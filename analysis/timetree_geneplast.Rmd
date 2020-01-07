@@ -65,7 +65,7 @@ ogr <- groot(ogr, nPermutations=10)
 roots <- groot.get(ogr, what="results")
 roots[,"cog_id"] <- row.names(roots)
 
-roots %<>% select(cog_id, Root) %>% rename(ncbi_root = Root)
+roots %<>% select(cog_id, Root) %>% rename(timetree_root = Root)
 
 write_tsv(roots, "../inst/extdata/timetree_geneplast.tsv")
 ```

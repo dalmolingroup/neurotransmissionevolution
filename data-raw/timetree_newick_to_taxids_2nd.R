@@ -6,19 +6,21 @@ library(magrittr)
 # loading species names and taxon ids
 data(string_eukaryotes_fix)
 
+string_eukaryotes_fix %<>% mutate(searched_name = coalesce(resolved_name, ncbi_name))
+
 # loading newick tree obtained from timetree
-timetree_newick <- read.tree("data-raw/resolved_names.nwk")
+timetree_newick_2nd <- read.tree("data-raw/resolved_names.nwk")
 
 # plot(timetree_newick %>% ladderize, type = "cladogram", use.edge.length = F)
 
 # replacing timetree's underscores with spaces
-timetree_newick[["tip.label"]] %<>% str_replace_all("_", " ")
+timetree_newick_2nd[["tip.label"]] %<>% str_replace_all("_", " ")
 
 # which timetree species' names exactly match with the resolved names
-taxid_indexes <- timetree_newick[["tip.label"]] %>% match(string_eukaryotes[["ncbi_name"]])
+taxid_indexes <- timetree_newick_2nd[["tip.label"]] %>% match(string_eukaryotes_fix[["searched_name"]])
 
 # find out which timetree species names didn't exactly match ncbi's
-unmatched_names <- timetree_newick[["tip.label"]] %>% extract(which(taxid_indexes %>% is.na)) %T>% print
+unmatched_names <- timetree_newick_2nd[["tip.label"]] %>% extract(which(taxid_indexes %>% is.na)) %T>% print
 
 # manually writing a dictionary to fix unmatched names
 unmatched_names_fix <- c(
@@ -31,22 +33,28 @@ unmatched_names_fix <- c(
 
 # "for each tip.label, if there exists an unmatched_names_fix value with this index, use this value.
 # else just leave it as is."
-timetree_newick[["tip.label"]] %<>% coalesce(unmatched_names_fix[.], .) %>% unname
+timetree_newick_2nd[["tip.label"]] %<>% coalesce(unmatched_names_fix[.], .) %>% unname
 
-# rematching after manual fix (which timetree species' names exactly match with ncbi's)
-taxid_indexes <- timetree_newick[["tip.label"]] %>% match(string_eukaryotes[["ncbi_name"]])
+# rematching after manual fix (which timetree species' names exactly match with searched ones)
+taxid_indexes <- timetree_newick_2nd[["tip.label"]] %>% match(string_eukaryotes_fix[["searched_name"]])
 
 # "for each tip.label, if there exists a matched string_eukaryotes$taxid, use this value.
 # else just leave it as is."
-timetree_newick[["taxid"]] <- coalesce(string_eukaryotes[taxid_indexes, "taxid", T], timetree_newick[["tip.label"]])
+timetree_newick_2nd[["taxid"]] <- coalesce(string_eukaryotes_fix[taxid_indexes, "taxid", T], timetree_newick_2nd[["tip.label"]])
 
 # the following assignments ensure a cleaner newick file with only necessary data
-timetree_newick[["node.label"]] <- NULL
-timetree_newick[["edge.length"]] <- NULL
+timetree_newick_2nd[["node.label"]] <- NULL
+timetree_newick_2nd[["edge.length"]] <- NULL
 
 # exporting phylo object
-usethis::use_data(timetree_newick, overwrite = TRUE)
+usethis::use_data(timetree_newick_2nd, overwrite = TRUE)
 
 # parseable data goes into the inst/extdata folder
-timetree_newick[["tip.label"]] <- timetree_newick[["taxid"]]
-write.tree(writable_newick, "inst/extdata/timetree_newick.nwk")
+timetree_newick_2nd[["tip.label"]] <- paste(
+  timetree_newick_2nd[["taxid"]],
+  timetree_newick_2nd[["tip.label"]]
+)
+
+string_eukaryotes_fix %<>% mutate(newick_name = paste(taxid, ncbi_name) %>% str_replace_all(" ","_"))
+
+write.tree(timetree_newick_2nd, "inst/extdata/timetree_380_eukaryotes.nwk")
