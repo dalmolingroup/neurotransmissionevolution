@@ -1,0 +1,74 @@
+---
+title: "Notebook 3: espécies e cogs"
+output:
+  html_document:
+  df_print: paged
+theme: default
+highlight: espresso
+toc: true
+toc_depth: 2
+toc_float: true
+number_sections: true
+---
+# Intro
+This markdown exports COG related data for the geneplast package
+```{r}
+library(dplyr)
+library(readr)
+library(tidyr)
+library(magrittr)
+library(data.table)
+
+data(string_eukaryotes, gene_ids, package = "neurotransmission")
+```
+
+# COGs
+Downloading STRING COG mappings (https://string-db.org/cgi/download.pl)
+```{r rows.print=5}
+if (!file.exists("download/COG.mappings.v11.0.txt.gz")) {
+  download.file(
+    "https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz",
+    "download/COG.mappings.v11.0.txt.gz"
+  )
+}
+
+#protein	start_position	end_position	orthologous_group	protein_annotation
+# cogs <- read_tsv(
+#   "download/COG.mappings.v11.0.txt.gz"
+#   ,skip=1
+#   ,col_names = c("taxid.string_id","cog_id")
+#   ,col_types = cols_only("c","-","-","c","-")
+#   ,quote = ""
+# )
+
+cogs <- fread(
+  "download/COG.mappings.v11.0.txt.gz",
+  header = F,
+  stringsAsFactors = F,
+  skip = 1,
+  sep = "\t",
+  # col.names = c("taxid.string_id","s","e","cog_id","anno"),
+  col.names = c("taxid.string_id","cog_id"),
+  select = c(1,4),
+  quote = ""
+)
+
+# spliting first column into taxid and string_id
+cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
+
+# keeping eukaryotes
+cogs %<>% filter(taxid %in% string_eukaryotes[["taxid"]])
+
+# exporting for package use
+usethis::use_data(cogs, overwrite = TRUE)
+```
+
+Separando a data.frame com cogs de neurotransmissores
+```{r rows.print=5}
+neurotransmission_cogs <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
+
+# exporting for package use
+usethis::use_data(neurotransmission_cogs, overwrite = TRUE)
+
+neurotransmission_cogs
+```

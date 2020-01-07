@@ -1,0 +1,68 @@
+---
+title: 'Gene identifiers and pathway annotation'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    highlight: espresso
+    number_sections: yes
+    theme: default
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+# Intro
+This markdown aims to measure the proportion of neural pathways for each gene
+```{r message=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(magrittr)
+```
+
+# Data
+```{r}
+data(gene_ids, entrez_to_pathway, package = "neurotransmission")
+```
+
+# Pathway names
+```{r}
+if (!file.exists("pathway_names.tsv")) {
+  download.file("http://rest.kegg.jp/list/pathway/hsa","pathway_names.tsv")
+}
+
+pathway_names <- read_tsv(
+  "pathway_names.tsv",
+  col_names = c("pathway_id", "pathway_name"),
+  col_types = "cc"
+)
+```
+
+
+```{r rows.print=5}
+selected_genes_pathways <- entrez_to_pathway %>% filter(entrez_id %in% gene_ids[["entrez_id"]])
+
+unique_pathway_ids <- selected_genes_pathways %>% pull(pathway_id) %>% unique
+
+pathway_names %<>% filter(pathway_id %in% unique_pathway_ids) %>% write_tsv("pathway_names.tsv")
+
+pathway_names
+```
+
+```{r rows.print=5}
+pathway_classification <- read_tsv("pathway_classification.tsv", col_types = "cci")
+
+pathway_neuroexclusivity <- selected_genes_pathways %>%
+  inner_join(pathway_classification) %>%
+  drop_na %>%
+  group_by(entrez_id) %>%
+  summarise(pathway_neuroexclusivity = sum(neural)/length(neural))
+
+# exporting for package use
+usethis::use_data(pathway_neuroexclusivity, overwrite = TRUE)
+
+pathway_neuroexclusivity
+```

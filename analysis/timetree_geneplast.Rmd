@@ -1,0 +1,71 @@
+---
+title: "NCBI geneplast"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    highlight: espresso
+    number_sections: yes
+    theme: default
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+# Objetivo
+Obter os enraizamentos
+```{r}
+library(dplyr)
+library(readr)
+library(magrittr)
+library(geneplast)
+```
+
+# Dados
+Carregamos o arquivo gerados no notebook anterior
+```{r rows.print=5}
+data(
+  neurotransmission_cogs,
+  cogs,
+  string_eukaryotes,
+  # ncbi_tree,
+  timetree_newick,
+  package = "neurotransmission"
+)
+```
+
+# Arvore
+Gerando objeto phytool da arvore curada
+```{r rows.print=5}
+#carregando newick
+# phyloTree<-read.newick("dados/Eukaryotes_2017.nwk")
+
+timetree_newick[["tip.alias"]] <- timetree_newick[["tip.label"]]
+
+timetree_newick[["tip.label"]] <- timetree_newick[["taxid"]]
+```
+
+# Geneplast
+## Raizes
+```{r message=F, warning=F, include=FALSE, quiet=T}
+cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
+
+ogr <- groot.preprocess(
+  cogdata   = cogs,
+  phyloTree = timetree_newick,
+  spid      = "9606",
+  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+)
+
+ogr <- groot(ogr, nPermutations=10)
+```
+
+```{r rows.print=5}
+roots <- groot.get(ogr, what="results")
+roots[,"cog_id"] <- row.names(roots)
+
+roots %<>% select(cog_id, Root) %>% rename(ncbi_root = Root)
+
+write_tsv(roots, "../inst/extdata/timetree_geneplast.tsv")
+```

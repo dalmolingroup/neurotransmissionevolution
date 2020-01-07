@@ -1,0 +1,72 @@
+---
+title: "Network"
+output:
+  html_document:
+    df_print: paged
+    theme: default
+    highlight: espresso
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+---
+# Intro
+Obter o layout da rede no RedeR
+```{r message=FALSE}
+library(dplyr)
+library(igraph)
+library(magrittr)
+```
+
+# Dados
+```{r rows.print=5}
+data(
+  gene_ids,
+  gene_pathways,
+  string_edgelist,
+  package = "neurotransmission"
+)
+```
+
+# RedeR
+```{r}
+vertices <- gene_ids %>% na.omit %>% inner_join(gene_pathways)
+
+g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
+
+V(g)$size <- V(g)$system_count
+```
+
+## Relaxamento
+```{r echo=T, eval=T, include=FALSE}
+rdp <- RedPort()
+calld(rdp)
+addGraph(rdp, network, gcoord=c(40,40), gscale=15, isNest=F, theme='tm1', zoom=25)
+#first
+relax(rdp,
+      p1=75,
+      p2=100,
+      p3=1000,
+      p4=300,
+      p5=500,
+      p6=100,
+      p7=10,
+      p8=10,
+      ps=TRUE
+)
+#then
+#relax(rdp,
+#      p1=60,
+#      p2=50,
+#      p3=800,
+#      p4=250,
+#      p5=500,
+#      p6=100,
+#      p7=10,
+#      p8=5,
+#      ps=TRUE
+#)
+```
+# Output
+Após relaxamento, exportar o arquivo .dynn:  
+file > export > data > basic network

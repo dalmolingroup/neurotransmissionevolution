@@ -1,0 +1,191 @@
+---
+title: 'Gene identifiers and pathway annotation'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    highlight: espresso
+    number_sections: yes
+    theme: default
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+# Intro
+This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table
+```{r message=FALSE}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(tidylog)
+library(magrittr)
+```
+
+# Neurotransmitter pathways annotation
+
+## Defining selected pathways
+```{r}
+pathways <- tribble(
+  ~pathway_id,      ~pathway_name, 
+  "path:hsa04724",  "glutamatergic",
+  "path:hsa04725",  "cholinergic",  
+  "path:hsa04726",  "serotonergic", 
+  "path:hsa04727",  "gabaergic",    
+  "path:hsa04728",  "dopaminergic", 
+  "path:hsa04721",  "vesicle"
+)
+
+# exporting for package use
+usethis::use_data(pathways, overwrite = TRUE)
+```
+
+## Genes to pathways relationships
+Downloading table containing all genes and pathways relationships
+```{r}
+if (!file.exists("entrez_to_pathway.tsv")) {
+  download.file("http://rest.kegg.jp/link/pathway/hsa","entrez_to_pathway.tsv")
+}
+
+entrez_to_pathway <- read.table(
+  "entrez_to_pathway.tsv"
+  ,header = F
+  ,stringsAsFactors = F
+  ,col.names = c("entrez_id", "pathway_id")
+  ,sep="\t"
+)
+
+# removing hsa prefix
+entrez_to_pathway[, "entrez_id"] %<>% substring(5)
+
+# exporting for package use
+usethis::use_data(entrez_to_pathway, overwrite = TRUE)
+```
+
+Filtering for genes in the selected pathways
+```{r rows.print=5}
+gene_pathways <- inner_join(entrez_to_pathway, pathways) %>%
+  mutate(n = 1) %>%
+  pivot_wider(
+    id_cols = entrez_id,
+    names_from = pathway_name, 
+    values_from = n,
+    values_fn = list(n = length),
+    values_fill = list(n = 0)
+  ) %>%
+  # filling 1's in all systems for synaptic vesicle genes
+  mutate_at(pathways[["pathway_name"]], ~ ifelse(vesicle == 1, 1L, .)) %>%
+  # neurotransmitter systems count for each gene (>=1, <= 5)
+  mutate(system_count = rowSums(select(., -entrez_id, -vesicle)))
+
+# exporting for package use
+usethis::use_data(gene_pathways, overwrite = TRUE)
+
+gene_pathways
+```
+
+# Base ID lookup table
+
+## Entrez to STRING
+Downloading entrez to string mapping table directly from STRING  [https://string-db.org/mapping_files/entrez/](https://string-db.org/mapping_files/entrez/)
+
+```{r rows.print=5}
+if (!file.exists("human.entrez_2_string.2018.tsv.gz")) {
+  download.file(
+    "https://string-db.org/mapping_files/entrez/human.entrez_2_string.2018.tsv.gz",
+    "human.entrez_2_string.2018.tsv.gz"
+  )
+}
+
+entrez_to_string <- read_tsv(
+  gzfile("human.entrez_2_string.2018.tsv.gz"),
+  skip = 1,
+  col_names = c("entrez_id", "string_id"),
+  col_types = cols_only("-", "c", "c")
+)
+
+gene_ids <- gene_pathways %>% select(entrez_id) %>% left_join(entrez_to_string)
+gene_ids
+```
+
+## STRING names
+
+Downloading string names mapping table directly from STRING  [https://string-db.org/mapping_files/entrez/](https://string-db.org/mapping_files/entrez/)
+
+```{r rows.print=5}
+if (!file.exists("human.name_2_string.tsv.gz")) {
+  download.file(
+    "https://string-db.org/mapping_files/STRING_display_names/human.name_2_string.tsv.gz",
+    "human.name_2_string.tsv.gz"
+  )
+}
+
+string_names <- read_tsv(
+  gzfile("human.name_2_string.tsv.gz"),
+  skip = 1,
+  col_names = c("string_name", "string_id"),
+  col_types = cols_only("-", "c", "c")
+)
+
+gene_ids %<>% left_join(string_names)
+gene_ids
+```
+
+## Entrez names
+
+Downloading gene symbols mapping table directly from NCBI's FTP  [ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/](ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/)
+```{r rows.print=5}
+if (!file.exists("Homo_sapiens.gene_info.gz")) {
+  download.file(
+    "ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz",
+    "Homo_sapiens.gene_info.gz"
+  )
+}
+
+entrez_names <- read_tsv(
+  gzfile("Homo_sapiens.gene_info.gz"),
+  skip = 1,
+  col_names = c("entrez_id", "entrez_name"),
+  col_types = cols_only("-", "c", "c")
+)
+
+gene_ids %<>% left_join(entrez_names)
+gene_ids
+```
+
+## Updating missing info
+
+Printing incomplete rows
+```{r rows.print=15}
+gene_ids[!complete.cases(gene_ids),]
+```
+
+Incomplete rows are filled manually
+```{r rows.print=15}
+complete_info <- tribble(
+  ~entrez_id,    ~string_id,               ~string_name,      ~entrez_name,  
+   "9296",        "9606.ENSP00000417378",   "ATP6V1F",         "ATP6V1F",      
+   "100137049",   "9606.ENSP00000396045",   "PLA2G4B",         "PLA2G4B",      
+   "85358",       NA,                       NA,                "SHANK3",       
+   "8681",        "9606.ENSP00000371886",   "JMJD7-PLA2G4B",   "JMJD7-PLA2G4B",
+   "1139",        "9606.ENSP00000407546",   "CHRNA7",          "CHRNA7",       
+   "107987478",   NA,                       NA,                "LOC107987478", 
+   "107987479",   NA,                       NA,                "LOC107987479", 
+   "1564",        NA,                       NA,                "CYP2D7",       
+   "801",         "9606.ENSP00000349467",   "CALM1",           "CALM1",        
+   "805",         "9606.ENSP00000272298",   "CALM2",           "CALM2",        
+   "808",         "9606.ENSP00000291295",   "CALM3",           "CALM3"
+)
+
+# removing incomplete cases and adding updated ones
+gene_ids %<>% na.omit %>% bind_rows(complete_info)
+```
+
+Exporting base table for package use
+```{r}
+gene_ids[["string_id"]] %<>% substring(6)
+
+usethis::use_data(gene_ids, overwrite = TRUE)
+```
+

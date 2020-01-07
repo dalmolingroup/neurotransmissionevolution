@@ -1,0 +1,96 @@
+---
+title: 'STRING edgelist'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    df_print: paged
+    highlight: espresso
+    number_sections: yes
+    theme: default
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Intro
+Coletar e filtrar as interações PPI dos genes obtidos via STRING.
+```{r message = FALSE}
+library(RCurl)
+library(dplyr)
+library(readr)
+library(tidyr)
+library(tidylog)
+library(magrittr)
+
+combine_scores <- function(string_interactions, sources){
+  #sources = nscore,fscore,pscore,ascore,escore,dscore,tscore
+  cs <- 1 - string_interactions[, sources, drop = FALSE]
+  cs <- apply(X = cs, MARGIN = 1, FUN = function(x) 1 - prod(x))
+  return(cs)
+}
+```
+
+# Data
+```{r}
+data(gene_ids, package = "neurotransmission")
+```
+
+# STRING API
+```{r rows.print=5}
+identifiers <- gene_ids[["string_id"]] %>% na.omit %>% paste(collapse="%0d",sep="")
+
+api_ids <- read_tsv(
+  postForm("http://string-db.org/api/tsv/get_string_ids"
+           ,identifiers = identifiers
+           ,echo_query = "1"
+           ,species = "9606"
+           ,style = "post"
+  )
+  ,comment = ""
+  ,quote = ""
+)
+
+# removing taxid
+api_ids %<>% separate(stringId, c(NA, "stringId"), extra = "merge", sep = "\\.")
+
+# removing duplicates
+api_ids %<>% group_by(queryItem) %>% filter(queryItem == stringId)
+
+# checking
+gene_ids$string_id[!gene_ids$string_id %in% api_ids$queryItem]
+api_ids$queryItem[!api_ids$queryItem %in% gene_ids$string_id]
+
+# checking if string resolved differently
+gene_ids$string_id[!gene_ids$string_id %in% api_ids$stringId]
+```
+
+
+Baixamos a tabela de interações pela API do string
+```{r rows.print=5}
+# identifiers <- api_ids[["stringId"]] %>% na.omit %>% paste(collapse="%0d",sep="")
+
+identifiers <- api_ids[["stringId"]] %>% na.omit
+identifiers <- paste0("9606.", identifiers, collapse="%0d",sep="")
+
+string_edgelist <- read_tsv(
+  postForm("http://string-db.org/api/tsv/network", identifiers = identifiers, species = "9606")
+)
+
+string_edgelist
+```
+
+# Recalculating scores
+Recalculamos o combinedscore apenas com as colunas `escore` (experimental) e `dscore` (database)
+```{r rows.print=5}
+string_edgelist[,"cs"] <- combine_scores(string_edgelist, c("escore","dscore"))
+string_edgelist %<>% filter(cs >= 0.7) %>% select(stringId_A, stringId_B)
+
+# checking
+edgelist_ids <- unique(c(string_edgelist[["stringId_A"]], string_edgelist[["stringId_B"]]))
+edgelist_ids[!edgelist_ids %in% gene_ids$string_id]
+
+# exporting for package use
+usethis::use_data(string_edgelist, overwrite = TRUE)
+```

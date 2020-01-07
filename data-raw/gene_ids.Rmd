@@ -1,0 +1,224 @@
+---
+title: "Notebook 1: tabulação de genes"
+output:
+  html_document:
+    df_print: paged
+    theme: default
+    highlight: espresso
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+---
+# Intro
+This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table
+```{r}
+#carregando pacotes necessarios
+library(reshape2)
+```
+
+
+# KEGG
+## Coleta de vias
+Aqui coletamos manualmente as vias sinápticas:
+
+  * path:hsa04724	Glutamatergic synapse - Homo sapiens (human)
+  * path:hsa04725	Cholinergic synapse - Homo sapiens (human)
+  * path:hsa04726	Serotonergic synapse - Homo sapiens (human)
+  * path:hsa04727	GABAergic synapse - Homo sapiens (human)
+  * path:hsa04728	Dopaminergic synapse - Homo sapiens (human)
+
+Montamos um data.frame referência com essas informações:
+
+```{r}
+pathways <- c(
+   "path:hsa04724"
+  ,"path:hsa04725"
+  ,"path:hsa04726"
+  ,"path:hsa04727"
+  ,"path:hsa04728"
+  ,"path:hsa04721"
+)
+
+pathway_names <- c(
+    "glutamatergic"
+   ,"cholinergic"
+   ,"serotonergic"
+   ,"gabaergic"
+   ,"dopaminergic"
+   ,"vesicle"
+)
+
+#montando data.frame referencia
+vias_sinapticas <- data.frame(pathway = pathways, pathway_name = pathway_names)
+vias_sinapticas
+```
+
+## Coleta de genes
+Coletamos via API todos os links entre genes e vias.
+```{r}
+#baixando tabela referencia
+#contendo todos as relações gene/pathway do kegg
+all_links <- read.table(
+  url("http://rest.kegg.jp/link/pathway/hsa")
+  ,header = F
+  ,stringsAsFactors = F
+  ,col.names = c("entrez", "pathway")
+  ,sep="\t"
+)
+```
+
+
+Filtramos o data.frame completo `all_links` para obter apenas genes relacionados as `vias_sinapticas`
+```{r rows.print=5}
+#filtrando apenas linhas das vias sinapticas
+genes_sinapticos <- subset(all_links, pathway %in% vias_sinapticas[,"pathway"])
+
+#removendo 4 primeiros caracteres "hsa:"
+genes_sinapticos[,"entrez"] <- substring(genes_sinapticos[,"entrez"],5)
+genes_sinapticos
+```
+
+## Anotação dos sistemas
+Populamos o data.frame `genes_sinapticos` com os nomes das vias (`vias_sinapticas$pathway_name`)
+```{r}
+genes_sinapticos <- merge(genes_sinapticos, vias_sinapticas, by="pathway", all.x=T)
+genes_sinapticos
+```
+
+Utilizando a função `dcast` do pacote `reshape2` convertemos o data.frame `genes_sinapticos` de formato *long* para *wide* através da coluna *pathway_name* (matriz de presença)
+```{r}
+genes_sinapticos <- dcast(genes_sinapticos[,c("entrez","pathway_name")], entrez~pathway_name, length, value.var="pathway_name")
+genes_sinapticos
+```
+
+# Identificadores ENSEMBL
+
+Baixamos a relação de identificadores Entrez/ENSEMBL diretamente do STRING [https://string-db.org/mapping_files/entrez_mappings/](https://string-db.org/mapping_files/entrez_mappings/)
+
+```{r rows.print=5}
+entrez_ensembl <- read.table(
+  url("https://string-db.org/mapping_files/entrez_mappings/entrez_gene_id.vs.string.v10.28042015.tsv")
+  ,header = F
+  ,skip = 1
+  ,stringsAsFactors = F
+  ,col.names = c("entrez", "protein_id")
+  ,sep="\t"
+)
+
+entrez_ensembl
+```
+
+Montando a tabela final (entrezid, protein_id) dos genes sinapticos
+```{r rows.print=5}
+tabela_final <- merge(genes_sinapticos, entrez_ensembl, by="entrez", all.x=T, all.y=F)
+tabela_final
+```
+Nota: apenas 299 identificadores ENSEMBL únicos no data.frame `tabela_final`. Corrigir manualmente no próximo tópico.
+```{r rows.print=5}
+faltantes <- tabela_final[is.na(tabela_final[,"protein_id"]),"entrez"]
+faltantes
+```
+
+# Identificadores GeneSymbol
+Baixamos a relação de identificadores Entrez/GeneSymbol `Homo_sapiens.gene_info.gz` diretamente do NCBI [ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/](ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/)  
+* Coluna 2: GeneID  
+* Coluna 3: Symbol
+```{r rows.print=5}
+#tax_id	GeneID	Symbol	LocusTag	Synonyms	dbXrefs	chromosome	map_location	description	type_of_gene	Symbol_from_nomenclature_authority	Full_name_from_nomenclature_authority	Nomenclature_status	Other_designations	Modification_date	Feature_type
+entrez_symbol <- read.table(
+  gzfile("dados/Homo_sapiens.gene_info.gz")
+  ,sep = "\t"
+  ,header = F
+  ,skip = 1
+  ,colClasses = "character"
+  ,comment.char = ""
+  ,quote = ""
+)[,2:3]
+
+colnames(entrez_symbol) <- c("entrez","symbol")
+
+entrez_symbol
+```
+## Correção faltantes
+Completamos manualmente os enspids dos genes `faltantes`.
+
+```{r}
+correcao <- entrez_symbol[entrez_symbol$entrez %in% faltantes,]
+correcao
+```
+```{r}
+write.table(correcao,"dados/temp_correcao_enspid.tsv",row.names = F,col.names = T,sep="\t", quote = F)
+```
+
+Preenchendo os enspids faltantes na `tabela_final`.  
+
+Os seguintes genes não foram encontrados no STRING:
+
+* 10991: SLC38A3
+* 146850: PIK3R6
+* 107987478: LOC107987478
+```{r, rows.print=5, tidy = FALSE}
+#carregando data.frame com enspids faltantes coletados manualmente
+corrigidos <- read.table("dados/correcao_enspid.tsv",header=T,sep="\t",stringsAsFactors=F,na.strings = "")
+
+#removendo os 3 genes nao encontrados
+corrigidos <- na.omit(corrigidos)
+
+entrez_ensembl <- entrez_ensembl[entrez_ensembl[,"entrez"] %in% genes_sinapticos[,"entrez"],]
+
+#completando o "dicionario"
+entrez_ensembl <- rbind(entrez_ensembl, corrigidos)
+
+```
+
+## Correção PLA2G4B
+
+**O .tsv referencia no STRING (de 2015) está errado para o gene 8681 - JMJD7-PLA2G4B.**  
+Nele, consta:
+
+* 8681 - ENSP00000396045 - JMJD7-PLA2G4B  
+
+Contudo, o correto é:  
+
+* 8681 - ENSP00000371886 - JMJD7-PLA2G4B 
+* 100137049 - ENSP00000396045 - PLA2G4B 
+
+**Correção abaixo.**
+```{r}
+entrez_ensembl[entrez_ensembl[,"entrez"]==8681,"protein_id"] <- "9606.ENSP00000371886"
+```
+
+
+```{r, rows.print=5, tidy=FALSE}
+#preenchendo protein_ids
+tabela_final <- merge(genes_sinapticos, entrez_ensembl, by="entrez", all.x=T, all.y=F)
+
+#preenchendo symbols
+tabela_final <- merge(tabela_final, entrez_symbol, by="entrez", all.x=T, all.y=F)
+
+#reorganizando ordem das colunas:
+tabela_final <- tabela_final[,
+  c(
+    "protein_id"
+    ,"symbol"
+    ,"entrez"
+    ,"glutamatergic"
+    ,"cholinergic"
+    ,"serotonergic"
+    ,"gabaergic"
+    ,"dopaminergic"
+  )
+]
+
+tabela_final[,"system_count"] <- rowSums(tabela_final[,c("glutamatergic","cholinergic","serotonergic","gabaergic","dopaminergic")])
+
+tabela_final
+```
+
+Escrevendo arquivo `n1_gene_info.tsv` na pasta `resultados` contendo `tabela_final`
+```{r}
+write.table(tabela_final,"resultados/n1_gene_info.tsv",row.names = F,col.names = T,sep="\t", quote = F)
+```
+
+usethis::use_data("gene_ids")
