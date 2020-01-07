@@ -16,6 +16,12 @@ Obter o layout da rede no RedeR
 library(dplyr)
 library(igraph)
 library(magrittr)
+library(easylayout)
+
+library(Hmisc)
+library(ggplot2)
+library(scatterpie)
+# library(UpSetR)
 ```
 
 # Dados
@@ -30,42 +36,26 @@ data(
 
 # RedeR
 ```{r}
-vertices <- gene_ids %>% na.omit %>% inner_join(gene_pathways)
+vertices <- gene_ids %>% na.omit %>% inner_join(gene_pathways) %>% select(string_id, everything())
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
-V(g)$size <- V(g)$system_count
+V(g)$size <- V(g)$system_count * 5
+
+subgraphs <- decompose.graph(graph)
+lcc <- subgraphs[[which.max(sapply(subgraphs, vcount))]]
 ```
 
-## Relaxamento
+# Force
 ```{r echo=T, eval=T, include=FALSE}
-rdp <- RedPort()
-calld(rdp)
-addGraph(rdp, network, gcoord=c(40,40), gscale=15, isNest=F, theme='tm1', zoom=25)
-#first
-relax(rdp,
-      p1=75,
-      p2=100,
-      p3=1000,
-      p4=300,
-      p5=500,
-      p6=100,
-      p7=10,
-      p8=10,
-      ps=TRUE
-)
-#then
-#relax(rdp,
-#      p1=60,
-#      p2=50,
-#      p3=800,
-#      p4=250,
-#      p5=500,
-#      p6=100,
-#      p7=10,
-#      p8=5,
-#      ps=TRUE
-#)
+layout <- easylayout(lcc)
+
+sistemas <- c("glutamatergic","cholinergic","serotonergic","gabaergic","dopaminergic")
+
+from <- gene_info[match(edgelist[,1], gene_info[,"protein_id"]), c("x","y")]
+to <- gene_info[match(edgelist[,2], gene_info[,"protein_id"]), c("x","y")]
+
+edges <- rbind(from, to) %>% cbind(group = 1:nrow(edgelist))
 ```
 # Output
 Após relaxamento, exportar o arquivo .dynn:  
