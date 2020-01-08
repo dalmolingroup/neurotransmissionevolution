@@ -63,12 +63,6 @@ tree_85k_genera <- tree_85k[["tip.genus"]] %>% unique
 tree_genus <- tree_85k %$% keep.tip(., tip.label[tip.genus %in% selected_genera])
 tree_genus[["tip.genus"]] <- sapply(strsplit(tree_genus[["tip.label"]]," "), "[", 1)
 
-# hack
-# tree_genus$node.label[1] <- " "
-
-# converting phylo to igraph
-# graph_genus <- as.igraph.phylo(tree_genus, directed = TRUE)
-
 # para cada especie nao encontrada
 unfound_species <- species_dictionary %>% filter(is.na(timetree_name) & genus_search %in% tree_85k_genera)
 
@@ -85,12 +79,67 @@ for(i in 1:nrow(unfound_species)){
 # for some reason bind.tip adds underscores to species names
 tree_genus[["tip.label"]] %<>% str_replace_all("_", " ")
 
-# filtrar arvore para especies encontradas + supostas
-found_and_supposed_species <- species_dictionary$timetree_name %>% na.omit %>% c(unfound_species[["ncbi_name"]])
-test <- keep.tip(tree_genus, found_and_supposed_species)
+# keeping track of found species
+found_species <- species_dictionary %>% filter(!is.na(timetree_name) | genus_search %in% tree_85k_genera)
+found_species %<>% mutate(forced_name = coalesce(timetree_name, ncbi_name))
 
-plot(test %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
+# filtrar arvore para especies encontradas + supostas
+tree_genus %<>% keep.tip(found_species[["forced_name"]])
+
+plot(tree_genus %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
 
 pdf("C:/R/test.pdf", width=20, height=75)
-  plot(test %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
+  plot(tree_genus %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
 dev.off()
+
+####################
+## unfound genera
+####################
+data(ncbi_tree)
+
+# converting ncbi phylo to igraph
+graph_ncbi <- as.igraph.phylo(ncbi_tree, directed = TRUE)
+plot(as.undirected(graph_ncbi), layout = layout_as_tree(graph_ncbi), vertex.label = NA, vertex.size=1)
+
+# hack
+tree_genus[["node.label"]][1] <- " "
+
+# converting phylo to igraph
+graph_genus <- as.igraph.phylo(tree_genus, directed = TRUE)
+plot(as.undirected(graph_genus), layout = layout_as_tree(graph_genus), vertex.label = NA, vertex.size=1)
+
+# para cada especie cujo genero nao está no timetree
+unfound_genera <- species_dictionary %>% filter(is.na(timetree_name) & !genus_search %in% tree_85k_genera)
+
+# procurar as duas espécies mais próximas, na árvore do ncbi, que estejam na arvore do timetree
+tip_nodes <- V(graph_ncbi)[degree(graph_ncbi, mode = "out") == 0]
+
+# undirected distances between all species nodes
+tip_distances <- graph_ncbi %>% distances(v = tip_nodes, to = tip_nodes, mode = "all") %>% as_tibble(rownames = "from") %>% pivot_longer(-from, names_to = "to", values_to = "distance")
+
+# removing self references
+tip_distances %<>% filter(distance > 0)
+
+# we only want to search for species of unfound genera
+tip_distances %<>% inner_join(unfound_genera %>% select(new_taxid, from_name = ncbi_name), by = c("from" = "new_taxid"))
+
+# we only want to find species already present in the genus_tree
+tip_distances %<>% inner_join(found_species %>% select(new_taxid, to_name = forced_name), by = c("to" = "new_taxid")) %>% group_by(from) %>% top_n(-2, distance) %>% top_n(2, to)
+
+# out distance matrix between all nodes in tree, needed to find MCRAs
+out_distances <- graph_ncbi %>% distances(mode = "out")
+
+# finding the mcra ffor each species of unfound genera
+closest_relative <- tip_distances %>% group_by(from) %>% summarise(closest_relative = {
+  # which rows have no infinite distances? the last one represents the MCRA
+  mcra_row_index <- max(which(rowSums(is.infinite(out_distances[, to])) == 0))
+  rownames(out_distances)[mcra_row_index]
+})
+
+graph_ncbi %<>% add_vertices(nrow(closest_relative), color = "red", attr = list(name = closest_relative[["from"]]))
+
+edges_to_add <- V(graph_ncbi)[closest_relative %>% select(closest_relative, from) %>% t %>% as.vector]$name
+
+graph_ncbi %<>% add_edges(V(graph_ncbi)[edges_to_add])
+
+plot(as.undirected(graph_ncbi), layout = layout_as_tree(graph_ncbi), vertex.label = NA, vertex.size=1)
