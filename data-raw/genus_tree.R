@@ -64,3 +64,10 @@ tree_genus <- tree_85k %$% keep.tip(., tip.label[tip.genus %in% selected_genera]
 
 # converting phylo to igraph
 graph_genus <- as.igraph.phylo(tree_genus, directed = TRUE)
+
+# para cada especie nao encontrada
+# buscar todas as especies do mesmo genero
+# obter ancestral comum dessas especies
+# adicionar um nó para essa especie
+
+# filtrar arvore para especies encontradas + supostas
