@@ -127,19 +127,36 @@ tip_distances %<>% inner_join(unfound_genera %>% select(new_taxid, from_name = n
 tip_distances %<>% inner_join(found_species %>% select(new_taxid, to_name = forced_name), by = c("to" = "new_taxid")) %>% group_by(from) %>% top_n(-2, distance) %>% top_n(2, to)
 
 # out distance matrix between all nodes in tree, needed to find MCRAs
-out_distances <- graph_ncbi %>% distances(mode = "out")
+out_distances <- graph_genus %>% distances(mode = "out")
 
 # finding the mcra ffor each species of unfound genera
-closest_relative <- tip_distances %>% group_by(from) %>% summarise(closest_relative = {
+closest_relative <- tip_distances %>% group_by(from_name) %>% summarise(closest_relative = {
   # which rows have no infinite distances? the last one represents the MCRA
-  mcra_row_index <- max(which(rowSums(is.infinite(out_distances[, to])) == 0))
+  mcra_row_index <- max(which(rowSums(is.infinite(out_distances[, to_name])) == 0))
   rownames(out_distances)[mcra_row_index]
 })
 
-graph_ncbi %<>% add_vertices(nrow(closest_relative), color = "red", attr = list(name = closest_relative[["from"]]))
+# V(graph_genus)$tax_name <- V(graph_genus)$name
+#
+# V(graph_genus)$name <- coalesce(
+#   found_species$new_taxid[match(V(graph_genus)$name, found_species$forced_name)],
+#   V(graph_genus)$name
+# )
 
-edges_to_add <- V(graph_ncbi)[closest_relative %>% select(closest_relative, from) %>% t %>% as.vector]$name
+graph_genus %<>% add_vertices(nrow(closest_relative), color = "red", attr = list(name = closest_relative[["from_name"]]))
 
-graph_ncbi %<>% add_edges(V(graph_ncbi)[edges_to_add])
+edges_to_add <- V(graph_genus)[closest_relative %>% select(closest_relative, from_name) %>% t %>% as.vector]$name
 
-plot(as.undirected(graph_ncbi), layout = layout_as_tree(graph_ncbi), vertex.label = NA, vertex.size=1)
+graph_genus %<>% add_edges(V(graph_genus)[edges_to_add])
+
+plot(as.undirected(graph_genus), layout = layout_as_tree(graph_genus), vertex.label = NA, vertex.size=1)
+
+V(graph_genus)$a <- str_replace_all(V(graph_genus)$name, "/^[a-z0-9]+$/", "_")
+
+n <- treeio::as.phylo(graph_genus)
+
+pdf("~/R/476_test.pdf", width=20, height=75)
+  n %>% ladderize %>% plot(type = "cladogram", use.edge.length = F)
+dev.off()
+
+write.tree(n, "inst/extdata/416_tree.nwk")
