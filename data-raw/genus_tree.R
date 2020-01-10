@@ -86,10 +86,17 @@ found_species %<>% mutate(forced_name = coalesce(timetree_name, ncbi_name))
 # filtrar arvore para especies encontradas + supostas
 tree_genus %<>% keep.tip(found_species[["forced_name"]])
 
-plot(tree_genus %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
+# converting to ncbi taxids
+tree_genus[["tip.label"]] <- found_species[["new_taxid"]][match(tree_genus[["tip.label"]], found_species[["forced_name"]])]
 
-pdf("C:/R/test.pdf", width=20, height=75)
-  plot(tree_genus %>% rotatePhyloTree("Homo sapiens"), type = "cladogram", use.edge.length = F)
+# ensuring a cleaner newick file with only necessary data
+tree_genus[["node.label"]] <- NULL
+tree_genus[["edge.length"]] <- NULL
+
+plot(tree_genus %>% rotatePhyloTree("9606"), type = "cladogram", use.edge.length = F)
+
+pdf("C:/R/416_test.pdf", width=20, height=75)
+  plot(tree_genus %>% rotatePhyloTree("9606"), type = "cladogram", use.edge.length = F)
 dev.off()
 
 ####################
@@ -100,9 +107,6 @@ data(ncbi_tree)
 # converting ncbi phylo to igraph
 graph_ncbi <- as.igraph.phylo(ncbi_tree, directed = TRUE)
 plot(as.undirected(graph_ncbi), layout = layout_as_tree(graph_ncbi), vertex.label = NA, vertex.size=1)
-
-# hack
-tree_genus[["node.label"]][1] <- " "
 
 # converting phylo to igraph
 graph_genus <- as.igraph.phylo(tree_genus, directed = TRUE)
@@ -121,42 +125,59 @@ tip_distances <- graph_ncbi %>% distances(v = tip_nodes, to = tip_nodes, mode = 
 tip_distances %<>% filter(distance > 0)
 
 # we only want to search for species of unfound genera
-tip_distances %<>% inner_join(unfound_genera %>% select(new_taxid, from_name = ncbi_name), by = c("from" = "new_taxid"))
+tip_distances %<>% inner_join(unfound_genera %>% select(new_taxid), by = c("from" = "new_taxid"))
 
 # we only want to find species already present in the genus_tree
-tip_distances %<>% inner_join(found_species %>% select(new_taxid, to_name = forced_name), by = c("to" = "new_taxid")) %>% group_by(from) %>% top_n(-2, distance) %>% top_n(2, to)
+tip_distances %<>% inner_join(found_species %>% select(new_taxid), by = c("to" = "new_taxid")) %>% group_by(from) %>% top_n(-2, distance) %>% top_n(2, to)
 
-# out distance matrix between all nodes in tree, needed to find MCRAs
+# out distance matrix between all nodes in tree, needed to find MRCAs
 out_distances <- graph_genus %>% distances(mode = "out")
 
-# finding the mcra ffor each species of unfound genera
-closest_relative <- tip_distances %>% group_by(from_name) %>% summarise(closest_relative = {
-  # which rows have no infinite distances? the last one represents the MCRA
-  mcra_row_index <- max(which(rowSums(is.infinite(out_distances[, to_name])) == 0))
-  rownames(out_distances)[mcra_row_index]
+# finding the mrca for each species of unfound genera
+closest_relative <- tip_distances %>% group_by(from) %>% summarise(closest_relative = {
+  # which rows have no infinite distances? the last one represents the MRCA
+  mrca_row_index <- max(which(rowSums(is.infinite(out_distances[, to])) == 0))
+  rownames(out_distances)[mrca_row_index]
 })
 
-# V(graph_genus)$tax_name <- V(graph_genus)$name
-#
-# V(graph_genus)$name <- coalesce(
-#   found_species$new_taxid[match(V(graph_genus)$name, found_species$forced_name)],
-#   V(graph_genus)$name
-# )
+# adding unfound genera species
+graph_genus %<>% add_vertices(nrow(closest_relative), color = "red", attr = list(name = closest_relative[["from"]]))
 
-graph_genus %<>% add_vertices(nrow(closest_relative), color = "red", attr = list(name = closest_relative[["from_name"]]))
+# edges_to_add[1] -> edges_to_add[2], edges_to_add[2] -> edges_to_add[3]...
+edges_to_add <- V(graph_genus)[closest_relative %>% select(closest_relative, from) %>% t %>% as.vector]$name
 
-edges_to_add <- V(graph_genus)[closest_relative %>% select(closest_relative, from_name) %>% t %>% as.vector]$name
-
+# connecting species leafs to the supposed MRCA
 graph_genus %<>% add_edges(V(graph_genus)[edges_to_add])
 
-plot(as.undirected(graph_genus), layout = layout_as_tree(graph_genus), vertex.label = NA, vertex.size=1)
+plot(as.undirected(graph_genus), layout = layout_as_tree(graph_genus), vertex.label = NA, vertex.size=2)
 
-V(graph_genus)$a <- str_replace_all(V(graph_genus)$name, "/^[a-z0-9]+$/", "_")
+# V(graph_genus)$a <- str_replace_all(V(graph_genus)$name, "/^[a-z0-9]+$/", "_")
 
-n <- treeio::as.phylo(graph_genus)
+# finally converting to phylo format
+phylo_graph_genus <- treeio::as.phylo(graph_genus)
 
-pdf("~/R/476_test.pdf", width=20, height=75)
-  n %>% ladderize %>% plot(type = "cladogram", use.edge.length = F)
+# adding tip.alias
+phylo_graph_genus[["tip.alias"]] <- species_dictionary[["string_name"]][match(phylo_graph_genus[["tip.label"]], species_dictionary[["new_taxid"]])]
+
+# converting to string ids
+phylo_graph_genus[["tip.label"]] <- species_dictionary[["taxid"]][match(phylo_graph_genus[["tip.label"]], species_dictionary[["new_taxid"]])]
+
+# ensuring a cleaner newick file with only necessary data
+phylo_graph_genus[["node.label"]] <- NULL
+phylo_graph_genus[["edge.length"]] <- NULL
+
+# phylo_graph_genus %<>% rotatePhyloTree("9606")
+
+usethis::use_data(phylo_graph_genus, overwrite = TRUE)
+
+write.tree(phylo_graph_genus, "inst/extdata/476_tree.nwk")
+
+
+################
+################
+
+phylo_graph_genus[["tip.label"]] <- phylo_graph_genus[["tip.alias"]]
+
+pdf("C:/R/476_test.pdf", width=20, height=75)
+  phylo_graph_genus %>% rotatePhyloTree("Homo sapiens") %>% plot(type = "cladogram")
 dev.off()
-
-write.tree(n, "inst/extdata/416_tree.nwk")
