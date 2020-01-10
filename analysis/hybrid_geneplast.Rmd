@@ -59,14 +59,14 @@ ogr <- groot.preprocess(
   cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
 )
 
-ogr <- groot(ogr, nPermutations=10)
+ogr <- groot(ogr, nPermutations=1000)
 ```
 
 ```{r rows.print=5}
 roots <- groot.get(ogr, what="results")
 roots[,"cog_id"] <- row.names(roots)
 
-roots %<>% select(cog_id, Root) %>% rename(timetree_root = Root)
+roots %<>% select(cog_id, Root) %>% rename(hybrid_root = Root)
 
 write_tsv(roots, "../inst/extdata/hybrid_geneplast.tsv")
 ```

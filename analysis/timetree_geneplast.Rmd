@@ -20,6 +20,7 @@ library(dplyr)
 library(readr)
 library(magrittr)
 library(geneplast)
+library(phytools)
 ```
 
 # Dados
@@ -30,7 +31,7 @@ data(
   cogs,
   string_eukaryotes,
   # ncbi_tree,
-  timetree_newick,
+  # timetree_newick,
   package = "neurotransmission"
 )
 ```
@@ -38,12 +39,11 @@ data(
 # Arvore
 Gerando objeto phytool da arvore curada
 ```{r rows.print=5}
-#carregando newick
-# phyloTree<-read.newick("dados/Eukaryotes_2017.nwk")
+# carregando newick
+phyloTree <- phytools::read.newick("../inst/extdata/timetree_newick.nwk")
 
-timetree_newick[["tip.alias"]] <- timetree_newick[["tip.label"]]
-
-timetree_newick[["tip.label"]] <- timetree_newick[["taxid"]]
+# renomeando tip.alias com base no match entre ssp_ids
+phyloTree[["tip.alias"]] <- string_eukaryotes[["string_name"]][match(phyloTree[["tip.label"]], string_eukaryotes[["taxid"]])]
 ```
 
 # Geneplast
