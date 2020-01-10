@@ -18,9 +18,10 @@ Obter os enraizamentos
 ```{r}
 library(dplyr)
 library(readr)
+library(tibble)
 library(magrittr)
 library(geneplast)
-library(ape)
+library(phytools)
 ```
 
 # Dados
@@ -31,45 +32,50 @@ data(
   cogs,
   string_eukaryotes,
   # ncbi_tree,
-  # timetree_newick,
-  # phylo_graph_genus,
+  timetree_newick,
   package = "neurotransmission"
 )
-
-cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
 ```
 
 # Arvore
 Gerando objeto phytool da arvore curada
 ```{r rows.print=5}
-# carregando newick
-phyloTree <- read.tree("../inst/extdata/476_tree.nwk")
+timetree_newick[["tip.alias"]] <- timetree_newick[["tip.label"]]
+timetree_newick[["tip.label"]] <- timetree_newick[["taxid"]]
 
-# renomeando tip.alias com base no match entre ssp_ids
+timetree_newick[["node.label"]] <- NULL
+timetree_newick[["edge.length"]] <- NULL
+```
+
+Gerando objeto phytool da arvore curada
+```{r rows.print=5}
+phyloTree <- phytools::read.newick("../inst/extdata/timetree_newick.nwk")
+
+#renomeando tip.alias com base no match entre ssp_ids
 phyloTree[["tip.alias"]] <- string_eukaryotes[["string_name"]][match(phyloTree[["tip.label"]], string_eukaryotes[["taxid"]])]
 ```
 
 # Geneplast
 ## Raizes
 ```{r message=F, warning=F, include=FALSE, quiet=T}
+cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
+
 ogr <- groot.preprocess(
   cogdata   = cogs,
-  phyloTree = phyloTree,
+  phyloTree = timetree_newick,
   spid      = "9606",
   cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
 )
 
-ogr <- groot(ogr, nPermutations=1)
-```
+ogr_spbranches <- groot.get(ogr, "spbranches")
+plot(ogr@tree)
 
-```{r rows.print=5}
-roots <- groot.get(ogr, what="results")
-roots[,"cog_id"] <- row.names(roots)
+ogr2 <- groot.preprocess(
+  cogdata   = cogs,
+  phyloTree = phyloTree,
+  spid      = "9606",
+  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+) %>T%
 
-roots %<>% select(cog_id, Root) %>% rename(hybrid_root = Root)
-
-groot.plot(ogr, whichOG="NOG259214", fname="hybrid", width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
-groot.plot(ogr, plot.lcas = TRUE, fname="hybrid", width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
-
-write_tsv(roots, "../inst/extdata/hybrid_geneplast.tsv")
+ogr2_spbranches <- groot.get(ogr2, "spbranches")
 ```

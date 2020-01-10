@@ -18,6 +18,7 @@ Obter os enraizamentos
 ```{r}
 library(dplyr)
 library(readr)
+library(tibble)
 library(magrittr)
 library(geneplast)
 library(phytools)
@@ -31,7 +32,7 @@ data(
   cogs,
   string_eukaryotes,
   # ncbi_tree,
-  # timetree_newick,
+  timetree_newick,
   package = "neurotransmission"
 )
 ```
@@ -39,10 +40,18 @@ data(
 # Arvore
 Gerando objeto phytool da arvore curada
 ```{r rows.print=5}
-# carregando newick
+timetree_newick[["tip.alias"]] <- timetree_newick[["tip.label"]]
+timetree_newick[["tip.label"]] <- timetree_newick[["taxid"]]
+
+timetree_newick[["node.label"]] <- NULL
+timetree_newick[["edge.length"]] <- NULL
+```
+
+Gerando objeto phytool da arvore curada
+```{r rows.print=5}
 phyloTree <- phytools::read.newick("../inst/extdata/timetree_newick.nwk")
 
-# renomeando tip.alias com base no match entre ssp_ids
+#renomeando tip.alias com base no match entre ssp_ids
 phyloTree[["tip.alias"]] <- string_eukaryotes[["string_name"]][match(phyloTree[["tip.label"]], string_eukaryotes[["taxid"]])]
 ```
 
@@ -56,16 +65,33 @@ ogr <- groot.preprocess(
   phyloTree = timetree_newick,
   spid      = "9606",
   cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
-)
+) %>%
+  groot(nPermutations=2)
 
-ogr <- groot(ogr, nPermutations=10)
+ogr2 <- groot.preprocess(
+  cogdata   = cogs,
+  phyloTree = phyloTree,
+  spid      = "9606",
+  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+) %>%
+  groot(nPermutations=2)
 ```
+
 
 ```{r rows.print=5}
 roots <- groot.get(ogr, what="results")
-roots[,"cog_id"] <- row.names(roots)
+roots2 <- groot.get(ogr2, what="results")
 
-roots %<>% select(cog_id, Root) %>% rename(timetree_root = Root)
+roots %<>% rownames_to_column("cog_id") %>% select(cog_id, Root) %>% rename(timetree_root = Root)
+roots2 %<>% rownames_to_column("cog_id") %>% select(cog_id, Root) %>% rename(timetree_root = Root)
 
-write_tsv(roots, "../inst/extdata/timetree_geneplast.tsv")
+groot.plot(ogr, whichOG="NOG259214", fname="roots1", plot.sspnames = FALSE)
+groot.plot(ogr, plot.lcas = TRUE, fname="roots1", plot.sspnames = FALSE)
+
+groot.plot(ogr2, whichOG="NOG259214", fname="roots2", plot.sspnames = FALSE)
+groot.plot(ogr2, plot.lcas = TRUE, fname="roots2", plot.sspnames = FALSE)
+
+ogr %>% groot.get("tree") %>% plot(type="cladogram", use.edge.length=F)
+ogr2 %>% groot.get("tree") %>% plot(type="cladogram", use.edge.length=F)
+# write_tsv(roots, "../inst/extdata/timetree_geneplast.tsv")
 ```
