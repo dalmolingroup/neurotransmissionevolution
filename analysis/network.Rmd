@@ -43,7 +43,7 @@ string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
-V(g)$size <- V(g)$system_count * 5
+V(g)$size <- V(g)$system_count #* 5
 
 subgraphs <- decompose.graph(g)
 lcc <- subgraphs[[which.max(sapply(subgraphs, vcount))]]

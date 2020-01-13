@@ -1,4 +1,6 @@
 #' @export
+#' @import igraph
+#' @import dplyr
 d3force <- function(graph, layout = NULL){
   if(is.matrix(layout)){
     V(graph)$x <- layout[,1]
@@ -6,11 +8,11 @@ d3force <- function(graph, layout = NULL){
   }
 
   graph_json <- jsonlite::toJSON(list(
-    nodes = igraph::as_data_frame(graph, "vertices")
-    ,links = igraph::as_data_frame(graph, "edges"))
+    nodes = igraph::as_data_frame(graph, "vertices") %>% rename(id = name)
+    ,links = igraph::as_data_frame(graph, "edges") %>% rename(source = from, target = to))
   )
 
-  print(graph_json)
+  # print(graph_json)
 
   server <- function(input, output, session) {
     session$sendCustomMessage(type = "dataTransferredFromServer", graph_json)

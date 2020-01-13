@@ -55,7 +55,7 @@ svg {
     <p><label>alpha</label> Simulation activity</p>
     <div class="alpha_bar" onclick="updateAll();"><div id="alpha_value"></div></div>
   </div>
-  <div class="force">
+  <!-- <div class="force">
     <p><label>center</label> Shifts the view, so the graph is centered at this location.</p>
     <label>
       x
@@ -67,7 +67,7 @@ svg {
       <output id="center_YSliderOutput">.5</output>
       <input type="range" min="0" max="1" value=".5" step="0.01" oninput="d3.select('#center_YSliderOutput').text(value); forceProperties.center.y=value; updateAll();">
     </label>
-  </div>
+  </div> -->
 
   <div class="force">
     <p><label><input type="checkbox" checked onchange="forceProperties.charge.enabled = this.checked; updateAll();"> charge</label> Attracts (+) or repels (-) nodes to/from each other.</p>
