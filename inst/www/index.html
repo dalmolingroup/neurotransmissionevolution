@@ -149,11 +149,28 @@ svg {
     </label>
   </div>
 </div>
+<!-- <div align='center' id="layout" style="width: 960px; height: 500px; margin: auto; margin-bottom: 12px">
+  <svg />
+</div> -->
 <svg></svg>
 <script src="www/d3.v4.min.js"></script>
 <script src="www/code.js"></script>
+<!-- <script src="www/d3force.js"></script> -->
 <script>
-  Shiny.addCustomMessageHandler("dataTransferredFromServer", easyLayout);
+  // Shiny.addCustomMessageHandler("dataTransferredFromServer", easyLayout);
+  
+  /**
+  var svg = d3.select('#layout');
+
+  d3.json('www/miserables.json', function(error, graph) {
+      if (!error) {
+          //console.log('graph', graph);
+          createV4SelectableForceDirectedGraph(svg, graph);
+      } else {
+          console.error(error);
+      }
+  });
+  /**/
 </script>
 </body>
 </html>
