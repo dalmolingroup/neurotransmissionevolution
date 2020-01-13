@@ -16,7 +16,6 @@ Obter o layout da rede no RedeR
 library(dplyr)
 library(igraph)
 library(magrittr)
-library(easylayout)
 
 library(Hmisc)
 library(ggplot2)
@@ -38,17 +37,21 @@ data(
 ```{r}
 vertices <- gene_ids %>% na.omit %>% inner_join(gene_pathways) %>% select(string_id, everything())
 
+# adapting to d3
+vertices %<>% mutate(id = string_id)
+string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
+
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
 V(g)$size <- V(g)$system_count * 5
 
-subgraphs <- decompose.graph(graph)
+subgraphs <- decompose.graph(g)
 lcc <- subgraphs[[which.max(sapply(subgraphs, vcount))]]
 ```
 
 # Force
 ```{r echo=T, eval=T, include=FALSE}
-layout <- easylayout(lcc)
+layout <- d3force(lcc)
 
 vertices
 
