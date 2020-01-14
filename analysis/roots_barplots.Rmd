@@ -97,11 +97,13 @@ ggplot(annotation_cs) +
   scale_x_reverse(breaks = seq(0, 40, by = 1), expand = c(0,0), minor_breaks = NULL) +
   geom_vline(data = vl, aes(xintercept = xintercept), alpha = 0.25) +
   geom_text(data = vl, aes(x = xintercept, label = text, y=100), angle=90, hjust=0)
+ggsave("cumulative_annotation.pdf", width = 10, height = 6)
 
 ggplot(ne_count) +
   geom_line(aes(x = hybrid_root, y = n, group = annotation, color = annotation)) +
   scale_x_reverse(breaks = seq(0, 40, by = 1), expand = c(0,0), minor_breaks = NULL) +
   geom_vline(data = vl, aes(xintercept = xintercept), alpha = 0.25) +
   geom_text(data = vl, aes(x = xintercept, label = text, y=100), angle=90, hjust=0)
+ggsave("cumulative_ne.pdf", width = 10, height = 6)
 ```
 
