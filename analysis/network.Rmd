@@ -14,6 +14,7 @@ output:
 Obter o layout da rede no RedeR
 ```{r message=FALSE}
 library(dplyr)
+library(tidyr)
 library(igraph)
 library(magrittr)
 
@@ -29,55 +30,118 @@ data(
   gene_ids,
   gene_pathways,
   string_edgelist,
+  layout,
   package = "neurotransmission"
 )
+
+gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+  mutate(annotation = case_when(
+    grepl("clearance",annotation) ~ "depletion",
+    grepl("degradation",annotation) ~ "depletion",
+    grepl("g-protein",annotation) ~ "signaling",
+    grepl("transport",annotation) ~ "synthesis",
+    TRUE ~ annotation
+  ))
 ```
 
 # RedeR
 ```{r}
-vertices <- gene_ids %>% na.omit %>% inner_join(gene_pathways) %>% select(string_id, everything())
+vertices <- gene_ids %>%
+  na.omit %>%
+  inner_join(gene_pathways) %>%
+  inner_join(gene_annotation) %>%
+  select(string_id, everything())
 
 # adapting to d3
 vertices %<>% mutate(id = string_id)
 string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
 
+#color
+vertices %<>%
+  unite(color, vesicle:dopaminergic, remove = F) %>%
+  mutate(color = rainbow(color %>% unique %>% length)[color %>% as.factor])
+
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
-V(g)$size <- V(g)$system_count #* 5
+V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 
 subgraphs <- decompose.graph(g)
-lcc <- subgraphs[[which.max(sapply(subgraphs, vcount))]]
+lcc_index <- which.max(sapply(subgraphs, vcount))
+lcc <- subgraphs[[lcc_index]]
+
+unconnected <- do.call(union, subgraphs[-lcc_index])
 ```
 
 # Force
 ```{r echo=T, eval=T, include=FALSE}
-layout <- d3force(lcc)
+# layout <- easylayout::easylayout(lcc)
+# layout <- easylayout::easylayout(lcc, layout)
 
-vertices
+V(lcc)$x <- layout[, 1]
+V(lcc)$y <- layout[, 2]
+
+lcc_info <- igraph::as_data_frame(lcc, what = "vertices")
 
 sistemas <- c("glutamatergic","cholinergic","serotonergic","gabaergic","dopaminergic")
 
-from <- gene_info[match(edgelist[,1], gene_info[,"protein_id"]), c("x","y")]
-to <- gene_info[match(edgelist[,2], gene_info[,"protein_id"]), c("x","y")]
+from <- lcc_info[match(string_edgelist[[1]], lcc_info[,"name"]), c("x","y")]
+to <- lcc_info[match(string_edgelist[[2]], lcc_info[,"name"]), c("x","y")]
 
-edges <- rbind(from, to) %>% cbind(group = 1:nrow(edgelist))
+edges <- rbind(from, to) %>% cbind(group = 1:nrow(string_edgelist)) %>% na.omit
 ```
 
 # Output
 ```{r}
+#piechart colors
+pie_colors <- c(
+   cholinergic   = "#D84315"
+  ,dopaminergic  = "#F9A825"
+  ,gabaergic     = "#558B2F"
+  ,glutamatergic = "#1565C0"
+  ,serotonergic  = "#6A1B9A"
+)
+
 ggplot() +
-  geom_path(data = edges, aes(x = x, y = y, group = group), colour="#888888", size=0.1) +
+  geom_path(data = edges, aes(x = x, y = y, group = group), colour=rgb(0.7,0.7,0.7,alpha = 0.3), size=0.1) +
   
   #piecharts
-  geom_scatterpie(data = vertices, aes(x=x, y=y, group=protein_id, r=resize), cols = new_names, color=NA) +
-  scale_fill_manual(values=pie_colors) +
+  geom_scatterpie(data = lcc_info, aes(x=x, y=y, group=name, r = size^(0.94) - 1), cols = sistemas, color=NA) +
+  scale_fill_manual(values = pie_colors) +
   
   #labels
-  geom_text(data = gene_info, aes(x=x, y=y, label=symbol, size=factor(size)), vjust = 0, nudge_y = gene_info[,"resize"]+6, alpha=0.75) +
-  scale_size_manual(values=txtsize, guide = 'none') +
+  geom_text(data = lcc_info, aes(x=x, y=y, label = string_name), size = 1.5, vjust = 0, nudge_y = lcc_info[,"size"]+2, alpha=0.75) +
+  # scale_size_manual(values=txtsize, guide = 'none') +
     
   ggtitle("Complete network") +
   coord_equal() +
   #guides(fill=FALSE) +
   theme_void()
+ggsave("systems_network.pdf")
+
+element_colors <- c(
+  "depletion"             = "#F40000",
+  "excitability"          = "#FFAB00",
+  "receptor-associated"   = "#D6EE00",
+  "ionotropic receptor"   = "#43FF1C",
+  "metabotropic receptor" = "#18FFFF",
+  "signaling"             = "#0091EA",
+  "g-protein"             = "#0033ff",
+  "synthesis"             = "#AA00FF",
+  "vesicle"               = "#FF00AA"
+)
+
+ggplot() +
+  geom_path(data = edges, aes(x = x, y = y, group = group), colour=rgb(0.7,0.7,0.7,alpha = 0.3), size=0.1) +
+  
+  geom_point(data = lcc_info, aes(x=x, y=y, color=annotation, fill=annotation, size=size), shape = 21, stroke = 1) +
+  scale_fill_manual(values = element_colors) +
+  scale_color_manual(values = element_colors %>% darken(0.25) %>% setNames(names(element_colors))) +
+  scale_radius(range = c(1.75, 4)) +
+  
+  #labels
+  geom_text(data = lcc_info, aes(x=x, y=y, label = string_name), size = 1.5, vjust = 0, nudge_y = lcc_info[,"size"]+2, alpha=0.75) +
+  coord_equal() +
+  #guides(fill=FALSE) +
+  theme_void()
+ggsave("functions_network.pdf")
 ```

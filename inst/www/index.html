@@ -79,6 +79,15 @@
       .nodes circle {
         pointer-events: all;
       }
+
+      .node {
+        stroke: #fff;
+        stroke-width: 1.5px;
+      }
+
+      .node .selected {
+        stroke: black;
+      }
     </style>
   </head>
   <body>
@@ -201,17 +210,6 @@
     <script src="www/d3force.js"></script>
     <script>
       // Shiny.addCustomMessageHandler("dataTransferredFromServer", easyLayout);
-
-      // var svg = d3.select("svg");
-
-      // d3.json("www/miserables.json", function(error, graph) {
-      //   if (!error) {
-      //     //console.log('graph', graph);
-      //     createV4SelectableForceDirectedGraph(svg, graph);
-      //   } else {
-      //     console.error(error);
-      //   }
-      // });
     </script>
   </body>
 </html>

@@ -30,5 +30,11 @@ d3force <- function(graph, layout = NULL){
 
   layout <- shiny::runGadget(shiny::shinyApp(ui = shiny::htmlTemplate(system.file("www/index.html", package="neurotransmission")), server))
 
-  matrix(layout, ncol=2,byrow=T)
+  matrix(layout, ncol = 3, byrow = T)
 }
+
+#' @export
+linMap <- function(x, from, to) approxfun(range(x), c(from, to))(x)
+
+#' @export
+darken <- function(color, intensity=0.5) rgb(t(col2rgb(color)*(1-intensity)/255))
