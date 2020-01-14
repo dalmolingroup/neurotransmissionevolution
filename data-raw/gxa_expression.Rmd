@@ -20,29 +20,15 @@ library(magrittr)
 # Data
 Loading all expression data files contained in the `dados/gxa` folder.
 ```{r rows.print=5}
-exp <- sapply(
-  list.files("dados/gxa", full.names = T),
-  read.table,
-  header = T,
-  sep = "\t",
-  stringsAsFactors = F,
+expression_tables <- sapply(
+  list.files("download/gxa/", full.names = T),
+  read_tsv,
+  comment = "#",
   simplify = FALSE,
   USE.NAMES = TRUE
 )
 
-gene_info <- read.table(
-  "resultados/n4_gene_info.tsv"
-  ,header=T
-  ,sep="\t"
-  ,stringsAsFactors=F
-)
-
-neural_tissues <- read.table(
-  "dados/neural_tissues.tsv"
-  ,header=T
-  ,sep="\t"
-  ,stringsAsFactors=F
-)
+neural_tissues <- read_tsv("pathway_classification.tsv")
 ```
 
 # Reshaping
