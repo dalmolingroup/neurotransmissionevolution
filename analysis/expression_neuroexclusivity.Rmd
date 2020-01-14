@@ -1,0 +1,107 @@
+---
+title: "Expression neuroexclusivity"
+output:
+  html_document:
+    df_print: paged
+    theme: default
+    highlight: espresso
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+---
+# Objectives
+Compile multiple expression data downloaded from gxa into `n11_expression.tsv`.
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+# Data
+Loading all expression data files contained in the `dados/gxa` folder.
+```{r rows.print=5}
+exp <- sapply(
+  list.files("dados/gxa", full.names = T),
+  read.table,
+  header = T,
+  sep = "\t",
+  stringsAsFactors = F,
+  simplify = FALSE,
+  USE.NAMES = TRUE
+)
+
+gene_info <- read.table(
+  "resultados/n4_gene_info.tsv"
+  ,header=T
+  ,sep="\t"
+  ,stringsAsFactors=F
+)
+
+neural_tissues <- read.table(
+  "dados/neural_tissues.tsv"
+  ,header=T
+  ,sep="\t"
+  ,stringsAsFactors=F
+)
+```
+
+# Reshaping
+```{r}
+# melting each data.frame
+exp <- lapply(exp, function(df){
+  melt(df, id.vars=c("Gene.Name","Gene.ID"))
+})
+#rbinding all data.frames together
+exp <- do.call(rbind, exp)
+```
+
+# Cleaning
+```{r}
+names(exp) <- c("symbol","entrez","tissue","value")
+
+#getting rid of factors
+exp[,"tissue"] <- as.character(exp[,"tissue"])
+
+#collapsing same tissues under a common name
+exp[exp[,"tissue"] == "adrenal.gland","tissue"]               <- "adrenal"
+exp[exp[,"tissue"] == "thyroid.gland","tissue"]               <- "thyroid"
+exp[exp[,"tissue"] == "adipose.tissue","tissue"]              <- "adipose"
+exp[exp[,"tissue"] == "breast..mammary.tissue.","tissue"]     <- "breast"
+exp[exp[,"tissue"] == "spinal.cord..cervical.c.1.","tissue"]  <- "spinal.cord"
+exp[exp[,"tissue"] == "visceral..omentum..adipose.tissue","tissue"] <- "visceral.adipose.tissue"
+
+exp <- exp[,c("symbol","tissue","value")]
+           
+#subseting for speed
+exp <- exp[exp[,"symbol"] %in% gene_info[,"symbol"],]
+
+#attaching neural tissue information
+exp <- merge(exp, neural_tissues, by="tissue")
+```
+
+# Maths
+```{r}
+avg_by_tissue <- aggregate(value ~ symbol + tissue + neural, exp, mean)
+
+#neuralidade <- exp %>% group_by(symbol) %>% summarise(value = sum(value[neural==1])/sum(value))
+#neuralidade <- subset(exp, value >= 0.5) %>% group_by(symbol) %>% summarise(value = sum(value[neural==1])/sum(value))
+#neuralidade <- subset(avg_by_tissue, value >= 0.5) %>% group_by(symbol) %>% summarise(value = sum(value[neural==1])/sum(value))
+neuralidade <- avg_by_tissue %>% group_by(symbol) %>% summarise(exp_neural = sum(value[neural==1 & value>=0.5])/sum(value[value>=0.5]))
+
+gene_mean <- setNames(aggregate(value ~ symbol, avg_by_tissue, mean),c("symbol","mean"))
+gene_sd <- setNames(aggregate(value ~ symbol, avg_by_tissue, sd),c("symbol","sd"))
+
+mean_sd <- merge(gene_mean, gene_sd, by="symbol")
+avg_mean_sd <- merge(avg_by_tissue, mean_sd, by="symbol")
+
+#exp_signf <- exp %>% group_by(symbol, tissue) %>% mutate(
+#  value = (value - gene_mean$value[gene_mean$symbol==symbol])/gene_sd$value[gene_sd$symbol==symbol]
+#)
+
+exp_signf <- avg_mean_sd %>% group_by(symbol, tissue) %>% mutate(
+  signf = (value - mean)/sd
+)
+
+exp_signf <- exp_signf[,c("symbol","tissue","neural","value","signf")]
+names(exp_signf) <- c("symbol","tissue","neural_tissue","avg_exp","exp_signf")
+```

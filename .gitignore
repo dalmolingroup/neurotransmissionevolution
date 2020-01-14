@@ -1,4 +1,4 @@
-data-raw/download/
+data-raw/download/*
 
 # History files
 .Rhistory

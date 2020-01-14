@@ -90,7 +90,7 @@ to <- lcc_info[match(string_edgelist[[2]], lcc_info[,"name"]), c("x","y")]
 edges <- rbind(from, to) %>% cbind(group = 1:nrow(string_edgelist)) %>% na.omit
 ```
 
-# Output
+# systems
 ```{r}
 #piechart colors
 pie_colors <- c(
@@ -118,6 +118,10 @@ ggplot() +
   theme_void()
 ggsave("systems_network.pdf")
 
+```
+
+# functions
+```{r}
 element_colors <- c(
   "depletion"             = "#F40000",
   "excitability"          = "#FFAB00",
