@@ -36,36 +36,31 @@ pathways <- tribble(
   "path:hsa04728",  "dopaminergic", 
   "path:hsa04721",  "vesicle"
 )
-
-# exporting for package use
-usethis::use_data(pathways, overwrite = TRUE)
 ```
 
 ## Genes to pathways relationships
 Downloading table containing all genes and pathways relationships
 ```{r}
-if (!file.exists("entrez_to_pathway.tsv")) {
-  download.file("http://rest.kegg.jp/link/pathway/hsa","entrez_to_pathway.tsv")
+if (!file.exists("download/link_pathway_entrez.tsv")) {
+  download.file("http://rest.kegg.jp/link/pathway/hsa","download/link_pathway_entrez.tsv")
 }
 
-entrez_to_pathway <- read.table(
-  "entrez_to_pathway.tsv"
-  ,header = F
-  ,stringsAsFactors = F
-  ,col.names = c("entrez_id", "pathway_id")
-  ,sep="\t"
+link_pathway_entrez <- read_tsv(
+  "download/link_pathway_entrez.tsv"
+  ,col_names = c("entrez_id", "pathway_id")
+  ,col_types = "cc"
 )
 
 # removing hsa prefix
-entrez_to_pathway[, "entrez_id"] %<>% substring(5)
+link_pathway_entrez[["entrez_id"]] %<>% str_split_n(":", 2)
 
 # exporting for package use
-usethis::use_data(entrez_to_pathway, overwrite = TRUE)
+usethis::use_data(link_pathway_entrez, overwrite = TRUE)
 ```
 
 Filtering for genes in the selected pathways
 ```{r rows.print=5}
-gene_pathways <- inner_join(entrez_to_pathway, pathways) %>%
+gene_pathways <- inner_join(link_pathway_entrez, pathways) %>%
   mutate(n = 1) %>%
   pivot_wider(
     id_cols = entrez_id,
@@ -91,21 +86,21 @@ gene_pathways
 Downloading entrez to string mapping table directly from STRING  [https://string-db.org/mapping_files/entrez/](https://string-db.org/mapping_files/entrez/)
 
 ```{r rows.print=5}
-if (!file.exists("human.entrez_2_string.2018.tsv.gz")) {
+if (!file.exists("download/human.entrez_2_string.2018.tsv.gz")) {
   download.file(
     "https://string-db.org/mapping_files/entrez/human.entrez_2_string.2018.tsv.gz",
-    "human.entrez_2_string.2018.tsv.gz"
+    "download/human.entrez_2_string.2018.tsv.gz"
   )
 }
 
-entrez_to_string <- read_tsv(
-  gzfile("human.entrez_2_string.2018.tsv.gz"),
+link_entrez_string <- read_tsv(
+  "download/human.entrez_2_string.2018.tsv.gz",
   skip = 1,
   col_names = c("entrez_id", "string_id"),
   col_types = cols_only("-", "c", "c")
 )
 
-gene_ids <- gene_pathways %>% select(entrez_id) %>% left_join(entrez_to_string)
+gene_ids <- gene_pathways %>% select(entrez_id) %>% left_join(link_entrez_string)
 gene_ids
 ```
 
@@ -114,15 +109,15 @@ gene_ids
 Downloading string names mapping table directly from STRING  [https://string-db.org/mapping_files/entrez/](https://string-db.org/mapping_files/entrez/)
 
 ```{r rows.print=5}
-if (!file.exists("human.name_2_string.tsv.gz")) {
+if (!file.exists("download/human.name_2_string.tsv.gz")) {
   download.file(
     "https://string-db.org/mapping_files/STRING_display_names/human.name_2_string.tsv.gz",
-    "human.name_2_string.tsv.gz"
+    "download/human.name_2_string.tsv.gz"
   )
 }
 
 string_names <- read_tsv(
-  gzfile("human.name_2_string.tsv.gz"),
+  "download/human.name_2_string.tsv.gz",
   skip = 1,
   col_names = c("string_name", "string_id"),
   col_types = cols_only("-", "c", "c")
@@ -136,15 +131,15 @@ gene_ids
 
 Downloading gene symbols mapping table directly from NCBI's FTP  [ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/](ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/)
 ```{r rows.print=5}
-if (!file.exists("Homo_sapiens.gene_info.gz")) {
+if (!file.exists("download/Homo_sapiens.gene_info.gz")) {
   download.file(
     "ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz",
-    "Homo_sapiens.gene_info.gz"
+    "download/Homo_sapiens.gene_info.gz"
   )
 }
 
 entrez_names <- read_tsv(
-  gzfile("Homo_sapiens.gene_info.gz"),
+  "download/Homo_sapiens.gene_info.gz",
   skip = 1,
   col_names = c("entrez_id", "entrez_name"),
   col_types = cols_only("-", "c", "c")
@@ -182,9 +177,32 @@ complete_info <- tribble(
 gene_ids %<>% na.omit %>% bind_rows(complete_info)
 ```
 
+## Entrez names
+
+Downloading ensembl gene mapping table directly from KEGG API  [http://rest.genome.jp/link/ensembl/hsa](http://rest.genome.jp/link/ensembl/hsa)
+```{r rows.print=5}
+if (!file.exists("download/link_ensembl_entrez.tsv")) {
+  download.file(
+    "http://rest.genome.jp/link/ensembl/hsa",
+    "download/link_ensembl_entrez.tsv"
+  )
+}
+
+link_ensembl_entrez <- read_tsv(
+  "download/link_ensembl_entrez.tsv",
+  col_names = c("entrez_id", "ensembl_id"),
+  col_types = "cc"
+)
+
+link_ensembl_entrez %<>% mutate_all(~ str_split_n(., ":", 2))
+
+gene_ids %<>% left_join(link_ensembl_entrez)
+gene_ids
+```
+
 Exporting base table for package use
 ```{r}
-gene_ids[["string_id"]] %<>% substring(6)
+gene_ids[["string_id"]] %<>% str_split_n("\\.", 2)
 
 usethis::use_data(gene_ids, overwrite = TRUE)
 ```

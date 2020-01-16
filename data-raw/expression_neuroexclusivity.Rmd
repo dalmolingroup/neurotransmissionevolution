@@ -12,7 +12,7 @@ output:
 ---
 # Objectives
 Compile multiple expression data downloaded from gxa into `n11_expression.tsv`.
-```{r}
+```{r message=FALSE}
 library(tidyverse)
 library(magrittr)
 
@@ -20,7 +20,7 @@ data(gene_ids, package = "neurotransmission")
 ```
 
 # Downloading experiment data
-```{r}
+```{r message=FALSE}
 experiments <- c(
   "E-MTAB-513",
   "E-MTAB-2836",
@@ -45,7 +45,7 @@ for(experiment in experiments) {
 
 # Data
 Loading all expression data files contained in the `dados/gxa` folder.
-```{r message=FALSE, rows.print=5}
+```{r message=FALSE}
 expression_data <- sapply(
   list.files("download/gxa/", full.names = T),
   read_tsv,

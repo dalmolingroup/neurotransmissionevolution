@@ -18,11 +18,6 @@ library(tidyr)
 library(readr)
 library(igraph)
 library(magrittr)
-
-library(Hmisc)
-library(ggplot2)
-library(scatterpie)
-# library(UpSetR)
 ```
 
 # Dados
@@ -30,6 +25,7 @@ library(scatterpie)
 data(
   gene_ids,
   pathway_neuroexclusivity,
+  expression_neuroexclusivity,
   string_edgelist,
   layout,
   package = "neurotransmission"
@@ -41,11 +37,8 @@ data(
 vertices <- gene_ids %>%
   na.omit %>%
   inner_join(pathway_neuroexclusivity) %>%
-  select(name = string_id, pathway_neuroexclusivity)
-
-# adapting to d3
-# vertices %<>% mutate(id = string_id)
-string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
+  inner_join(expression_neuroexclusivity) %>%
+  select(name = string_id, pathway_neuroexclusivity, expression_neuroexclusivity)
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
@@ -85,4 +78,29 @@ write_tsv(pajek_nodes %>% select(name, x, y), "kegg.net", append = TRUE, col_nam
 
 
 write_tsv(pajek_nodes %>% select(id, name, signal), "kegg.dat")
+```
+
+# Force
+```{r echo=T, eval=T, include=FALSE}
+pajek_nodes <- igraph::as_data_frame(lcc, what = "vertices") %>%
+  select(name, signal = expression_neuroexclusivity, x, y)
+
+hack <- tribble(
+  ~name, ~signal, ~x,   ~y,
+  "bot", 0,       -200, -700,
+  "top", 0,       400, -200,
+)
+
+pajek_nodes %<>% bind_rows(hack) %>% mutate(id = row_number())
+```
+
+# Output
+```{r}
+write("*edges", file="gxa.net")
+write_tsv(pajek_edges, "gxa.net", append = TRUE, col_names = FALSE, quote_escape = F)
+write("*nodes", file="gxa.net", append = TRUE)
+write_tsv(pajek_nodes %>% select(name, x, y), "gxa.net", append = TRUE, col_names = FALSE, quote_escape = F)
+
+
+write_tsv(pajek_nodes %>% select(id, name, signal), "gxa.dat")
 ```

@@ -1,0 +1,45 @@
+---
+title: "Expression neuroexclusivity"
+output:
+  html_document:
+    df_print: paged
+    theme: default
+    highlight: espresso
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+---
+# Objectives
+Compile multiple expression data downloaded from gxa into `n11_expression.tsv`.
+```{r}
+library(tidyverse)
+library(magrittr)
+
+data(
+  gene_ids,
+  expression_data,
+  package = "neurotransmission"
+)
+```
+
+# loading manual classification
+```{r}
+tissue_classification <- read_tsv("../data-raw/tissue_classification.tsv", col_types = "ci")
+```
+
+# Maths
+```{r}
+avg_by_tissue <- expression_data %>%
+  group_by(ensembl_id, tissue) %>%
+  summarise(tpm_avg = mean(tpm))
+
+#attaching neural tissue information
+avg_by_tissue %<>% left_join(tissue_classification)
+
+#measuring neuroexclusivity
+expression_neuroexclusivity <- avg_by_tissue %>%
+  filter(tpm_avg >= 0.5) %>%
+  group_by(ensembl_id) %>%
+  summarise(expression_neuroexclusivity = sum(tpm_avg[is_nervous == 1])/sum(tpm_avg))
+```

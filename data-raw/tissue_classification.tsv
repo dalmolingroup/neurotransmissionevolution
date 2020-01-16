@@ -1,0 +1,119 @@
+tissue	is_nervous
+adipose tissue	0
+adrenal gland	0
+bone marrow	0
+cerebral cortex	1
+colon	0
+duodenum	0
+endometrium	0
+esophagus	0
+fallopian tube	0
+gall bladder	0
+heart	0
+kidney	0
+liver	0
+lung	0
+lymph node	0
+ovary	0
+pancreas	0
+placenta	0
+prostate gland	0
+rectum	0
+saliva-secreting gland	0
+skeletal muscle tissue	0
+small intestine	0
+smooth muscle tissue	0
+spleen	0
+stomach	0
+testis	0
+thyroid gland	0
+tonsil	0
+urinary bladder	0
+vermiform appendix	0
+zone of skin	0
+amygdala	1
+artery	0
+brain	1
+brain meninx	0
+breast	0
+caudate nucleus	1
+cerebellum	1
+diencephalon	1
+dorsal thalamus	1
+dura mater	0
+epididymis	0
+globus pallidus	1
+heart left ventricle	0
+hippocampus	1
+left cardiac atrium	0
+locus ceruleus	1
+medulla oblongata	1
+middle frontal gyrus	1
+middle temporal gyrus	1
+mitral valve	0
+occipital cortex	1
+occipital lobe	1
+olfactory apparatus	0
+parietal lobe	1
+parotid gland	0
+penis	0
+pineal body	1
+pituitary gland	1
+pulmonary valve	0
+putamen	1
+seminal vesicle	0
+spinal cord	1
+submandibular gland	0
+substantia nigra	1
+tongue	0
+tricuspid valve	0
+uterine cervix	0
+uterus	0
+vagina	0
+vas deferens	0
+diaphragm	0
+eye	0
+temporal lobe	1
+throat	0
+trachea	0
+umbilical cord	0
+astrocytoma	1
+oligoastrocytoma	1
+oligodendroglioma	1
+frontal lobe	1
+prefrontal cortex	1
+sigmoid colon	0
+basal ganglion	1
+choroid plexus	1
+forebrain	1
+hindbrain	1
+midbrain	1
+telencephalon	1
+pituitary and diencephalon	1
+pons	1
+leukocyte	0
+Brodmann (1909) area 24	1
+Brodmann (1909) area 9	1
+EBV-transformed lymphocyte	0
+aorta	0
+atrium auricular region	0
+blood	0
+cerebellar hemisphere	1
+coronary artery	0
+cortex of kidney	0
+ectocervix	0
+endocervix	0
+esophagogastric junction	0
+esophagus mucosa	0
+esophagus muscularis mucosa	0
+greater omentum	0
+hypothalamus	1
+lower leg skin	0
+minor salivary gland	0
+nucleus accumbens	1
+small intestine Peyer's patch	0
+suprapubic skin	0
+tibial artery	0
+tibial nerve	1
+transformed skin fibroblast	0
+transverse colon	0
