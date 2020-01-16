@@ -15,13 +15,17 @@ Obter o layout da rede no RedeR
 ```{r message=FALSE}
 library(dplyr)
 library(tidyr)
+library(readr)
 library(igraph)
 library(magrittr)
+library(gridExtra)
 
 library(Hmisc)
 library(ggplot2)
 library(scatterpie)
 # library(UpSetR)
+
+library(neurotransmission)
 ```
 
 # Dados
@@ -30,6 +34,8 @@ data(
   gene_ids,
   gene_pathways,
   string_edgelist,
+  neurotransmission_cogs,
+  pathway_neuroexclusivity,
   layout,
   package = "neurotransmission"
 )
@@ -42,19 +48,29 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     grepl("transport",annotation) ~ "synthesis",
     TRUE ~ annotation
   ))
+
+cog_roots <- read_tsv("../inst/extdata/hybrid_geneplast.tsv")
 ```
 
 # RedeR
 ```{r}
+neurotransmission_cogs %<>%
+  inner_join(cog_roots) %>%
+  group_by(string_id) %>%
+  filter(hybrid_root == max(hybrid_root))
+
 vertices <- gene_ids %>%
   na.omit %>%
   inner_join(gene_pathways) %>%
   inner_join(gene_annotation) %>%
+  inner_join(neurotransmission_cogs) %>%
+  inner_join(pathway_neuroexclusivity) %>%
+  mutate(ne = (pathway_neuroexclusivity >= 0.9) %>% as.character) %>%
   select(string_id, everything())
 
 # adapting to d3
-vertices %<>% mutate(id = string_id)
-string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
+# vertices %<>% mutate(id = string_id)
+# string_edgelist %<>% rename(source = stringId_A, target = stringId_B)
 
 #color
 vertices %<>%
@@ -69,7 +85,12 @@ subgraphs <- decompose.graph(g)
 lcc_index <- which.max(sapply(subgraphs, vcount))
 lcc <- subgraphs[[lcc_index]]
 
-unconnected <- do.call(union, subgraphs[-lcc_index])
+# unconnected <- do.call(union, subgraphs[-lcc_index])
+unconnected_nodes <- lapply(subgraphs[-lcc_index], as_data_frame, what = "vertices") %>% bind_rows
+unconnected_edges <- lapply(subgraphs[-lcc_index], as_data_frame) %>% bind_rows
+
+unconnected <- graph_from_data_frame(unconnected_edges, directed = F, vertices = unconnected_nodes)
+plot(unconnected, vertex.label = V(unconnected)$string_name)
 ```
 
 # Force
@@ -81,17 +102,18 @@ V(lcc)$x <- layout[, 1]
 V(lcc)$y <- layout[, 2]
 
 lcc_info <- igraph::as_data_frame(lcc, what = "vertices")
+lcc_edgelist <- igraph::as_data_frame(lcc, what = "edges")
 
 sistemas <- c("glutamatergic","cholinergic","serotonergic","gabaergic","dopaminergic")
 
-from <- lcc_info[match(string_edgelist[[1]], lcc_info[,"name"]), c("x","y")]
-to <- lcc_info[match(string_edgelist[[2]], lcc_info[,"name"]), c("x","y")]
+from <- lcc_info[match(lcc_edgelist[[1]], lcc_info[["name"]]), c("x","y")]
+to <- lcc_info[match(lcc_edgelist[[2]], lcc_info[["name"]]), c("x","y")]
 
-edges <- rbind(from, to) %>% cbind(group = 1:nrow(string_edgelist)) %>% na.omit
+edges <- rbind(from, to) %>% cbind(group = 1:nrow(lcc_edgelist))
 ```
 
 # systems
-```{r}
+```{r message=FALSE}
 #piechart colors
 pie_colors <- c(
    cholinergic   = "#D84315"
@@ -147,5 +169,119 @@ ggplot() +
   coord_equal() +
   #guides(fill=FALSE) +
   theme_void()
-ggsave("functions_network.pdf")
+ggsave("functions_network.pdf", )
+```
+
+### Rede Diferencial
+```{r message=FALSE}
+roots <- lcc_info %>% pull(hybrid_root) %>% unique %>% sort
+
+#xy boundaries
+xb <- lcc_info %>% pull(x) %>% range %>% multiply_by(1.1)
+yb <- lcc_info %>% pull(y) %>% range %>% multiply_by(1.1)
+
+diferenciais <- list()
+
+for(i in roots){
+  
+  #finding which genes should be drawn
+  current_genes <- lcc_info %>% filter(hybrid_root == i)
+  past_genes <- lcc_info %>% filter(hybrid_root > i)
+  
+  #finding which edges should NOT be drawn
+  partial_ids <- c(current_genes[["name"]], past_genes[["name"]])
+  which_edges <- which(apply(lcc_edgelist, 1, function(r) all(r %in% partial_ids)))
+  partial_edges <- edges %>% filter(group %in% which_edges)
+  
+  p <- ggplot()
+  
+  p <- p + geom_path(data = partial_edges, aes(x = x, y = y, group = group), colour=rgb(0.7,0.7,0.7,alpha = 0.3), size=0.1)
+  
+  past_genes_sizes <- (past_genes[["size"]]^(0.94) - 1) %>% linMap(from = 0.6, to = 1.4)
+  
+  p <- p + geom_point(data = past_genes, aes(x=x, y=y), fill="#ffffff", colour="#888888", shape=21, size=past_genes_sizes, stroke = 0.25)
+  
+  #current genes piecharts
+  p <- p + geom_scatterpie(data = current_genes, aes(x=x, y=y, group=name, r = size^(0.94) - 1), cols = sistemas, color=NA) +
+  scale_fill_manual(values = pie_colors)
+  
+  #labels
+  p <- p + geom_text(data = current_genes, aes(x=x, y=y, label = string_name), size = 1, vjust = 0, nudge_y = 1.5, alpha=0.75)
+  
+  p <- p + ggtitle(i)
+  p <- p + coord_equal()
+  p <- p + theme_void()
+  p <- p + theme(
+    plot.title = element_text(size=8, hjust = 0.5),
+    #plot.margin=unit(c(1, 0.25, 1, 0.25),"cm"),
+    plot.margin=unit(c(0, 0, 0, 0),"cm"),
+    legend.text = element_text(size=6),
+    legend.title = element_text(size=8),
+    legend.key.size = unit(1,"mm")
+  )
+  
+  #fixing boundaries
+  p <- p + scale_x_continuous(limits = xb)
+  p <- p + scale_y_continuous(limits = yb)
+  
+  diferenciais[[as.character(i)]] <- p
+}
+
+#saving pdfs
+ggsave(file = "diff_systems_roots.pdf", arrangeGrob(grobs = diferenciais %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
+```
+
+
+### Rede Diferencial
+```{r message=FALSE}
+annotation <- list()
+
+for(i in roots){
+  
+  #finding which genes should be drawn
+  current_genes <- lcc_info %>% filter(hybrid_root == i)
+  past_genes <- lcc_info %>% filter(hybrid_root > i)
+  
+  #finding which edges should NOT be drawn
+  partial_ids <- c(current_genes[["name"]], past_genes[["name"]])
+  which_edges <- which(apply(lcc_edgelist, 1, function(r) all(r %in% partial_ids)))
+  partial_edges <- edges %>% filter(group %in% which_edges)
+  
+  p <- ggplot()
+  
+  p <- p + geom_path(data = partial_edges, aes(x = x, y = y, group = group), colour=rgb(0.7,0.7,0.7,alpha = 0.3), size=0.1)
+  
+  p <- p + geom_point(data = current_genes, aes(x=x, y=y, color=annotation, fill=annotation, size=size, shape=ne), stroke = 0.5)
+  
+  p <- p + geom_point(data = past_genes, aes(x=x, y=y, size=size, shape=ne), fill="#ffffff", color="#888888", stroke = 0.5)
+  
+  p <- p + scale_fill_manual(values = element_colors)
+  p <- p + scale_color_manual(values = element_colors %>% darken(0.25) %>% setNames(names(element_colors)))
+  p <- p + scale_radius(range = c(0.5, 1.5), guide = FALSE)
+  p <- p + scale_shape_manual(values = c("TRUE" = 8, "FALSE" = 21), guide = FALSE)
+  
+  #labels
+  p <- p + geom_text(data = current_genes, aes(x=x, y=y, label = string_name), size = 1, vjust = 0, nudge_y = 1.5, alpha=0.75)
+  
+  p <- p + ggtitle(i)
+  p <- p + coord_equal()
+  p <- p + theme_void()
+  p <- p + theme(
+    plot.title = element_text(size=8, hjust = 0.5),
+    #plot.margin=unit(c(1, 0.25, 1, 0.25),"cm"),
+    plot.margin=unit(c(0, 0, 0, 0),"cm"),
+    legend.text = element_text(size=6),
+    legend.title = element_text(size=8),
+    legend.key.size = unit(1,"mm")
+  )
+  
+  #fixing boundaries
+  p <- p + scale_x_continuous(limits = xb)
+  p <- p + scale_y_continuous(limits = yb)
+  
+  annotation[[as.character(i)]] <- p
+}
+
+#saving pdfs
+ggsave(file = "diff_annotation_roots.pdf", arrangeGrob(grobs = annotation %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
 ```

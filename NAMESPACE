@@ -2,6 +2,8 @@
 
 export("%>%")
 export(d3force)
+export(darken)
+export(linMap)
 import(dplyr)
 import(igraph)
 importFrom(magrittr,"%>%")
