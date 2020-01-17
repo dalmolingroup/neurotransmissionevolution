@@ -44,7 +44,7 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
   mutate(annotation = case_when(
     grepl("clearance",annotation) ~ "depletion",
     grepl("degradation",annotation) ~ "depletion",
-    grepl("g-protein",annotation) ~ "signaling",
+    # grepl("g-protein",annotation) ~ "signaling",
     grepl("transport",annotation) ~ "synthesis",
     TRUE ~ annotation
   ))
@@ -132,6 +132,12 @@ edge_color <- rgb(0.7,0.7,0.7,alpha = 0.3)
 past_fill  <- "#FFFFFF"
 past_color <- "#888888"
 
+vertices %<>% mutate(
+  shape = ifelse(ne, 23, 21),
+  color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.25)),
+  color_pie = ifelse(ne, "#000000", NA),
+)
+
 # reusable aesthetics
 edge_aes <- aes(x = x, y = y, group = group)
 pie_aes  <- aes(x = x, y = y, group=string_id, r = size^(0.94) - 1)
@@ -174,7 +180,7 @@ upset_texts <- c(
 plot_edges <- geom_path(data = edges, edge_aes, color = edge_color, size = 0.1)
 
 #piecharts
-plot_pies <- geom_scatterpie(data = vertices, pie_aes, cols = sistemas, color=NA)
+plot_pies <- geom_scatterpie(data = vertices, pie_aes, cols = sistemas, color = NA)
 
 # plor scale
 plot_pie_fill <- scale_fill_manual(values = pie_colors)
@@ -195,7 +201,14 @@ ggsave("fig1a.pdf")
 # functions
 ```{r}
 # nodes
-plot_nodes <- geom_point(data = vertices, aes(x=x, y=y, color=annotation, fill=annotation, size=size), shape = 21, stroke = 1)
+plot_nodes <- geom_point(
+  data = vertices,
+  aes(x=x, y=y, fill=annotation, color=annotation, size=size),
+  shape = 21,
+  # shape = ifelse(vertices$ne,23,21),
+  # color= ifelse(vertices$ne,"#000000",element_colors[vertices$annotation] %>% darken(0.25)), 
+  stroke = 0.5
+)
 
 # color and size scales
 plot_scales <- list(
@@ -208,7 +221,7 @@ complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_sca
 
 complete_functions
   
-ggsave("fig1b.pdf")
+ggsave("fig1b.pdf", width = 7, height = 7)
 ```
 
 ### Rede Diferencial
@@ -232,7 +245,7 @@ for(i in roots){
   ############
   plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
   
-  plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape=21, stroke = 0.25)
+  plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape = ifelse(past_genes$ne,23,21), stroke = 0.25)
   
   plot_size <- scale_radius(range = c(0.6, 1.4), guide = FALSE)
   
@@ -247,7 +260,7 @@ for(i in roots){
   ##############
   ## FUNCTIONS
   ##############
-  plot_current_nodes <- geom_point(data = current_genes, aes(x=x, y=y, color = annotation, fill = annotation, size = size), shape = 21, stroke = 0.25)
+  plot_current_nodes <- geom_point(data = current_genes, aes(x=x, y=y, fill = annotation, size = size), color = current_genes$color_node, shape = current_genes$shape, stroke = 0.25)
   
   ############
   ## SAVING
@@ -256,7 +269,9 @@ for(i in roots){
   
   systems[[as.character(i)]] <- base + plot_current_pies + plot_pie_fill + plot_text
   
-  functions[[as.character(i)]] <- base + plot_current_nodes + plot_scales + plot_size + plot_text
+  legend_hack <- guides(fill = guide_legend(override.aes=list(shape=21)))
+  
+  functions[[as.character(i)]] <- base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
 }
 
 #saving pdfs
