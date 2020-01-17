@@ -24,7 +24,6 @@ library(Hmisc)
 library(ggplot2)
 library(scatterpie)
 library(UpSetR)
-library(ggplotify)
 
 library(neurotransmission)
 ```
@@ -190,7 +189,7 @@ complete_systems <- ggplot() + plot_theme + plot_edges + plot_pies + plot_pie_fi
 
 complete_systems
   
-ggsave("systems_network.pdf")
+ggsave("fig1a.pdf")
 ```
 
 # functions
@@ -209,7 +208,7 @@ complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_sca
 
 complete_functions
   
-ggsave("functions_network.pdf")
+ggsave("fig1b.pdf")
 ```
 
 ### Rede Diferencial
@@ -261,9 +260,9 @@ for(i in roots){
 }
 
 #saving pdfs
-ggsave(file = "diff_systems_roots.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
+ggsave(file = "sup_systems_emergence.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
 
-ggsave(file = "diff_functions_roots.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
+ggsave(file = "sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
 ```
 
 Fig 3A
