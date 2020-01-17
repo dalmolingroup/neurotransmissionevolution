@@ -38,26 +38,45 @@ function easyLayout(graph_json) {
     timeStep: 5 //20
   });
 
+  var pinned_node_count = 0;
+
   graph.forEachNode(function(node) {
-    if (node.data.x) layout.setNodePosition(node.id, node.data.x, node.data.y);
-    else
+
+    if ("x" in node.data){
+      layout.setNodePosition(node.id, node.data.x, node.data.y);
+      // console.log(`set node "${node.id}" position at x = ${node.data.x} and y = ${node.data.y}`);
+    } else {
       layout.setNodePosition(node.id, Math.random() * 500, Math.random() * 500);
-    if(node.data.pinned)
+    }
+
+    if(node.data.pinned){
       layout.pinNode(node, true);
+      console.log(`${pinned_node_count++}. pinned node "${node.id}" position at x = ${node.data.x} and y = ${node.data.y}`);
+    }
+
   });
 
   var graphics = Viva.Graph.View.webglGraphics();
 
   graphics.node(function(node) {
+
+    var color = "#000000"
+
+    if (node.data.color)
+      color = node.data.color
+
     if (node.data.size)
-      return Viva.Graph.View.webglSquare(node.data.size, "#000000");
-    else return Viva.Graph.View.webglSquare(5, "#000000");
+      return Viva.Graph.View.webglSquare(node.data.size, color);
+
+    else return Viva.Graph.View.webglSquare(5, color);
+
   });
 
   var renderer = Viva.Graph.View.renderer(graph, {
     container: document.getElementById("graph-container"),
     graphics: graphics,
-    layout: layout
+    layout: layout,
+    prerender: true
   });
 
   var events = Viva.Graph.webglInputEvents(graphics, graph);
@@ -109,7 +128,8 @@ function easyLayout(graph_json) {
       });
     });
 
-  renderer.run();
+    renderer.run();
+    renderer.pause();
 
   //////////////////////////////////
   // force layout controls
@@ -130,7 +150,10 @@ function easyLayout(graph_json) {
   };
 
   document.getElementById("run").onchange = function() {
-    if (this.checked) renderer.resume();
+    if (this.checked) {
+      // renderer.run();
+      renderer.resume();
+    }
     else renderer.pause();
   };
 

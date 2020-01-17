@@ -35,7 +35,7 @@ function startMultiSelect(graph, renderer, layout, selectedNodes) {
 
                 node.selected = true;
 
-                nodeUI.color = 0xFFA500ff;
+                // nodeUI.color = 0xFFA500ff;
 
                 selectedNodes.push(node);
 
@@ -44,7 +44,7 @@ function startMultiSelect(graph, renderer, layout, selectedNodes) {
                 // nodeUI.size = 20;
             } else {
                 node.selected = false;
-                nodeUI.color = 0x000000ff;
+                // nodeUI.color = 0x000000ff;
                 // nodeUI.size = 10;
             }
         }
