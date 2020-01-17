@@ -32,6 +32,15 @@ data(
 )
 ```
 
+## Rotação
+```{r}
+#matriz de rotacao
+angle <- 90*(pi/180)
+rotm <- matrix(c(cos(angle),sin(angle),-sin(angle),cos(angle)),ncol=2)
+#rotacao
+layout <- t(rotm %*% (t(layout)))
+```
+
 # RedeR
 ```{r}
 vertices <- gene_ids %>%
@@ -42,17 +51,17 @@ vertices <- gene_ids %>%
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
+V(g)$x <- -layout[, 1]
+V(g)$y <- -layout[, 2]
+
 subgraphs <- decompose.graph(g)
 lcc_index <- which.max(sapply(subgraphs, vcount))
 lcc <- subgraphs[[lcc_index]]
-
-V(lcc)$x <- layout[, 1]
-V(lcc)$y <- -layout[, 2]
 ```
 
 # Force
 ```{r echo=T, eval=T, include=FALSE}
-pajek_nodes <- igraph::as_data_frame(lcc, what = "vertices") %>%
+pajek_nodes <- as_data_frame(lcc, what = "vertices") %>%
   select(name, signal = pathway_neuroexclusivity, x, y)
 
 pajek_edges <- igraph::as_data_frame(lcc, what = "edges")
@@ -61,9 +70,9 @@ range(pajek_nodes$x) %>% print
 range(pajek_nodes$y) %>% print
 
 hack <- tribble(
-  ~name, ~signal, ~x,   ~y,
-  "bot", 0,       -200, -700,
-  "top", 0,       400, -200,
+  ~name, ~signal, ~x,       ~y,
+  "bot", 0,       -42 - 50, -483 - 50,
+  "top", 0,       445 + 50,  -22 + 50
 )
 
 pajek_nodes %<>% bind_rows(hack) %>% mutate(id = row_number())
@@ -71,36 +80,21 @@ pajek_nodes %<>% bind_rows(hack) %>% mutate(id = row_number())
 
 # Output
 ```{r}
-write("*edges", file="kegg.net")
-write_tsv(pajek_edges, "kegg.net", append = TRUE, col_names = FALSE, quote_escape = F)
-write("*nodes", file="kegg.net", append = TRUE)
-write_tsv(pajek_nodes %>% select(name, x, y), "kegg.net", append = TRUE, col_names = FALSE, quote_escape = F)
-
+write("*edges", file="viacomplex.net")
+write_tsv(pajek_edges, "viacomplex.net", append = TRUE, col_names = FALSE, quote_escape = F)
+write("*nodes", file="viacomplex.net", append = TRUE)
+write_tsv(pajek_nodes %>% select(name, x, y), "viacomplex.net", append = TRUE, col_names = FALSE, quote_escape = F)
 
 write_tsv(pajek_nodes %>% select(id, name, signal), "kegg.dat")
 ```
 
 # Force
 ```{r echo=T, eval=T, include=FALSE}
-pajek_nodes <- igraph::as_data_frame(lcc, what = "vertices") %>%
+pajek_nodes <- as_data_frame(lcc, what = "vertices") %>%
   select(name, signal = expression_neuroexclusivity, x, y)
 
-hack <- tribble(
-  ~name, ~signal, ~x,   ~y,
-  "bot", 0,       -200, -700,
-  "top", 0,       400, -200,
-)
-
 pajek_nodes %<>% bind_rows(hack) %>% mutate(id = row_number())
-```
-
-# Output
-```{r}
-write("*edges", file="gxa.net")
-write_tsv(pajek_edges, "gxa.net", append = TRUE, col_names = FALSE, quote_escape = F)
-write("*nodes", file="gxa.net", append = TRUE)
-write_tsv(pajek_nodes %>% select(name, x, y), "gxa.net", append = TRUE, col_names = FALSE, quote_escape = F)
-
 
 write_tsv(pajek_nodes %>% select(id, name, signal), "gxa.dat")
 ```
+

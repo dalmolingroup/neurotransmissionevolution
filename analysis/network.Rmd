@@ -83,7 +83,6 @@ V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 #matriz de rotacao
 angle <- 90*(pi/180)
 rotm <- matrix(c(cos(angle),sin(angle),-sin(angle),cos(angle)),ncol=2)
-
 #rotacao
 layout <- t(rotm %*% (t(layout)))
 ```
