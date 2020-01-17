@@ -90,7 +90,7 @@ unconnected_nodes <- lapply(subgraphs[-lcc_index], as_data_frame, what = "vertic
 unconnected_edges <- lapply(subgraphs[-lcc_index], as_data_frame) %>% bind_rows
 
 unconnected <- graph_from_data_frame(unconnected_edges, directed = F, vertices = unconnected_nodes)
-plot(unconnected, vertex.label = V(unconnected)$string_name)
+plot(unconnected, layout = layout_on_grid(unconnected), vertex.label = V(unconnected)$string_name)
 ```
 
 # Force

@@ -32,9 +32,3 @@ d3force <- function(graph, layout = NULL){
 
   matrix(layout, ncol = 3, byrow = T)
 }
-
-#' @export
-linMap <- function(x, from, to) approxfun(range(x), c(from, to))(x)
-
-#' @export
-darken <- function(color, intensity=0.5) rgb(t(col2rgb(color)*(1-intensity)/255))

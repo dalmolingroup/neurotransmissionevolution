@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="Description" content="Remove overlaps between rectangular nodes in graph layout" />
+  <meta name="author" content="Andrei Kashcha" />
+  <title>ngraph.forcelayout remove overlaps demo [rectangles]</title>
+
+  <script type="text/javascript" src="www/vivagraph.min.js"></script>
+  <script type="text/javascript" src="www/multiselect.js"></script>
+  <script type="text/javascript" src="www/index.js"></script>
+
+  <script type="text/javascript" src="shared/jquery.js"></script>
+  <script type="text/javascript" src="shared/shiny.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="shared/shiny.css" />
+  <style type="text/css">
+    /* http://meyerweb.com/eric/tools/css/reset/
+      v2.0 | 20110126
+      License: none (public domain)
+    */
+    html, body, div, span, applet, object, iframe,
+    h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+    a, abbr, acronym, address, big, cite, code,
+    del, dfn, em, img, ins, kbd, q, s, samp,
+    small, strike, strong, sub, sup, tt, var,
+    b, u, i, center,
+    dl, dt, dd, ol, ul, li,
+    fieldset, form, label, legend,
+    table, caption, tbody, tfoot, thead, tr, th, td,
+    article, aside, canvas, details, embed,
+    figure, figcaption, footer, header, hgroup,
+    menu, nav, output, ruby, section, summary,
+    time, mark, audio, video {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      font-size: 100%;
+      font: inherit;
+      vertical-align: baseline;
+    }
+    /* HTML5 display-role reset for older browsers */
+    article, aside, details, figcaption, figure,
+    footer, header, hgroup, menu, nav, section {
+      display: block;
+    }
+    body {
+      line-height: 1;
+    }
+    ol, ul {
+      list-style: none;
+    }
+    blockquote, q {
+      quotes: none;
+    }
+    blockquote:before, blockquote:after,
+    q:before, q:after {
+      content: '';
+      content: none;
+    }
+    table {
+      border-collapse: collapse;
+      border-spacing: 0;
+    }
+  </style>
+  <style type="text/css">
+    html,
+    body {
+      font-family: Arial, Helvetica, sans-serif
+    }
+
+    #graph-container {
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      overflow: hidden;
+      margin: 0px;
+    }
+
+    .graph-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+
+    .graph-selection-indicator {
+      position: absolute;
+      background: transparent;
+      border: 1px solid orange;
+    }
+
+    .control {
+      background-color: #eee;
+      position: absolute;
+      float: left;
+      height: 100%;
+      overflow-y: scroll;
+    }
+
+    #get {
+      background-color: limegreen;
+      color: #fff;
+      font-size: 2em;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      padding: 5px;
+      margin: 5px;
+      position: absolute;
+      right:0;
+      top:0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="graph-container"></div>
+  <div class="graph-overlay"></div>
+  <div class="control">
+    <p>Spring length:</p>
+    <input type="range" class="layout" min="1" max="100" value="100" id="springLength" />
+    <p>Spring coefficient:</p>
+    <input type="range" class="layout" min="0.0001" max="0.0025" value="0.0002" step="0.00001" id="springCoeff" />
+    <p>Gravity:</p>
+    <input type="range" class="layout" min="-2" max="-0.1" value="-0.4" step="0.1" id="gravity" />
+    <p>Drag coefficient:</p>
+    <input type="range" class="layout" min="0.01" max="1" value="0.05" step="0.01" id="dragCoeff" />
+    <p>Theta:</p>
+    <input type="range" class="layout" min="0.01" max="1" value="0.4" step="0.01" id="theta" />
+    <p>Time step:</p>
+    <input type="range" class="layout" min="1" max="100" value="5" id="timeStep" />
+
+    <p>Remove overlaps:</p>
+    <input type="checkbox" id="remove-overlaps" />
+    <p>Run</p>
+    <input type="checkbox" id="run" />
+  </div>
+  <a href="javascript:void(0)" id="get">Get</button>
+  <script>
+    // document.getElementById("get").onclick = function() {
+    //   var number = Math.random();
+    //   Shiny.onInputChange("mydata", number);
+    // };
+    Shiny.addCustomMessageHandler("dataTransferredFromServer", easyLayout);
+  </script>
+</body>
+
+</html>
