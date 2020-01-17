@@ -23,7 +23,8 @@ library(gridExtra)
 library(Hmisc)
 library(ggplot2)
 library(scatterpie)
-# library(UpSetR)
+library(UpSetR)
+library(ggplotify)
 
 library(neurotransmission)
 ```
@@ -157,6 +158,15 @@ diff_theme <- list(
 )
 
 roots <- vertices %>% pull(hybrid_root) %>% unique %>% sort
+
+upset_texts <- c(
+  3 #ytitle
+  ,2 #ytick
+  ,1 #setsizetitle
+  ,1.5 #setsizetick
+  ,2 #setnames
+  ,2.5 #barnums
+)
 ```
 
 # systems
@@ -256,6 +266,42 @@ ggsave(file = "diff_systems_roots.pdf", arrangeGrob(grobs = systems %>% rev, nco
 ggsave(file = "diff_functions_roots.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
 ```
 
+Fig 3A
+```{r}
+#finding which genes should be drawn
+current_genes <- vertices %>% filter(hybrid_root == 37)
+
+#finding which edges should be drawn
+partial_ids <- current_genes[["string_id"]]
+which_edges <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+partial_edges <- edges[which_edges,]
+
+############
+## COMMON
+############
+plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
+
+plot_text <- geom_text(data = current_genes, text_aes, size = 1, vjust = 0, nudge_y = 1.75, alpha=0.5)
+
+############
+## SYSTEMS
+############
+plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = sistemas, color=NA)
+
+############
+## SAVING
+############
+base <- ggplot() + plot_edges + plot_scales
+
+fig3a <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
+
+fig3a
+
+#saving pdfs
+ggsave(file = "fig3a.pdf")
+```
+
+Fig 3B
 ```{r}
 #finding which genes should be drawn
 current_genes <- vertices %>% filter(hybrid_root < 37 & hybrid_root >= 26)
@@ -292,5 +338,38 @@ fig3b
 
 #saving pdfs
 ggsave(file = "fig3b.pdf")
+```
+
+# upset
+```{r}
+#a
+pdf("fig3a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+upset(
+  vertices %>% filter(hybrid_root == 37) %>% select(sistemas)
+  ,mb.ratio = c(0.7, 0.3)
+  ,order.by = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label = "Genes per system"
+  ,text.scale = upset_texts
+  ,point.size = 3.5
+  ,line.size = 1
+  ,sets.bar.color = pie_colors[c("dopaminergic","cholinergic","glutamatergic","gabaergic","serotonergic")]
+)
+dev.off()
+
+#b
+pdf("fig3b_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+upset(
+  vertices %>% filter(hybrid_root < 37 & hybrid_root >= 26) %>% select(sistemas)
+  ,mb.ratio = c(0.7, 0.3)
+  ,order.by = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label = "Genes per system"
+  ,text.scale = upset_texts
+  ,point.size = 3.5
+  ,line.size = 1
+  ,sets.bar.color = pie_colors[c("dopaminergic","cholinergic","glutamatergic","gabaergic","serotonergic")]
+)
+dev.off()
 ```
 
