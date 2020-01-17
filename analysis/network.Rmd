@@ -199,7 +199,7 @@ complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_sca
 
 complete_functions
   
-ggsave("functions_network.pdf", )
+ggsave("functions_network.pdf")
 ```
 
 ### Rede Diferencial
@@ -235,9 +235,9 @@ for(i in roots){
   ############
   plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = sistemas, color=NA)
   
-  ############
-  ## SYSTEMS
-  ############
+  ##############
+  ## FUNCTIONS
+  ##############
   plot_current_nodes <- geom_point(data = current_genes, aes(x=x, y=y, color = annotation, fill = annotation, size = size), shape = 21, stroke = 0.25)
   
   ############
@@ -255,3 +255,42 @@ ggsave(file = "diff_systems_roots.pdf", arrangeGrob(grobs = systems %>% rev, nco
 
 ggsave(file = "diff_functions_roots.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
 ```
+
+```{r}
+#finding which genes should be drawn
+current_genes <- vertices %>% filter(hybrid_root < 37 & hybrid_root >= 26)
+past_genes <- vertices %>% filter(hybrid_root == 37)
+
+#finding which edges should be drawn
+partial_ids <- c(current_genes[["string_id"]], past_genes[["string_id"]])
+which_edges <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+partial_edges <- edges[which_edges,]
+
+############
+## COMMON
+############
+plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
+
+plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape=21, stroke = 0.25)
+
+#labels
+plot_text <- geom_text(data = current_genes, text_aes, size = 1, vjust = 0, nudge_y = 1.75, alpha=0.5)
+
+############
+## SYSTEMS
+############
+plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = sistemas, color=NA)
+
+############
+## SAVING
+############
+base <- ggplot() + plot_edges + plot_past + plot_scales
+
+fig3b <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
+
+fig3b
+
+#saving pdfs
+ggsave(file = "fig3b.pdf")
+```
+
