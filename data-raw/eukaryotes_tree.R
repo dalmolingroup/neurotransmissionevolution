@@ -16,14 +16,14 @@ if (!file.exists("data-raw/species.v11.0.txt")) {
 }
 
 string_species <- read_tsv(
-  "data-raw/species.v11.0.txt",
+  "data-raw/download/species.v11.0.txt",
   skip = 1,
   col_names = c("taxid", "string_name"),
   col_types = cols_only("c", "-", "c")
 )
 
 ncbi_merged_ids <- read_delim(
-  "data-raw/taxonomy/merged.dmp",
+  "data-raw/download/taxonomy/merged.dmp",
   delim = "|",
   trim_ws = TRUE,
   col_names = c("taxid","new_taxid"),
@@ -35,7 +35,7 @@ string_species %<>% left_join(ncbi_merged_ids) %>% mutate(new_taxid = coalesce(n
 string_updated_taxids <- string_species[["new_taxid"]]
 
 ncbi_edgelist <- read_delim(
-  "data-raw/taxonomy/nodes.dmp",
+  "data-raw/download/taxonomy/nodes.dmp",
   skip = 1,
   delim = "|",
   trim_ws = TRUE,
@@ -44,7 +44,7 @@ ncbi_edgelist <- read_delim(
 )
 
 ncbi_taxon_names <- read_delim(
-  "data-raw/taxonomy/names.dmp",
+  "data-raw/download/taxonomy/names.dmp",
   delim = "|",
   trim_ws = TRUE,
   col_names = c("name","ncbi_name","type"),

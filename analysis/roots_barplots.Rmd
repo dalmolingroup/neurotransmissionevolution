@@ -35,7 +35,6 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
   mutate(annotation = case_when(
     grepl("clearance",annotation) ~ "depletion",
     grepl("degradation",annotation) ~ "depletion",
-    grepl("g-protein",annotation) ~ "signaling",
     grepl("transport",annotation) ~ "synthesis",
     TRUE ~ annotation
   ))

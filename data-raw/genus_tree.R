@@ -8,6 +8,7 @@ library(igraph)
 data(string_eukaryotes)
 
 # loading newick tree obtained from timetree
+# ESSA EH A ARVORE QUE O TIMETREE RETORNOU NA BUSCA MANUAL
 timetree_newick <- read.tree("data-raw/timetree_eukaryotes.nwk")
 
 # plot(timetree_newick %>% ladderize, type = "cladogram", use.edge.length = F)
@@ -50,6 +51,7 @@ timetree_newick[["node.label"]] <- NULL
 timetree_newick[["edge.length"]] <- NULL
 
 # loading newick tree obtained from timetree
+# ESSA EH A ARVORE DE TODOS OS EUCARIOTOS DO STRING (85k)
 tree_85k <- read.tree("data-raw/Eukaryota_species.nwk")
 
 # replacing timetree's underscores with spaces

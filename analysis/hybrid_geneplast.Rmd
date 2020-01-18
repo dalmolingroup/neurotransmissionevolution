@@ -15,9 +15,10 @@ output:
 ---
 # Objetivo
 Obter os enraizamentos
-```{r}
+```{r message=FALSE}
 library(dplyr)
 library(readr)
+library(tibble)
 library(magrittr)
 library(geneplast)
 library(ape)
@@ -63,13 +64,28 @@ ogr <- groot(ogr, nPermutations=1)
 ```
 
 ```{r rows.print=5}
-roots <- groot.get(ogr, what="results")
-roots[,"cog_id"] <- row.names(roots)
-
-roots %<>% select(cog_id, Root) %>% rename(hybrid_root = Root)
+roots <- groot.get(ogr, what="results") %>%
+  rownames_to_column("cog_id") %>%
+  select(cog_id, Root) %>%
+  rename(hybrid_root = Root)
 
 groot.plot(ogr, whichOG="NOG259214", fname="hybrid", width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
 groot.plot(ogr, plot.lcas = TRUE, fname="hybrid", width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
 
 write_tsv(roots, "../inst/extdata/hybrid_geneplast.tsv")
 ```
+
+# plotting all patterns
+```{r}
+for (i in roots$cog_id) {
+  groot.plot(
+    ogr, 
+    whichOG = i, 
+    width=10, 
+    height=20, 
+    cex.lab = 0.2, 
+    cex.nodes = 0.4
+  )
+}
+```
+
