@@ -38,6 +38,8 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
   ))
 
 cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+
+spbranches <- ogr@spbranches %>% select(taxid = ssp_id, root = `9606`)
 ```
 
 # joining data
@@ -68,6 +70,14 @@ orthodist_annotation <- inner_join(orthodist, cog_annotation)
 
 # plot
 ```{r}
-
+ssp_abundance <- orthodist %>%
+  group_by(taxid) %>%
+  summarise(abundance = { sum(count)/sum(count > 1) }) %>%
+  inner_join(spbranches) %>%
+  arrange(-root) %>%
+  mutate(taxid = factor(taxid, levels = taxid[order(-root)]))
+  
+ggplot(ssp_abundance) +
+  geom_bar(aes(x = taxid, y = abundance), stat="identity")
 ```
 
