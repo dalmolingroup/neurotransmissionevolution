@@ -39,7 +39,7 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv")
+cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
 ```
 
 # joining data
@@ -96,20 +96,23 @@ string_eukaryotes %<>% mutate(
   lineage = xpathSApply(lineages, "//Lineage", XML::xmlValue)
 )
 
-root_extant <- string_eukaryotes %>%
+roots_extant_clades <- string_eukaryotes %>%
   group_by(root) %>%
   summarise(lineage = Reduce(intersect, strsplit(lineage, "; ")) %>% list) %>%
-  mutate(branch = mapply(setdiff, lineage, lead(lineage))) %>%
-  mutate(branch = mapply(setdiff,  branch,  lag(lineage))) %>%
-  mutate(branch = map(branch, 1)) %>%
-  select(root, branch)
+  mutate(extant_name = mapply(setdiff,     lineage, lead(lineage))) %>%
+  mutate(extant_name = mapply(setdiff, extant_name,  lag(lineage))) %>%
+  mutate(extant_name = map_chr(extant_name, 1, .default = NA)) %>%
+  mutate(extant_name = coalesce(extant_name, root %>% as.character, extant_name)) %>%
+  select(root, extant_name)
+
+write_tsv(roots_extant_clades, "extant_clades.tsv")
 ```
 
 # plot
 ```{r}
-root_text <- root_extant %>% filter(root %in% ne_count[["root"]])
+root_text <- roots_extant_clades %>% filter(root %in% ne_count[["root"]])
 
-text <- geom_text(data = root_text, aes(x = root, label = branch, y=75), angle=90, hjust=0)
+text <- geom_text(data = root_text, aes(x = root, label = extant_name, y=75), angle=90, hjust=0)
 line_aes <- aes(x = root, y = n, group = annotation, color = annotation)
 scale_reverse <- scale_x_reverse(breaks = seq(0, 40, by = 1), expand = c(0,0), minor_breaks = NULL)
 
