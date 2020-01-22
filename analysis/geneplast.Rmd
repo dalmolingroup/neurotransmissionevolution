@@ -57,6 +57,11 @@ ogr <- groot.preprocess(
   cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
 )
 
+ogp <- gplast.preprocess(
+  cogdata   = cogs,
+  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+)
+
 ogr <- groot(ogr, nPermutations=1)
 ```
 

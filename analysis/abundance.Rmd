@@ -1,0 +1,73 @@
+---
+title: "Network"
+output:
+  html_document:
+    df_print: paged
+    theme: default
+    highlight: espresso
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+---
+# Intro
+Obter o layout da rede no RedeR
+```{r message=FALSE}
+library(tidyverse)
+library(magrittr)
+```
+
+# Dados
+```{r rows.print=5}
+data(
+  ogr,
+  ogp,
+  gene_ids,
+  gene_pathways,
+  neurotransmission_cogs,
+  string_eukaryotes,
+  package = "neurotransmission"
+)
+
+gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+  mutate(annotation = case_when(
+    grepl("clearance",annotation) ~ "depletion",
+    grepl("degradation",annotation) ~ "depletion",
+    grepl("transport",annotation) ~ "synthesis",
+    TRUE ~ annotation
+  ))
+
+cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+```
+
+# joining data
+```{r}
+neurotransmission_cogs %<>%
+  inner_join(cog_roots) %>%
+  group_by(string_id) %>%
+  filter(root == max(root))
+
+info <- gene_ids %>%
+  na.omit %>%
+  inner_join(gene_pathways) %>%
+  inner_join(gene_annotation) %>%
+  inner_join(neurotransmission_cogs)
+```
+
+# wrangle
+```{r}
+cog_annotation <- info %>% select(cog_id, annotation) %>% unique
+
+orthodist <- ogp@orthodist %>%
+  as.data.frame %>%
+  rownames_to_column("taxid") %>%
+  pivot_longer(cols = -taxid, names_to = "cog_id", values_to = "count")
+
+orthodist_annotation <- inner_join(orthodist, cog_annotation)
+```
+
+# plot
+```{r}
+
+```
+
