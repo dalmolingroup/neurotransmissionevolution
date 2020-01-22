@@ -36,20 +36,19 @@ data(
   string_edgelist,
   neurotransmission_cogs,
   pathway_neuroexclusivity,
-  layout,
+  # layout,
   package = "neurotransmission"
 )
 
 gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
-    grepl("clearance",annotation) ~ "depletion",
-    grepl("degradation",annotation) ~ "depletion",
-    # grepl("g-protein",annotation) ~ "signaling",
-    grepl("transport",annotation) ~ "synthesis",
+    grepl("clearance",   annotation) ~ "depletion",
+    grepl("degradation", annotation) ~ "depletion",
+    grepl("transport",   annotation) ~ "synthesis",
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("../inst/extdata/hybrid_geneplast.tsv")
+cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
 ```
 
 # RedeR
@@ -57,7 +56,7 @@ cog_roots <- read_tsv("../inst/extdata/hybrid_geneplast.tsv")
 neurotransmission_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
-  filter(hybrid_root == max(hybrid_root))
+  filter(root == max(root))
 
 vertices <- gene_ids %>%
   na.omit %>%
@@ -65,44 +64,52 @@ vertices <- gene_ids %>%
   inner_join(gene_annotation) %>%
   inner_join(neurotransmission_cogs) %>%
   inner_join(pathway_neuroexclusivity) %>%
-  mutate(ne = (pathway_neuroexclusivity >= 0.9) %>% as.character) %>%
+  mutate(ne = pathway_neuroexclusivity >= 0.9) %>%
   select(string_id, everything())
 
-#color
+# color hack
 vertices %<>%
   unite(color, vesicle:dopaminergic, remove = F) %>%
   mutate(color = rainbow(color %>% unique %>% length)[color %>% as.factor])
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
+# removing vesicle cycle-only nodes
+g %<>% delete_vertices(which(V(g)$system_count == 0))
+
 V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 ```
 
-## Rotação
+# Layout
 ```{r}
-#matriz de rotacao
-angle <- 90*(pi/180)
-rotm <- matrix(c(cos(angle),sin(angle),-sin(angle),cos(angle)),ncol=2)
-#rotacao
-layout <- t(rotm %*% (t(layout)))
+if(file.exists("layout.tsv")) {
+  layout <- read_tsv("layout.tsv", col_types = "dd") %>% as.matrix
+} else {
+  layout <- vivagraph(g, precompute_multiplier = 200, precompute_niter = 1000)
+}
 ```
 
-
-# Force
+# Position adjustments, rerun as needed
 ```{r}
-# adjusted_layout <- vivagraph(g, layout)
+# layout %<>% rotate_layout(0)
+# 
+# layout <- vivagraph(g, layout, repin = T, pinned_cols = 2)
+# 
+# write_tsv(layout %>% as.data.frame, "layout.tsv")
+```
 
-V(g)$x <- -layout[, 1]
-V(g)$y <- layout[, 2]
+# Making edges data.frame
+```{r}
+V(g)$x <-  layout[, 1]
+V(g)$y <- -layout[, 2]
 
 vertices <- as_data_frame(g, what = "vertices") %>% rename(string_id = name)
+edgelist <- as_data_frame(g, what = "edges")
 
-sistemas <- c("glutamatergic","cholinergic","serotonergic","gabaergic","dopaminergic")
+from <- vertices[match(edgelist[[1]], vertices[["string_id"]]), c("x","y")]
+to <- vertices[match(edgelist[[2]], vertices[["string_id"]]), c("x","y")]
 
-from <- vertices[match(string_edgelist[[1]], vertices[["string_id"]]), c("x","y")]
-to <- vertices[match(string_edgelist[[2]], vertices[["string_id"]]), c("x","y")]
-
-edges <- rbind(from, to) %>% cbind(group = 1:nrow(string_edgelist))
+edges <- rbind(from, to) %>% cbind(group = 1:nrow(edgelist))
 ```
 
 # Config
@@ -127,6 +134,8 @@ element_colors <- c(
   "vesicle"               = "#FF00AA"
 )
 
+sistemas <- names(pie_colors)
+
 edge_color <- rgb(0.7,0.7,0.7,alpha = 0.3)
 
 past_fill  <- "#FFFFFF"
@@ -134,19 +143,19 @@ past_color <- "#888888"
 
 vertices %<>% mutate(
   shape = ifelse(ne, 23, 21),
-  color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.25)),
+  color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.2)),
   color_pie = ifelse(ne, "#000000", NA),
 )
 
 # reusable aesthetics
 edge_aes <- aes(x = x, y = y, group = group)
-pie_aes  <- aes(x = x, y = y, group=string_id, r = size^(0.94) - 1)
+pie_aes  <- aes(x = x, y = y, group=string_id, r = size^(0.94) - 1.5)
 text_aes <- aes(x = x, y = y, label = string_name)
 
 #xy boundaries
 xy_lim <- list(
-  scale_x_continuous(limits = range(vertices[["x"]]) * 1.1),
-  scale_y_continuous(limits = range(vertices[["y"]]) * 1.1)
+  scale_x_continuous(limits = range(vertices[["x"]]) + c(-50, 50)),
+  scale_y_continuous(limits = range(vertices[["y"]]) + c(-50, 50))
 )
 
 diff_theme <- list(
@@ -162,7 +171,7 @@ diff_theme <- list(
   )
 )
 
-roots <- vertices %>% pull(hybrid_root) %>% unique %>% sort
+roots <- vertices %>% pull(root) %>% unique %>% sort
 
 upset_texts <- c(
   3 #ytitle
@@ -195,11 +204,11 @@ complete_systems <- ggplot() + plot_theme + plot_edges + plot_pies + plot_pie_fi
 
 complete_systems
   
-ggsave("fig1a.pdf")
+ggsave("fig1a.pdf", width = 7, height = 7)
 ```
 
 # functions
-```{r}
+```{r message=FALSE}
 # nodes
 plot_nodes <- geom_point(
   data = vertices,
@@ -214,7 +223,7 @@ plot_nodes <- geom_point(
 plot_scales <- list(
   scale_fill_manual(values = element_colors),
   scale_color_manual(values = element_colors %>% darken(0.25) %>% setNames(names(element_colors))),
-  scale_radius(range = c(1.75, 4), guide = FALSE)
+  scale_radius(range = c(1.75, 5.5), guide = FALSE)
 )
   
 complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_scales + plot_text
@@ -232,12 +241,12 @@ functions <- list()
 for(i in roots){
   
   #finding which genes should be drawn
-  current_genes <- vertices %>% filter(hybrid_root == i)
-  past_genes <- vertices %>% filter(hybrid_root > i)
+  current_genes <- vertices %>% filter(root == i)
+  past_genes <- vertices %>% filter(root > i)
   
   #finding which edges should be drawn
   partial_ids <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-  which_edges <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+  which_edges <- apply(edgelist, 1, function(r) all(r %in% partial_ids))
   partial_edges <- edges[which_edges,]
   
   ############
@@ -281,13 +290,13 @@ ggsave(file = "sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% r
 ```
 
 Fig 3A
-```{r}
+```{r message=FALSE}
 #finding which genes should be drawn
-current_genes <- vertices %>% filter(hybrid_root == 37)
+current_genes <- vertices %>% filter(root == 37)
 
 #finding which edges should be drawn
 partial_ids <- current_genes[["string_id"]]
-which_edges <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+which_edges <- apply(edgelist, 1, function(r) all(r %in% partial_ids))
 partial_edges <- edges[which_edges,]
 
 ############
@@ -305,7 +314,7 @@ plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = siste
 ############
 ## SAVING
 ############
-base <- ggplot() + plot_edges + plot_scales
+base <- ggplot() + plot_edges + plot_scales + xy_lim
 
 fig3a <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 
@@ -316,14 +325,14 @@ ggsave(file = "fig3a.pdf")
 ```
 
 Fig 3B
-```{r}
+```{r message=FALSE}
 #finding which genes should be drawn
-current_genes <- vertices %>% filter(hybrid_root < 37 & hybrid_root >= 26)
-past_genes <- vertices %>% filter(hybrid_root == 37)
+current_genes <- vertices %>% filter(root < 37 & root >= 26)
+past_genes <- vertices %>% filter(root == 37)
 
 #finding which edges should be drawn
 partial_ids <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-which_edges <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+which_edges <- apply(edgelist, 1, function(r) all(r %in% partial_ids))
 partial_edges <- edges[which_edges,]
 
 ############
@@ -344,7 +353,7 @@ plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = siste
 ############
 ## SAVING
 ############
-base <- ggplot() + plot_edges + plot_past + plot_scales
+base <- ggplot() + plot_edges + plot_past + plot_scales + xy_lim
 
 fig3b <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 
@@ -355,11 +364,11 @@ ggsave(file = "fig3b.pdf")
 ```
 
 # upset
-```{r}
+```{r message=FALSE}
 #a
 pdf("fig3a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
 upset(
-  vertices %>% filter(hybrid_root == 37) %>% select(sistemas)
+  vertices %>% filter(root == 37) %>% select(sistemas)
   ,mb.ratio = c(0.7, 0.3)
   ,order.by = "freq"
   ,mainbar.y.label = "System Intersections"
@@ -374,7 +383,7 @@ dev.off()
 #b
 pdf("fig3b_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
 upset(
-  vertices %>% filter(hybrid_root < 37 & hybrid_root >= 26) %>% select(sistemas)
+  vertices %>% filter(root < 37 & root >= 26) %>% select(sistemas)
   ,mb.ratio = c(0.7, 0.3)
   ,order.by = "freq"
   ,mainbar.y.label = "System Intersections"

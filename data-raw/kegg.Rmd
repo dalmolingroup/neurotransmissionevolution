@@ -16,9 +16,7 @@ output:
 # Intro
 This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table
 ```{r message=FALSE}
-library(readr)
-library(tidyr)
-library(dplyr)
+library(tidyverse)
 library(tidylog)
 library(magrittr)
 ```
@@ -69,8 +67,10 @@ gene_pathways <- inner_join(link_pathway_entrez, pathways) %>%
     values_fn = list(n = length),
     values_fill = list(n = 0)
   ) %>%
+  
   # filling 1's in all systems for synaptic vesicle genes
-  mutate_at(pathways[["pathway_name"]], ~ ifelse(vesicle == 1, 1L, .)) %>%
+  # mutate_at(pathways[["pathway_name"]], ~ ifelse(vesicle == 1, 1L, .)) %>%
+  
   # neurotransmitter systems count for each gene (>=1, <= 5)
   mutate(system_count = rowSums(select(., -entrez_id, -vesicle)))
 

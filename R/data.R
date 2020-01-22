@@ -12,15 +12,3 @@ NULL
 #'}
 #' @source \url{http://somewhere.important.com/}
 "string_eukaryotes"
-
-#' @title DATASET_TITLE
-#' @description DATASET_DESCRIPTION
-#' @format A newick file with 335 tips and taxids:
-#' \describe{
-#'   \item{\code{edge}}{integer COLUMN_DESCRIPTION}
-#'   \item{\code{Nnode}}{integer COLUMN_DESCRIPTION}
-#'   \item{\code{tip.label}}{character COLUMN_DESCRIPTION}
-#'   \item{\code{taxid}}{character COLUMN_DESCRIPTION}
-#'}
-#' @source \url{http://somewhere.important.com/}
-"timetree_newick"
