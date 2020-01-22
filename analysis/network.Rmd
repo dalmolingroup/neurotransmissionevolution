@@ -13,15 +13,12 @@ output:
 # Intro
 Obter o layout da rede no RedeR
 ```{r message=FALSE}
-library(dplyr)
-library(tidyr)
-library(readr)
+library(tidyverse)
 library(igraph)
 library(magrittr)
 library(gridExtra)
 
 library(Hmisc)
-library(ggplot2)
 library(scatterpie)
 library(UpSetR)
 
@@ -49,6 +46,8 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
   ))
 
 cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+
+roots_extant_clades <- read_tsv("extant_clades.tsv", col_types = "ic")
 ```
 
 # RedeR
@@ -56,7 +55,8 @@ cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
 neurotransmission_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
-  filter(root == max(root))
+  filter(root == max(root)) %>%
+  inner_join(roots_extant_clades)
 
 vertices <- gene_ids %>%
   na.omit %>%
@@ -103,8 +103,8 @@ if(file.exists("layout.tsv")) {
 V(g)$x <-  layout[, 1]
 V(g)$y <- -layout[, 2]
 
-vertices <- as_data_frame(g, what = "vertices") %>% rename(string_id = name)
-edgelist <- as_data_frame(g, what = "edges")
+vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
+edgelist <- igraph::as_data_frame(g, what = "edges")
 
 from <- vertices[match(edgelist[[1]], vertices[["string_id"]]), c("x","y")]
 to <- vertices[match(edgelist[[2]], vertices[["string_id"]]), c("x","y")]
@@ -162,16 +162,18 @@ diff_theme <- list(
   coord_equal(),
   theme_void(),
   theme(
-    plot.title = element_text(size=8, hjust = 0.5),
-    #plot.margin=unit(c(1, 0.25, 1, 0.25),"cm"),
-    plot.margin=unit(c(0, 0, 0, 0),"cm"),
-    legend.text = element_text(size=6),
-    legend.title = element_text(size=8),
-    legend.key.size = unit(1,"mm")
+    plot.title         = element_text(size=8, hjust = 0.5),
+    legend.text        = element_text(size=6),
+    legend.title       = element_text(size=8),
+    plot.margin        = unit(c(0, 0, 0, 0),"mm"),
+    legend.key.size    = unit(1,"mm"),
+    legend.box.spacing = unit(-2,"mm"),
+    legend.box.margin  = unit(c(0, 2, 0, 0),"mm")
   )
 )
 
-roots <- vertices %>% pull(root) %>% unique %>% sort
+roots <- vertices %>% arrange(-root) %>% pull(root) %>% unique
+roots_titles <- vertices %>% arrange(-root) %>% pull(extant_name) %>% unique %>% paste0(" LCA (",roots,")")
 
 upset_texts <- c(
   3 #ytitle
@@ -204,7 +206,7 @@ complete_systems <- ggplot() + plot_theme + plot_edges + plot_pies + plot_pie_fi
 
 complete_systems
   
-ggsave("fig1a.pdf", width = 7, height = 7)
+ggsave("fig1a.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 # functions
@@ -230,7 +232,7 @@ complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_sca
 
 complete_functions
   
-ggsave("fig1b.pdf", width = 7, height = 7)
+ggsave("fig1b.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 ### Rede Diferencial
@@ -238,11 +240,11 @@ ggsave("fig1b.pdf", width = 7, height = 7)
 systems <- list()
 functions <- list()
 
-for(i in roots){
+walk2(roots, roots_titles, ~ {
   
   #finding which genes should be drawn
-  current_genes <- vertices %>% filter(root == i)
-  past_genes <- vertices %>% filter(root > i)
+  current_genes <- vertices %>% filter(root == .x)
+  past_genes <- vertices %>% filter(root > .x)
   
   #finding which edges should be drawn
   partial_ids <- c(current_genes[["string_id"]], past_genes[["string_id"]])
@@ -274,19 +276,19 @@ for(i in roots){
   ############
   ## SAVING
   ############
-  base <- ggplot() + ggtitle(i) + diff_theme + xy_lim + plot_edges + plot_past + plot_size
+  base <- ggplot() + ggtitle(.y) + diff_theme + xy_lim + plot_edges + plot_past + plot_size
   
-  systems[[as.character(i)]] <- base + plot_current_pies + plot_pie_fill + plot_text
+  systems[[as.character(.x)]] <<- base + plot_current_pies + plot_pie_fill + plot_text
   
   legend_hack <- guides(fill = guide_legend(override.aes=list(shape=21)))
   
-  functions[[as.character(i)]] <- base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
-}
+  functions[[as.character(.x)]] <<- base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
+})
 
 #saving pdfs
-ggsave(file = "sup_systems_emergence.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
+ggsave(file = "sup_systems_emergence.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
 
-ggsave(file = "sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm")
+ggsave(file = "sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
 ```
 
 Fig 3A
@@ -321,7 +323,7 @@ fig3a <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 fig3a
 
 #saving pdfs
-ggsave(file = "fig3a.pdf")
+ggsave(file = "fig3a.pdf",onefile=F,useDingbats=FALSE)
 ```
 
 Fig 3B
@@ -360,12 +362,36 @@ fig3b <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 fig3b
 
 #saving pdfs
-ggsave(file = "fig3b.pdf")
+ggsave(file = "fig3b.pdf",onefile=F,useDingbats=FALSE)
 ```
 
 # upset
 ```{r message=FALSE}
+systems_totals <- colSums(vertices %>% select(sistemas))
+systems_totals <- systems_totals[systems_totals>0]
+systems_totals <- systems_totals[names(systems_totals)[order(names(systems_totals), decreasing = T)]]
+setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
+
+#1a
+pdf("fig1a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+upset(
+  vertices %>% select(sistemas)
+  ,mb.ratio = c(0.7, 0.3)
+  ,order.by = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label = "Genes per system"
+  ,text.scale = upset_texts
+  ,point.size = 3.5
+  ,line.size = 1
+  ,sets.bar.color = setcolors
+)
+dev.off()
+
 #a
+systems_totals <- colSums(vertices %>% filter(root == 37) %>% select(sistemas))
+systems_totals <- systems_totals[systems_totals>0]
+setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
+
 pdf("fig3a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
 upset(
   vertices %>% filter(root == 37) %>% select(sistemas)
@@ -376,11 +402,15 @@ upset(
   ,text.scale = upset_texts
   ,point.size = 3.5
   ,line.size = 1
-  ,sets.bar.color = pie_colors[c("dopaminergic","cholinergic","glutamatergic","gabaergic","serotonergic")]
+  ,sets.bar.color = setcolors
 )
 dev.off()
 
 #b
+systems_totals <- colSums(vertices %>% filter(root < 37 & root >= 26) %>% select(sistemas))
+systems_totals <- systems_totals[systems_totals>0]
+setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
+
 pdf("fig3b_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
 upset(
   vertices %>% filter(root < 37 & root >= 26) %>% select(sistemas)
@@ -391,7 +421,7 @@ upset(
   ,text.scale = upset_texts
   ,point.size = 3.5
   ,line.size = 1
-  ,sets.bar.color = pie_colors[c("dopaminergic","cholinergic","glutamatergic","gabaergic","serotonergic")]
+  ,sets.bar.color = setcolors
 )
 dev.off()
 ```
