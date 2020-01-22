@@ -57,8 +57,8 @@ g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 # removing vesicle cycle-only nodes
 g %<>% delete_vertices(which(V(g)$system_count == 0))
 
-V(g)$x <- -layout[, 1]
-V(g)$y <- -layout[, 2]
+V(g)$x <- layout[, 1]
+V(g)$y <- layout[, 2]
 
 subgraphs <- decompose.graph(g)
 lcc_index <- which.max(sapply(subgraphs, vcount))
@@ -75,8 +75,8 @@ pajek_edges <- igraph::as_data_frame(lcc, what = "edges")
 hack <- data.frame(
   name = c("top", "bot"),
   signal = 0,
-  x = range(pajek_nodes$x) + c(-0, 0),
-  y = range(pajek_nodes$y) + c(-0, 0),
+  x = range(pajek_nodes$x) + c(-75, 75),
+  y = range(pajek_nodes$y) + c(-75, 75),
   stringsAsFactors = FALSE
 )
 
