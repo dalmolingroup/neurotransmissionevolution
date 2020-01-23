@@ -17,6 +17,10 @@ library(XML)
 library(rentrez)
 library(tidyverse)
 library(magrittr)
+
+library(treeio)
+library(ggtree)
+library(tidytree)
 ```
 
 # Dados
@@ -105,7 +109,7 @@ roots_extant_clades <- string_eukaryotes %>%
   mutate(extant_name = coalesce(extant_name, root %>% as.character, extant_name)) %>%
   select(root, extant_name)
 
-write_tsv(roots_extant_clades, "extant_clades.tsv")
+# write_tsv(roots_extant_clades, "extant_clades.tsv")
 ```
 
 # plot
@@ -128,5 +132,40 @@ ggplot() +
   scale_reverse +
   text
 ggsave("plots/roots_ne.pdf", width = 10, height = 6)
+```
+
+```{r message=FALSE}
+hybrid_tree <- read.newick("../inst/extdata/hybrid_tree.nwk")
+
+iono_cogs <- info %>% filter(annotation == "ionotropic receptor") %>% pull(cog_id) %>% unique
+
+tree_heatmap <- ogr@orthoct %>%
+  as_tibble(rownames = NA) %>%
+  select(iono_cogs)
+
+to_drop <- string_eukaryotes %>% filter(!root %in% 29:26) %>% pull(taxid)
+
+early_animals <- hybrid_tree %>%
+  drop.tip(to_drop) %>%
+  as_tibble %>%
+  left_join(string_eukaryotes %>% select(label = taxid, ncbi_name, root)) %>%
+  as.treedata
+  
+p <- ggtree(early_animals, branch.length = "none") +
+  geom_tiplab(aes(label = ncbi_name), offset = 1, hjust = 0, align = T) +
+  xlim(0,50)
+
+gheatmap(
+  p,
+  tree_heatmap,
+  offset=15,
+  width=8,
+  font.size=3,
+  colnames_angle=45,
+  hjust=0.25,
+  low = "#DDDDDD",
+  high = "#00AA44"
+)
+ggsave("plots/roots_ionotropic_pattern.pdf", width = 10, height = 6)
 ```
 
