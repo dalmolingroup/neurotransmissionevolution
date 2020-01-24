@@ -82,7 +82,7 @@ ggplot(ssp_abundance) +
 ```
 
 
-```{r}
+```{r message=FALSE}
 annotation_abundance <- orthodist_annotation %>%
   filter(count > 0) %>%
   group_by(taxid, annotation) %>%
@@ -108,7 +108,7 @@ ggsave("plots/abundance_by_function.pdf", width = 20, height = 10)
 ```
 
 
-```{r}
+```{r message=FALSE}
 annotation_count <- orthodist_annotation %>%
   group_by(taxid, annotation) %>%
   summarise(count = sum(count)) %>%
@@ -116,8 +116,6 @@ annotation_count <- orthodist_annotation %>%
   inner_join(spbranches) %>%
   inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
   mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
-
-porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Amphimedon queenslandica")
 
 ggplot(annotation_count) +
   geom_bar(aes(x = ncbi_name, y = count), stat="identity") +
@@ -149,3 +147,28 @@ ggplot(annotation_count_by_all_cogs) +
 ggsave("plots/abundance_by_all_cogs.pdf", width = 20, height = 10)
 ```
 
+
+```{r message=FALSE}
+cog_annotation_collapse <- cog_annotation %>%
+  group_by(cog_id) %>%
+  summarise(annotation = paste(annotation, collapse = " "))
+
+protein_count_by_cog <- orthodist %>%
+  group_by(taxid, cog_id) %>%
+  summarise(count = sum(count)) %>%
+  ungroup(taxid, annotation) %>%
+  inner_join(cog_annotation_collapse) %>%
+  inner_join(spbranches) %>%
+  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+  mutate(
+    ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique),
+    cog_id    = factor(cog_id,  levels = cog_id[order(annotation)] %>% unique)
+  )
+
+t <- ggplot(protein_count_by_cog) +
+  geom_bar(aes(x = ncbi_name, y = count, fill = annotation), stat="identity") +
+  facet_grid(cog_id ~ ., scales = "free_y") +
+  plot_config[-1] +
+  theme(strip.text.y = element_text(size = 6))
+ggsave("plots/abundance_protein_count_by_cog.pdf", t, width = 20, height = 50, limitsize = FALSE)
+```
