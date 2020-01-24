@@ -97,7 +97,8 @@ porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Amphimed
 plot_config <- list(
   facet_grid(annotation ~ ., scales = "free_y"),
   geom_vline(xintercept = porifera_xintercept, color = "#FF0000", linetype = "11", size = 0.25),
-  theme(axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = 0))
+  theme(axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = 0)),
+  theme(plot.title = element_text(size = 20, face = "bold"))
 )
 
 ggplot(annotation_abundance) +
@@ -168,7 +169,9 @@ protein_count_by_cog <- orthodist %>%
 t <- ggplot(protein_count_by_cog) +
   geom_bar(aes(x = ncbi_name, y = count, fill = annotation), stat="identity") +
   facet_grid(cog_id ~ ., scales = "free_y") +
+  ggtitle("numero de proteinas por cog, para cada especie") +
   plot_config[-1] +
-  theme(strip.text.y = element_text(size = 6))
+  theme(strip.text.y = element_text(size = 6)) #+
+  # theme(legend.text = element_text(margin = margin(t = 1.5, b = 1.5, unit = "in")))
 ggsave("plots/abundance_protein_count_by_cog.pdf", t, width = 20, height = 50, limitsize = FALSE)
 ```
