@@ -332,7 +332,7 @@ fig4 <- map2(roots[idx], roots_titles[idx], ~ {
   base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
 })
 
-ggsave(file = "plots/fig4.pdf", arrangeGrob(grobs = fig4, ncol = 4), onefile=F, useDingbats=FALSE)
+ggsave(file = "plots/fig4.pdf", arrangeGrob(grobs = fig4, ncol = 4), width = 10*0.7, height = 5*0.7, onefile=F, useDingbats=FALSE)
 ```
 
 Fig 3A
