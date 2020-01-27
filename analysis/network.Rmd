@@ -142,7 +142,7 @@ past_fill  <- "#FFFFFF"
 past_color <- "#888888"
 
 vertices %<>% mutate(
-  shape = ifelse(ne, 23, 21),
+  shape = ifelse(ne, 22, 21),
   color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.2)),
   color_pie = ifelse(ne, "#000000", NA),
 )
@@ -206,7 +206,7 @@ complete_systems <- ggplot() + plot_theme + plot_edges + plot_pies + plot_pie_fi
 
 complete_systems
   
-ggsave("fig1a.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
+ggsave("plots/fig1a.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 # functions
@@ -225,18 +225,20 @@ plot_nodes <- geom_point(
 plot_scales <- list(
   scale_fill_manual(values = element_colors),
   scale_color_manual(values = element_colors %>% darken(0.25) %>% setNames(names(element_colors))),
-  scale_radius(range = c(1.75, 5.5), guide = FALSE)
+  scale_radius(range = c(1.75, 5.00), guide = FALSE)
 )
   
 complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_scales + plot_text
 
 complete_functions
   
-ggsave("fig1b.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
+ggsave("plots/fig1b.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 ### Rede Diferencial
 ```{r message=FALSE}
+plot_size <- scale_radius(range = c(0.5, 1.3), guide = FALSE)
+
 systems <- list()
 functions <- list()
 
@@ -256,9 +258,7 @@ walk2(roots, roots_titles, ~ {
   ############
   plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
   
-  plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape = ifelse(past_genes$ne,23,21), stroke = 0.25)
-  
-  plot_size <- scale_radius(range = c(0.6, 1.4), guide = FALSE)
+  plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape = past_genes$shape, stroke = 0.25)
   
   #labels
   plot_text <- geom_text(data = current_genes, text_aes, size = 1, vjust = 0, nudge_y = 1.75, alpha=0.5)
@@ -286,9 +286,53 @@ walk2(roots, roots_titles, ~ {
 })
 
 #saving pdfs
-ggsave(file = "sup_systems_emergence.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
+ggsave(file = "plots/sup_systems_emergence.pdf", arrangeGrob(grobs = systems %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
 
-ggsave(file = "sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
+ggsave(file = "plots/sup_functions_emergence.pdf", arrangeGrob(grobs = functions %>% rev, ncol = 3), width = 210, height = 297, units = "mm",onefile=F,useDingbats=FALSE)
+```
+
+
+# 4
+```{r message=FALSE}
+idx <- which(roots >= 26 & roots <= 29)
+
+fig4 <- map2(roots[idx], roots_titles[idx], ~ {
+  
+  #finding which genes should be drawn
+  current_genes <- vertices %>% filter(root == .x)
+  past_genes <- vertices %>% filter(root > .x)
+  
+  #finding which edges should be drawn
+  partial_ids <- c(current_genes[["string_id"]], past_genes[["string_id"]])
+  which_edges <- apply(edgelist, 1, function(r) all(r %in% partial_ids))
+  partial_edges <- edges[which_edges,]
+  
+  ############
+  ## COMMON
+  ############
+  plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
+  
+  plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape = past_genes$shape, stroke = 0.25)
+  
+  #labels
+  plot_text <- geom_text(data = current_genes, text_aes, size = 1, vjust = 0, nudge_y = 1.75, alpha=0.5)
+  
+  ##############
+  ## FUNCTIONS
+  ##############
+  plot_current_nodes <- geom_point(data = current_genes, aes(x=x, y=y, fill = annotation, size = size), color = current_genes$color_node, shape = current_genes$shape, stroke = 0.25)
+  
+  ############
+  ## SAVING
+  ############
+  base <- ggplot() + ggtitle(.y) + diff_theme + xy_lim + plot_edges + plot_past + plot_size
+  
+  legend_hack <- guides(fill = "none", colour = "none")
+  
+  base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
+})
+
+ggsave(file = "plots/fig4.pdf", arrangeGrob(grobs = fig4, ncol = 4), onefile=F, useDingbats=FALSE)
 ```
 
 Fig 3A
@@ -323,7 +367,7 @@ fig3a <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 fig3a
 
 #saving pdfs
-ggsave(file = "fig3a.pdf",onefile=F,useDingbats=FALSE)
+ggsave(file = "plots/fig3a.pdf",onefile=F,useDingbats=FALSE)
 ```
 
 Fig 3B
@@ -342,7 +386,7 @@ partial_edges <- edges[which_edges,]
 ############
 plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
 
-plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape=21, stroke = 0.25)
+plot_past <- geom_point(data = past_genes, aes(x, y, size = size), fill = past_fill, color = past_color, shape = past_genes$shape, stroke = 0.25)
 
 #labels
 plot_text <- geom_text(data = current_genes, text_aes, size = 1, vjust = 0, nudge_y = 1.75, alpha=0.5)
@@ -362,7 +406,7 @@ fig3b <- base + plot_current_pies + plot_pie_fill + plot_text + plot_theme
 fig3b
 
 #saving pdfs
-ggsave(file = "fig3b.pdf",onefile=F,useDingbats=FALSE)
+ggsave(file = "plots/fig3b.pdf",onefile=F,useDingbats=FALSE)
 ```
 
 # upset
@@ -373,7 +417,7 @@ systems_totals <- systems_totals[names(systems_totals)[order(names(systems_total
 setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
 
 #1a
-pdf("fig1a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+pdf("plots/fig1a_set.pdf",width=18,height=10,onefile=F,useDingbats=FALSE)
 upset(
   vertices %>% select(sistemas)
   ,mb.ratio = c(0.7, 0.3)
@@ -392,7 +436,7 @@ systems_totals <- colSums(vertices %>% filter(root == 37) %>% select(sistemas))
 systems_totals <- systems_totals[systems_totals>0]
 setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
 
-pdf("fig3a_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+pdf("plots/fig3a_set.pdf",width=16,height=8,onefile=F,useDingbats=FALSE)
 upset(
   vertices %>% filter(root == 37) %>% select(sistemas)
   ,mb.ratio = c(0.7, 0.3)
@@ -411,7 +455,7 @@ systems_totals <- colSums(vertices %>% filter(root < 37 & root >= 26) %>% select
 systems_totals <- systems_totals[systems_totals>0]
 setcolors <- pie_colors[names(systems_totals)[order(systems_totals, decreasing = T)]]
 
-pdf("fig3b_set.pdf",width=16,height=12,onefile=F,useDingbats=FALSE)
+pdf("plots/fig3b_set.pdf",width=16,height=8,onefile=F,useDingbats=FALSE)
 upset(
   vertices %>% filter(root < 37 & root >= 26) %>% select(sistemas)
   ,mb.ratio = c(0.7, 0.3)
