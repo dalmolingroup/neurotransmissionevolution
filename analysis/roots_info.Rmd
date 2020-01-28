@@ -13,8 +13,6 @@ output:
 # Intro
 Obter o layout da rede no RedeR
 ```{r message=FALSE}
-library(XML)
-library(rentrez)
 library(tidyverse)
 library(magrittr)
 
@@ -83,33 +81,6 @@ annotation_cs <- wide_annotation %>%
   arrange(-root) %>%
   mutate_at(vars(-root), cumsum) %>%
   pivot_longer(-root, names_to = "annotation", values_to = "n")
-```
-
-# extant clades' names
-```{r}
-lineages <- entrez_fetch(
-  db = "taxonomy",
-  id = string_eukaryotes[["new_taxid"]],
-  rettype = "xml",
-  retmode = "xml",
-  parsed=TRUE
-)
-
-string_eukaryotes %<>% mutate(
-  root = ogr@tree$tip.group[taxid],
-  lineage = xpathSApply(lineages, "//Lineage", XML::xmlValue)
-)
-
-roots_extant_clades <- string_eukaryotes %>%
-  group_by(root) %>%
-  summarise(lineage = Reduce(intersect, strsplit(lineage, "; ")) %>% list) %>%
-  mutate(extant_name = mapply(setdiff,     lineage, lead(lineage))) %>%
-  mutate(extant_name = mapply(setdiff, extant_name,  lag(lineage))) %>%
-  mutate(extant_name = map_chr(extant_name, 1, .default = NA)) %>%
-  mutate(extant_name = coalesce(extant_name, root %>% as.character, extant_name)) %>%
-  select(root, extant_name)
-
-# write_tsv(roots_extant_clades, "extant_clades.tsv")
 ```
 
 # plot

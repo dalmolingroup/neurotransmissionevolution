@@ -16,12 +16,13 @@ output:
 # Objetivo
 Obter os enraizamentos
 ```{r message=FALSE}
-library(dplyr)
-library(readr)
-library(tibble)
+library(tidyverse)
 library(magrittr)
 library(geneplast)
 library(ape)
+
+library(XML)
+library(rentrez)
 ```
 
 # Dados
@@ -71,7 +72,47 @@ roots <- groot.get(ogr, what="results") %>%
   select(cog_id, Root) %>%
   rename(root = Root)
 
-write_tsv(roots, "../inst/extdata/cogs_roots.tsv")
+# write_tsv(roots, "../inst/extdata/cogs_roots.tsv")
+```
+
+# extant clades' names
+```{r}
+lineages <- entrez_fetch(
+  db = "taxonomy",
+  id = string_eukaryotes[["new_taxid"]],
+  rettype = "xml",
+  retmode = "xml",
+  parsed=TRUE
+)
+
+string_eukaryotes %<>% mutate(
+  root = ogr@tree$tip.group[taxid],
+  lineage_txt = xpathSApply(lineages, "//Lineage", XML::xmlValue)
+)
+
+all_equal <- function(...) {
+  Reduce(identical, list(...))
+}
+
+a <- string_eukaryotes %>%
+  mutate(lineage_list = strsplit(lineage_txt, "; ")) %>%
+  group_by(root) %>%
+  summarise(group_depth  = map_int(lineage_list, length) %>% min)
+
+pmap(strsplit(string_eukaryotes$lineage_txt, "; "), ~ {
+  length(unique(.)) == 1
+})
+
+roots_names <- string_eukaryotes %>%
+  group_by(root) %>%
+  summarise(lineage = Reduce(intersect, strsplit(lineage_txt, "; ")) %>% list) %>%
+  mutate(clade_name = mapply(setdiff,    lineage, lead(lineage))) %>%
+  mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
+  mutate(clade_name = map_chr(clade_name, 1, .default = NA)) %>%
+  mutate(clade_name = coalesce(clade_name, root %>% as.character, clade_name)) #%>%
+  # select(root, clade_name)
+
+# write_tsv(roots_extant_clades, "extant_clades.tsv")
 ```
 
 # plotting all patterns
