@@ -78,11 +78,11 @@ roots <- groot.get(ogr, what="results") %>%
 # extant clades' names
 ```{r}
 lineages <- entrez_fetch(
-  db = "taxonomy",
-  id = string_eukaryotes[["new_taxid"]],
+  db      = "taxonomy",
+  id      = string_eukaryotes[["new_taxid"]],
   rettype = "xml",
   retmode = "xml",
-  parsed=TRUE
+  parsed  = TRUE
 )
 
 string_eukaryotes %<>% mutate(
@@ -93,6 +93,25 @@ string_eukaryotes %<>% mutate(
 all_equal <- function(...) {
   Reduce(identical, list(...))
 }
+
+a <- string_eukaryotes %>%
+  
+  group_by(root) %>%
+  mutate(lca_size = n_distinct(new_taxid)) %>%
+  
+  mutate(clade_name = strsplit(lineage_txt, "; ")) %>%
+  unnest(clade_name) %>%
+  
+  group_by(new_taxid) %>%
+  mutate(clade_depth = row_number()) %>%
+  
+  group_by(root, clade_name) %>%
+  # summarise(clade_size = n())
+  filter(n() == lca_size) %>%
+  
+  group_by(new_taxid) %>%
+  filter(clade_depth == max(clade_depth))
+  
 
 a <- string_eukaryotes %>%
   mutate(lineage_list = strsplit(lineage_txt, "; ")) %>%
