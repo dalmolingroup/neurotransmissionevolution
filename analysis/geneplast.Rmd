@@ -105,22 +105,28 @@ a <- string_eukaryotes %>%
   group_by(new_taxid) %>%
   mutate(clade_depth = row_number()) %>%
   
-  group_by(root, clade_name) %>%
-  # summarise(clade_size = n())
-  filter(n() == lca_size) %>%
+  group_by(root, clade_name, clade_depth) %>%
+  # filter(n() == lca_size) %>%
+  summarise(clade_size = n()) %>%
+  
+  group_by(root) %>%
+  summarise(collapse_at_depth = max(clade_depth[clade_size == max(clade_size)]))
   
   group_by(new_taxid) %>%
   filter(clade_depth == max(clade_depth))
   
-
-a <- string_eukaryotes %>%
-  mutate(lineage_list = strsplit(lineage_txt, "; ")) %>%
+  
+roots_names <- string_eukaryotes %>%
+  mutate(lineage_split = strsplit(lineage_txt, "; ")) %>%
   group_by(root) %>%
-  summarise(group_depth  = map_int(lineage_list, length) %>% min)
+  summarise(lineage = Reduce(intersect, lineage_split) %>% list,
+            lineage_list = lineage_split %>% list) %>%
+  mutate(clade_name = mapply(setdiff,    lineage, lead(lineage))) %>%
+  mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
+  mutate(clade_name = map_chr(clade_name, 1, .default = NA)) %>%
+  mutate(clade_name = coalesce(clade_name, lineage_list %>% flatten %>% map(length(lineage)+1) %>% unlist %>% unique %>% paste0(collapse="; "), clade_name)) #%>%
+  select(root, clade_name)
 
-pmap(strsplit(string_eukaryotes$lineage_txt, "; "), ~ {
-  length(unique(.)) == 1
-})
 
 roots_names <- string_eukaryotes %>%
   group_by(root) %>%
@@ -129,7 +135,7 @@ roots_names <- string_eukaryotes %>%
   mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
   mutate(clade_name = map_chr(clade_name, 1, .default = NA)) %>%
   mutate(clade_name = coalesce(clade_name, root %>% as.character, clade_name)) #%>%
-  # select(root, clade_name)
+  select(root, clade_name)
 
 # write_tsv(roots_extant_clades, "extant_clades.tsv")
 ```
