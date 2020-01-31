@@ -1,4 +1,4 @@
-root	extant_name
+root	clade_name
 1	Homo
 2	Pan
 3	Gorilla
@@ -12,7 +12,7 @@ root	extant_name
 11	Scandentia
 12	Glires
 13	Laurasiatheria
-14	14
+14	Xenarthra; Afrotheria
 15	Metatheria
 16	Prototheria
 17	Sauropsida
@@ -21,18 +21,18 @@ root	extant_name
 20	Actinopterygii
 21	Tunicata
 22	Cephalochordata
-23	23
-24	24
+23	Echinodermata; Hemichordata
+24	Ecdysozoa; Spiralia
 25	Spiralia
 26	Cnidaria
 27	Ctenophora
 28	Placozoa
 29	Porifera
-30	30
+30	Ichthyosporea; Choanoflagellata; Filasterea; Rotosphaerida
 31	Fungi
 32	Amoebozoa
 33	Viridiplantae
-34	34
+34	Euglenozoa; Metamonada; Heterolobosea; Sar
 35	Rhodophyta
-36	36
+36	Sar; Haptista; Cryptophyceae; Apusozoa
 37	Metamonada

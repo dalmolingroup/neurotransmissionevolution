@@ -86,58 +86,38 @@ lineages <- entrez_fetch(
 )
 
 string_eukaryotes %<>% mutate(
-  root = ogr@tree$tip.group[taxid],
+  root        = ogr@tree$tip.group[taxid],
   lineage_txt = xpathSApply(lineages, "//Lineage", XML::xmlValue)
 )
-
-all_equal <- function(...) {
-  Reduce(identical, list(...))
-}
-
-a <- string_eukaryotes %>%
-  
-  group_by(root) %>%
-  mutate(lca_size = n_distinct(new_taxid)) %>%
-  
-  mutate(clade_name = strsplit(lineage_txt, "; ")) %>%
-  unnest(clade_name) %>%
-  
-  group_by(new_taxid) %>%
-  mutate(clade_depth = row_number()) %>%
-  
-  group_by(root, clade_name, clade_depth) %>%
-  # filter(n() == lca_size) %>%
-  summarise(clade_size = n()) %>%
-  
-  group_by(root) %>%
-  summarise(collapse_at_depth = max(clade_depth[clade_size == max(clade_size)]))
-  
-  group_by(new_taxid) %>%
-  filter(clade_depth == max(clade_depth))
-  
   
 roots_names <- string_eukaryotes %>%
+  
+  # splitting lienage text
   mutate(lineage_split = strsplit(lineage_txt, "; ")) %>%
   group_by(root) %>%
+  
+  # for each root, get all lineages intersections
+  # but also keep complete lineages for future use
   summarise(lineage = Reduce(intersect, lineage_split) %>% list,
             lineage_list = lineage_split %>% list) %>%
+  
+  # windowed lineage differences (window size = 3)
   mutate(clade_name = mapply(setdiff,    lineage, lead(lineage))) %>%
   mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
+  
+  # defaults to the furthest rank (i.e. the 1st one)
   mutate(clade_name = map_chr(clade_name, 1, .default = NA)) %>%
-  mutate(clade_name = coalesce(clade_name, lineage_list %>% flatten %>% map(length(lineage)+1) %>% unlist %>% unique %>% paste0(collapse="; "), clade_name)) #%>%
-  select(root, clade_name)
-
-
-roots_names <- string_eukaryotes %>%
+  
+  # finding at what rank depth should mixed lineages be collapsed
+  mutate(collapse_depth = lineage %>% map_int(length) + 1) %>%
   group_by(root) %>%
-  summarise(lineage = Reduce(intersect, strsplit(lineage_txt, "; ")) %>% list) %>%
-  mutate(clade_name = mapply(setdiff,    lineage, lead(lineage))) %>%
-  mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
-  mutate(clade_name = map_chr(clade_name, 1, .default = NA)) %>%
-  mutate(clade_name = coalesce(clade_name, root %>% as.character, clade_name)) #%>%
+  
+  # fallback_name is the collapsed lineage ranks
+  mutate(fallback_name = lineage_list %>% flatten %>% map2_chr(collapse_depth, `[`) %>% unique %>% paste0(collapse="; ")) %>%
+  mutate(clade_name = coalesce(clade_name, fallback_name)) %>%
   select(root, clade_name)
 
-# write_tsv(roots_extant_clades, "extant_clades.tsv")
+write_tsv(roots_names, "extant_clades.tsv")
 ```
 
 # plotting all patterns
