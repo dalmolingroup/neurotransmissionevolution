@@ -25,6 +25,7 @@ library(tidytree)
 ```{r rows.print=5}
 data(
   ogr,
+  ogp,
   gene_ids,
   gene_pathways,
   pathway_neuroexclusivity,
@@ -42,6 +43,8 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
   ))
 
 cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+
+roots_extant_clades <- read_tsv("extant_clades.tsv", col_types = "ic")
 ```
 
 # joining data
@@ -87,7 +90,7 @@ annotation_cs <- wide_annotation %>%
 ```{r}
 root_text <- roots_extant_clades %>% filter(root %in% ne_count[["root"]])
 
-text <- geom_text(data = root_text, aes(x = root, label = extant_name, y=75), angle=90, hjust=0)
+text <- geom_text(data = root_text, aes(x = root, label = clade_name, y=75), angle=90, hjust=0)
 line_aes <- aes(x = root, y = n, group = annotation, color = annotation)
 scale_reverse <- scale_x_reverse(breaks = seq(0, 40, by = 1), expand = c(0,0), minor_breaks = NULL)
 
@@ -114,7 +117,13 @@ tree_heatmap <- ogr@orthoct %>%
   as_tibble(rownames = NA) %>%
   select(iono_cogs)
 
-to_drop <- string_eukaryotes %>% filter(!root %in% 29:26) %>% pull(taxid)
+tree_heatmap2 <- ogp@orthodist %>%
+  as_tibble(rownames = NA) %>%
+  select(iono_cogs)
+
+string_eukaryotes %<>% inner_join(ogr@spbranches, by = c("taxid" = "ssp_id")) %>% rename(root = `9606`)
+
+to_drop <- ogr@spbranches %>% filter(!`9606` %in% 29:26) %>% pull(ssp_id)
 
 early_animals <- hybrid_tree %>%
   drop.tip(to_drop) %>%
@@ -138,5 +147,18 @@ gheatmap(
   high = "#00AA44"
 )
 ggsave("plots/roots_ionotropic_pattern.pdf", width = 10, height = 6)
+
+gheatmap(
+  p,
+  tree_heatmap2,
+  offset=15,
+  width=8,
+  font.size=3,
+  colnames_angle=45,
+  hjust=0.25,
+  low = "#DDDDDD",
+  high = "#00AA44"
+)
+ggsave("plots/roots_ionotropic_abundance.pdf", width = 10, height = 6)
 ```
 
