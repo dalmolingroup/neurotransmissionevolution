@@ -101,7 +101,7 @@ roots_names <- string_eukaryotes %>%
   summarise(lineage = Reduce(intersect, lineage_split) %>% list,
             lineage_list = lineage_split %>% list) %>%
   
-  # windowed lineage differences (window size = 3)
+  # windowed lineage differences (window size = 3 -> curr, next, prev)
   mutate(clade_name = mapply(setdiff,    lineage, lead(lineage))) %>%
   mutate(clade_name = mapply(setdiff, clade_name,  lag(lineage))) %>%
   
@@ -110,10 +110,16 @@ roots_names <- string_eukaryotes %>%
   
   # finding at what rank depth should mixed lineages be collapsed
   mutate(collapse_depth = lineage %>% map_int(length) + 1) %>%
-  group_by(root) %>%
   
+  group_by(root) %>%
   # fallback_name is the collapsed lineage ranks
-  mutate(fallback_name = lineage_list %>% flatten %>% map2_chr(collapse_depth, `[`) %>% unique %>% paste0(collapse="; ")) %>%
+  mutate(fallback_name = lineage_list %>%
+           flatten %>%
+           map2_chr(collapse_depth, `[`) %>%
+           table %>%
+           sort(TRUE) %>%
+           names %>%
+           paste0(collapse="; ")) %>%
   mutate(clade_name = coalesce(clade_name, fallback_name)) %>%
   select(root, clade_name)
 
