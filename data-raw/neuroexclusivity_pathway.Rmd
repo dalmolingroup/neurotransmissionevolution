@@ -30,8 +30,8 @@ data(gene_ids, entrez_to_pathway, package = "neurotransmission")
 
 # Pathway names
 ```{r}
-if (!file.exists("pathway_names.tsv")) {
-  download.file("http://rest.kegg.jp/list/pathway/hsa","pathway_names.tsv")
+if (!file.exists("download/pathway_names.tsv")) {
+  download.file("http://rest.kegg.jp/list/pathway/hsa","download/pathway_names.tsv")
 }
 
 pathway_names <- read_tsv(

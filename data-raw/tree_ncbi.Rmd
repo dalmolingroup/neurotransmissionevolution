@@ -3,7 +3,7 @@ title: "NCBI eukaryotes info"
 output:
   pdf_document:
     toc: yes
-    toc_depth: '2'
+    # toc_depth: '2'
   html_document:
     df_print: paged
     highlight: espresso
