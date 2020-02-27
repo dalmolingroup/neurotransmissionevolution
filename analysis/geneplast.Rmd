@@ -118,7 +118,8 @@ roots_names <- string_eukaryotes %>%
            map2_chr(collapse_depth, `[`) %>%
            table %>%
            sort(TRUE) %>%
-           names %>%
+           # names %>%
+           { paste0(names(.), " (", .,")") } %>%
            paste0(collapse="; ")) %>%
   mutate(clade_name = coalesce(clade_name, fallback_name)) %>%
   select(root, clade_name)
