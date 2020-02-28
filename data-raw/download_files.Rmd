@@ -8,24 +8,38 @@ output:
 ---
 
 ```{r}
+library(here)
 library(purrr)
 library(tibble)
 
 download_if_missing <- function(filename, url) {
-
+  if (!file.exists(here("data-raw", "download", filename))) {
+    download.file(url, filename)
+  }
 }
 
 files <- tribble(
   ~filename,           ~url,
   "species.v11.0.txt", "https://stringdb-static.org/download/species.v11.0.txt",
-  "x",                 "y",
-  "x",                 "y",
-  "x",                 "y",
-  "x",                 "y",
-  "x",                 "y",
-  "x",                 "y",
-  "x",                 "y",
+  # "download/taxonomy", "https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz",
+  # "x",                 "y",
+  # "x",                 "y",
 )
 
 files
 ```
+
+```{r}
+pwalk(files, download_if_missing)
+```
+
+# Special cases
+```{r}
+if (!file.exists("download/taxonomy")) {
+  tmp <- tempfile()
+  download.file("https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz", tmp)
+  untar(tmp, exdir = "download/taxonomy")
+  unlink(tmp)
+}
+```
+
