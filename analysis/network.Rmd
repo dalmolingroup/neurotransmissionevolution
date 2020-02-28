@@ -45,9 +45,9 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+cog_roots <- read_tsv("geneplast_roots_modified.tsv", col_types = "ci")
 
-roots_extant_clades <- read_tsv("extant_clades.tsv", col_types = "ic")
+roots_extant_clades <- read_tsv("geneplast_clade_names_modified.tsv", col_types = "ic")
 ```
 
 # RedeR
