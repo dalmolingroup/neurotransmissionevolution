@@ -1,0 +1,54 @@
+---
+# layout: 12pt,review
+linenumbers: true
+title: "Supplementary Material"
+subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
+author: 
+  - Lucas Henriques Viscardi
+  - Danilo Oliveira Imparato
+  - Maria Cátira Bortolini
+  - Rodrigo Juliani Siqueira Dalmolin
+abstract: |
+  Model uncertainty and limited data are fundamental challenges to
+  robust management of human intervention in a natural system.
+  These challenges are acutely highlighted by concerns that
+  many ecological systems may contain tipping points, such as
+  Allee population sizes.  Before a collapse, we do not know
+  where the tipping points lie, if they exist at all.  Hence,
+  we know neither a complete model of the system dynamics nor
+  do we have access to data in some large region of state-space
+  where such a tipping point might exist.
+  
+keywords:
+  - Evolution
+  - Nervous system
+  
+header-includes:
+   - \usepackage{docmute}
+
+## rmarkdown render options
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 6
+    highlight: zenburn
+    # pandoc_args: "--highlight=breezedark"
+    # fig_caption: true
+    # template: components/elsarticle.latex
+    # keep_tex: true
+---
+
+# Project structure
+This is the title page
+
+# Data collection
+Nested title
+
+# Preprocessing
+Preprocessing
+
+# Analysis
+Analysis
+
+```{r child='../data-raw/md/download_files.md'}
+```
