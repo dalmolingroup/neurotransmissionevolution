@@ -1,7 +1,5 @@
 ---
-knit: (function(i, encoding) { rmarkdown::render(i, output_dir = "md") })
-# knit: (function(i, encoding) { ezknitr::ezknit(i, out_dir = "../manuscripts", fig_dir = "figs", keep_html = F) })
-# output: md_document
+knit: neurotransmission::custom_knit
 output:
   md_document:
     variant: markdown_github
@@ -61,16 +59,16 @@ files
 ```
 
 ```{r}
-pwalk(files, download_if_missing)
+# pwalk(files, download_if_missing)
 ```
 
 # Special cases
 ```{r}
-if (!file.exists("download/taxonomy")) {
-  tmp <- tempfile()
-  download.file("https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz", tmp)
-  untar(tmp, exdir = "download/taxonomy")
-  unlink(tmp)
-}
+# if (!file.exists("download/taxonomy")) {
+#   tmp <- tempfile()
+#   download.file("https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz", tmp)
+#   untar(tmp, exdir = "download/taxonomy")
+#   unlink(tmp)
+# }
 ```
 
