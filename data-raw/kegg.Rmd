@@ -17,7 +17,7 @@ output:
 This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table
 ```{r message=FALSE}
 library(tidyverse)
-library(tidylog)
+# library(tidylog)
 library(magrittr)
 ```
 

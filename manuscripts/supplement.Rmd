@@ -41,14 +41,43 @@ output:
 # Project structure
 This is the title page
 
-# Data collection
-Nested title
-
 # Preprocessing
 Preprocessing
+
+<!--- Eukaryota species tree -->
+## Eukaryota species tree
+Explanation
+
+### NCBI Taxonomy tree
+Explanation
+
+### Duplicated Genera
+
+### Hybrid tree
+Explanation
+
+<!--- Kegg annotation -->
+## Gene selection and annotation
+
+<!--- Kegg annotation -->
+## Gene selection and annotation
+
+<!--- Neuroexclusivity -->
+## Neuroexclusivity
+Explanation
+
+### Expression
+
+### Pathways
+
+<!--- COG data -->
+## COG data
+
+<!--- Network -->
+## Network
 
 # Analysis
 Analysis
 
-```{r child='../data-raw/md/download_files.md'}
+```{r child='download_files.md'}
 ```
