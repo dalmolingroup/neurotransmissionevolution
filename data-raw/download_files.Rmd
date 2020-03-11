@@ -1,10 +1,10 @@
 ---
 knit: neurotransmission::custom_knit
-output:
-  md_document:
-    variant: markdown_github
-    df_print: kable
-    dev: pdf
+# output:
+#   md_document:
+#     variant: markdown_github
+#     df_print: kable
+#     dev: pdf
 ---
 
 ```{r}
@@ -55,11 +55,12 @@ files <- tribble(
   # "Homo_sapiens.gene_info.gz",
 )
 
-files
+knitr::kable(files, "markdown", booktabs = F)
 ```
 
 ```{r}
 # pwalk(files, download_if_missing)
+plot(1,1)
 ```
 
 # Special cases
