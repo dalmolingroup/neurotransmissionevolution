@@ -1,26 +1,15 @@
 ---
-title: "NCBI eukaryotes info"
-output:
-  pdf_document:
-    toc: yes
-    # toc_depth: '2'
-  html_document:
-    df_print: paged
-    highlight: espresso
-    number_sections: yes
-    theme: default
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
+title: "NCBI Taxonomy tree"
+knit: neurotransmission::custom_knit
 ---
 # Packages
 ```{r message=FALSE}
-library(readr)
-library(dplyr)
-library(tidyr)
+library(tidyverse)
 library(igraph)
 library(tidylog)
 library(magrittr)
+
+library(neurotransmission)
 ```
 
 # Downloading files
@@ -31,6 +20,7 @@ if (!file.exists("download/taxonomy")) {
   untar(tmp, exdir = "download/taxonomy")
   unlink(tmp)
 }
+
 
 if (!file.exists("download/species.v11.0.txt")) {
   download.file("https://stringdb-static.org/download/species.v11.0.txt", "download/species.v11.0.txt")

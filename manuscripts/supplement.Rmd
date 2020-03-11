@@ -23,8 +23,8 @@ keywords:
   - Evolution
   - Nervous system
   
-header-includes:
-   - \usepackage{docmute}
+# header-includes:
+#    - \usepackage{docmute}
 
 ## rmarkdown render options
 output:
@@ -38,6 +38,7 @@ output:
     # keep_tex: true
 ---
 
+<!--- Project structure -->
 # Project structure
 This is the title page
 

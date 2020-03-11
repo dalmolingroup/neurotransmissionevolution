@@ -1,17 +1,6 @@
 ---
 title: 'Gene identifiers and pathway annotation'
-output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
-  html_document:
-    df_print: paged
-    highlight: espresso
-    number_sections: yes
-    theme: default
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
+knit: neurotransmission::custom_knit
 ---
 # Intro
 This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table

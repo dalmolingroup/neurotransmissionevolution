@@ -1,13 +1,13 @@
-Package: neurotransmission
-Title: What the Package Does (One Line, Title Case)
+Package: neurotransmissionevolution
+Title: Research Compendium for Viscardi et al, 2020.
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Danilo",
+           family = "Imparato",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
+           email = "imparatodanilo@gmail.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: This package serves as a research compendium for the paper titled "Ionotropic receptors as the driving force behind human synapse establishment".
 License: What license it uses
 Encoding: UTF-8
 LazyData: true

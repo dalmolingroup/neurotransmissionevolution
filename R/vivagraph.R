@@ -75,9 +75,9 @@ vivagraph <- function(graph,
     })
   }
 
-  shiny::addResourcePath("www", system.file("www/vivagraph", package="neurotransmission"))
+  shiny::addResourcePath("www", system.file("www/vivagraph", package="neurotransmissionevolution"))
 
-  layout <- shiny::runGadget(shiny::shinyApp(ui = shiny::htmlTemplate(system.file("www/vivagraph/index.html", package="neurotransmission")), server))
+  layout <- shiny::runGadget(shiny::shinyApp(ui = shiny::htmlTemplate(system.file("www/vivagraph/index.html", package="neurotransmissionevolution")), server))
 
   matrix(layout, ncol=2,byrow=T)
 }
