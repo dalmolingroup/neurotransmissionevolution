@@ -17,29 +17,28 @@ download_if_missing <- function(url, filename) {
 
 #' @export
 custom_knit <- function(input, encoding) {
+  knitr::opts_knit$set(base.dir = here::here("manuscripts"));
+  knitr::opts_chunk$set(fig.path = "figs/");
+  knitr::knit(input, here::here("manuscripts", paste0(tools::file_path_sans_ext(basename(input)), ".md")))
+}
+
+custom_knit_old <- function(input, encoding) {
   ezknitr::ezknit(input, out_dir = here::here("manuscripts"), fig_dir = "figs", keep_html = F)
 }
 
-custom_knit2 <- function(input, encoding) {
-  knitr::opts_chunk$set(fig.path = "figsAAA")
+custom_knit2 <- function(input, encoding, base.dir = here::here("manuscripts"), fig.path = "figs") {
+  knitr::opts_knit$set(base.dir = base.dir)
+  knitr::opts_chunk$set(fig.path = fig.path)
+
   rmarkdown::render(
     input,
     encoding       = encoding,
-    output_dir     = here::here("manuscripts"),
+    output_dir     = base.dir,
     output_format  = "md_document",
     output_options = list(
       variant  = "markdown_github",
       df_print = "kable",
       dev      = "pdf"
     )
-    # fig_dir = "figs",
-    # keep_html = F
   )
-}
-
-
-custom_knit3 <- function(input, encoding) {
-  knitr::opts_knit$set(base.dir = "../manuscripts");
-  knitr::opts_chunk$set(fig.path = "figsAAA");
-  knitr::opts_knit
 }
