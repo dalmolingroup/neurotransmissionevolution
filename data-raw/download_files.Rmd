@@ -1,16 +1,20 @@
 ---
-knit: neurotransmission::custom_knit
+knit: neurotransmissionevolution::custom_knit
 # output:
 #   md_document:
 #     variant: markdown_github
 #     df_print: kable
 #     dev: pdf
+always_allow_html: yes
 ---
 
 ```{r}
 library(here)
 library(purrr)
 library(tibble)
+
+library(knitr)
+library(kableExtra)
 
 # download_if_missing <- function(filename, url) {
 #   if (!file.exists(here("data-raw", "download", filename))) {
@@ -55,7 +59,9 @@ files <- tribble(
   # "Homo_sapiens.gene_info.gz",
 )
 
-knitr::kable(files, "markdown", booktabs = F)
+files %>%
+  kable(format = "html") %>%
+  kable_styling(bootstrap_options = "striped")
 ```
 
 ```{r}

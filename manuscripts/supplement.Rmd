@@ -23,8 +23,8 @@ keywords:
   - Evolution
   - Nervous system
   
-# header-includes:
-#    - \usepackage{docmute}
+header-includes:
+   - \usepackage{docmute}
 
 ## rmarkdown render options
 output:
@@ -80,5 +80,7 @@ Explanation
 # Analysis
 Analysis
 
-```{r child='download_files.md'}
+```{r childa='download_files.tex'}
 ```
+
+\input{download_files.tex}

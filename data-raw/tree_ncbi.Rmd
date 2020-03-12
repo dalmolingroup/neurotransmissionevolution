@@ -25,33 +25,35 @@ untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 string_species <- read_tsv(
   "download/species.v11.0.txt",
   skip = 1,
-  col_names = c("taxid", "string_name"),
-  col_types = cols_only("c", "-", "c")
+  col_names = c(
+    "taxon_id",
+    "string_type",
+    "string_name",
+    "ncbi_official_name"
+  ),
+  col_types = cols_only(
+    taxon_id = "c",
+    string_name = "c"
+  )
 )
 
-#taxon_id	STRING_type	STRING_name_compact	official_name_NCBI
-string_species <- read_tsv(
-  "download/species.v11.0.txt",
-  skip = 1,
-  col_names = F,
-  col_types = cols_only("c","-","c","-")
-)
-
+# these .dmp files are very tricky to read
+# the following read_delims are very hacky
 ncbi_merged_ids <- read_delim(
-  "download/taxonomy/merged.dmp",
+  "download/taxdump/merged.dmp",
   delim = "|",
   trim_ws = TRUE,
   col_names = c("taxid","new_taxid"),
-  col_types = cols_only("c", "c")
+  col_types = "cc"
 )
 
 ncbi_edgelist <- read_delim(
-  "download/taxonomy/nodes.dmp",
+  "download/taxdump/nodes.dmp",
   skip = 1,
   delim = "|",
   trim_ws = TRUE,
   col_names = c("n1","n2"),
-  col_types = cols_only("c", "c")
+  col_types = "cc"
 )
 
 ncbi_taxon_names <- read_delim(
@@ -59,7 +61,7 @@ ncbi_taxon_names <- read_delim(
   delim = "|",
   trim_ws = TRUE,
   col_names = c("name","ncbi_name","type"),
-  col_types = cols_only("c", "c", "-", "c")
+  col_types = "cc-c"
 )
 ```
 

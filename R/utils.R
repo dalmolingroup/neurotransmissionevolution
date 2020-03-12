@@ -15,13 +15,18 @@ download_if_missing <- function(url, filename = basename(url)) {
 #' @export
 custom_knit <- function(input, encoding, fig.path = "figs") {
   custom_options <- rmarkdown::knitr_options(
-    opts_knit  = list(base.dir = here::here("manuscripts")),
+    opts_knit  = list(
+      base.dir = here::here("manuscripts"),
+      self.contained = FALSE
+    ),
     opts_chunk = list(fig.path = "figs/", dev = "pdf")
   )
 
   custom_format <- rmarkdown::output_format(
     knitr    = custom_options,
-    pandoc   = rmarkdown::pandoc_options(to = "gfm", ext = ".md"),
+    # pandoc   = rmarkdown::pandoc_options(to = "gfm", ext = ".md"),
+    # pandoc   = rmarkdown::pandoc_options(to = "html", ext = ".html"),
+    pandoc   = rmarkdown::pandoc_options(to = "latex", ext = ".tex"),
     df_print = "kable"
   )
 
@@ -29,7 +34,8 @@ custom_knit <- function(input, encoding, fig.path = "figs") {
     input,
     encoding       = encoding,
     output_dir     = here::here("manuscripts"),
-    output_format  = custom_format
+    output_format  = custom_format,
+    output_options = list(always_allow_html = "yes")
   )
 }
 
