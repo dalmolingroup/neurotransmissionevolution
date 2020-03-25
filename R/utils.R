@@ -13,6 +13,27 @@ download_if_missing <- function(url, filename = basename(url)) {
 }
 
 #' @export
+print_dataframe_specification <- function(df, location, source, caption = "", desc_width = "20em") {
+
+    df <- cbind(`#` = 1:nrow(df), df) %>% dplyr::rename(
+      `Col. name` = col_name,
+      `Col. type` = col_type,
+      `Used?`     = used,
+      Example     = ex,
+      Description = desc
+    )
+
+    ncol_df <- ncol(df)
+
+    kdf <- knitr::kable(df, "latex", caption = caption, booktabs = T)
+    kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Source:", source)), bold = TRUE)
+    kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Location:", location)), bold = TRUE)
+    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "scale_down", "hold_position"))
+    kdf <- kableExtra::column_spec(kdf, ncol_df, width = desc_width)
+    kdf
+}
+
+#' @export
 custom_knit <- function(input, encoding, fig.path = "figs") {
   custom_options <- rmarkdown::knitr_options(
     opts_knit  = list(

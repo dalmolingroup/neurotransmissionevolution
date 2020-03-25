@@ -1,13 +1,13 @@
 ---
 # layout: 12pt,review
 linenumbers: true
-title: "Supplementary Material"
-subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
+title: "Ionotropic receptors as the driving force behind human synapse establishment"
+subtitle: "Supplementary Material"
 author: 
-  - Lucas Henriques Viscardi
-  - Danilo Oliveira Imparato
+  - Lucas H. Viscardi
+  - Danilo O. Imparato
   - Maria Cátira Bortolini
-  - Rodrigo Juliani Siqueira Dalmolin
+  - Rodrigo J. S. Dalmolin
 abstract: |
   Model uncertainty and limited data are fundamental challenges to
   robust management of human intervention in a natural system.
@@ -23,8 +23,27 @@ keywords:
   - Evolution
   - Nervous system
   
+# header-includes:
+   # - \usepackage[table]{xcolor}
+   # - \usepackage{docmute}
+   # - \usepackage{float}
+   # - \usepackage{booktabs}
+   
 header-includes:
-   - \usepackage{docmute}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
 
 ## rmarkdown render options
 output:
@@ -35,7 +54,7 @@ output:
     # pandoc_args: "--highlight=breezedark"
     # fig_caption: true
     # template: components/elsarticle.latex
-    # keep_tex: true
+    keep_tex: false
 ---
 
 <!--- Project structure -->
@@ -80,7 +99,19 @@ Explanation
 # Analysis
 Analysis
 
-```{r childa='download_files.tex'}
+```{r setup}
+library(magrittr)
+library(neurotransmissionevolution)
 ```
 
 \input{download_files.tex}
+
+Test tab2
+```{r}
+tibble::tribble(
+  ~col_name,   ~col_type, ~used, ~ex,                  ~desc,
+  "string_id", "numeric", "yes", "9606.ENSP000000666", "This represents the string protein identifier.",
+  "length",    "numeric", "yes", "666",                "This represents the protein size"
+) %>% print_dataframe_specification("a", "b", "caption")
+```
+

@@ -16,6 +16,8 @@ library(tibble)
 library(knitr)
 library(kableExtra)
 
+library(neurotransmissionevolution)
+
 # download_if_missing <- function(filename, url) {
 #   if (!file.exists(here("data-raw", "download", filename))) {
 #     download.file(url, filename)
@@ -59,9 +61,45 @@ files <- tribble(
   # "Homo_sapiens.gene_info.gz",
 )
 
+# files %>%
+#   kable(format = "html") %>%
+#   kable_styling(bootstrap_options = "striped")
+
 files %>%
-  kable(format = "html") %>%
-  kable_styling(bootstrap_options = "striped")
+  kable("latex", booktabs = T) %>%
+  kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+* **test_table.tsv**
+  * Just testing description
+  1. **string_id**
+    * **Description:** This represents the string protein identifier
+    * **Type:** numeric
+    * **Used:** yes
+    * **Example:** 9606.ENSP000007157
+  2. **length**
+    * **Description:** This represents the protein size
+    * **Type:** numeric
+    * **Used:** no
+    * **Example:** 462
+
+First table
+
+```{r}
+spec <- tibble::tribble(
+  ~col_name, ~col_type, ~used, ~ex, ~desc,
+  "string_id", "numeric", "yes", "9606.ENSP000007157", paste("This represents the string protein identifier.",
+                                                             "Like, really cool! Lorem ipsum dolar sit amet.",
+                                                             "Niiiiii. Lero lero coronavirus coronaipsum."),
+  "length", "numeric", "no", "462", "This represents the protein size",
+)
+
+# spec %>%
+#   kable("latex", booktabs = T) %>%
+#   add_header_above(c("test_table.tsv" = ncol(spec))) %>%
+#   kable_styling(latex_options = c("striped", "scale_down")) %>%
+#   column_spec(ncol(spec), width = "20em")
+print_dataframe_specification(spec, "a", "b", "caption")
 ```
 
 ```{r}
