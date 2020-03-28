@@ -49,7 +49,7 @@ header-includes:
 output:
   pdf_document:
     toc: yes
-    toc_depth: 6
+    toc_depth: 3
     highlight: zenburn
     # pandoc_args: "--highlight=breezedark"
     # fig_caption: true
@@ -62,16 +62,19 @@ output:
 This is the title page
 
 # Preprocessing
-Preprocessing
+This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
 
 <!--- Eukaryota species tree -->
 ## Eukaryota species tree
-Explanation
+We opted to use the TimeTree database in order to obtain an standardized Eukaryota species tree. However, some species were not present in it, so we devised a way to fill them in based on NCBI Taxonomy data. 
 
 ### NCBI Taxonomy tree
-Explanation
+First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes, thus making the task easier.
+<!-- \input{tree_ncbi.tex} -->
+\input{download_files.tex}
 
 ### Duplicated Genera
+Some species from different kingdoms may share the same genus name. These genera must be noted down because one of the ways we fill in missing species is by looking at genera names.
 
 ### Hybrid tree
 Explanation
@@ -104,7 +107,7 @@ library(magrittr)
 library(neurotransmissionevolution)
 ```
 
-\input{download_files.tex}
+<!-- \input{download_files.tex} -->
 
 Test tab2
 ```{r}

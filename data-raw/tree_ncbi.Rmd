@@ -2,42 +2,101 @@
 title: "NCBI Taxonomy tree"
 knit: neurotransmissionevolution::custom_knit
 ---
-# Packages
-```{r message=FALSE}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE,
+  cache.extra = file.mtime("download/taxdump.tar.gz")
+) 
+
 library(tidyverse)
 library(igraph)
-library(tidylog)
+# library(tidylog)
+library(tibble)
 library(magrittr)
 
 library(neurotransmissionevolution)
 ```
 
-# Downloading files
+#### Downloading data
 ```{r message=FALSE}
-download_if_missing("ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz")
+download_if_missing("http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz")
 download_if_missing("stringdb-static.org/download/species.v11.0.txt")
 
 untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ```
 
-# Loading data
-```{r message=FALSE, warning=FALSE}
-
+#### Loading data
+```{r results='asis', echo=FALSE}
+###################
+## string_species
+###################
+string_species_spec <- tribble(
+  ~col_name,            ~col_type,   ~used, ~ex,            ~desc,
+  "taxid",           "character", "yes", "9606",         "NCBI Taxonomy identifier",
+  "string_type",        "character", "no",  "core",         "if the genome of this species is core or periphery",
+  "string_name",        "character", "yes", "Homo sapiens", "STRING species name",
+  "ncbi_official_name", "character", "no",  "Homo sapiens", "NCBI Taxonomy species name"
+) %T>% print_dataframe_specification(
+  "data-raw/download/species.v11.0.txt",
+  "stringdb-static.org/download/species.v11.0.txt",
+  "Lists all organisms in STRING v11."
+)
+###################
+## ncbi_merged_ids
+###################
+ncbi_merged_ids_spec <- tribble(
+  ~col_name,   ~col_type,   ~used,  ~ex,    ~desc,
+  "taxid",     "character", "yes",  "9606", "id of node that has been merged",
+  "new_taxid", "character", "yes",  "core", "id of node that is the result of merging",
+) %T>% print_dataframe_specification(
+  "data-raw/download/taxdump/merged.dmp",
+  "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
+  "Links outdated taxon IDs to corresponding new ones."
+)
+###################
+## ncbi_edgelist
+###################
+ncbi_edgelist_spec <- tribble(
+  ~col_name,       ~col_type,  ~used,  ~ex,            ~desc,
+  "taxid",        "character", "yes",  "2",            "node id in NCBI taxonomy database",
+  "parent_taxid", "character", "yes",  "131567",       "parent node id in NCBI taxonomy database",
+  "rank",         "character", "no",   "superkingdom", "rank of this node",
+  "...",          "",          "no",   "",             "(too many unrelated fields)",
+) %T>% print_dataframe_specification(
+  "data-raw/download/taxdump/nodes.dmp",
+  "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
+  "Represents taxonomy nodes."
+)
+###################
+## ncbi_taxon_names
+###################
+ncbi_taxon_names_spec <- tribble(
+  ~col_name,     ~col_type,  ~used,  ~ex,                  ~desc,
+  "taxid",       "character", "yes",  "2",                 "the id of node associated with this name",
+  "name",        "character", "yes",  "Monera",            "name itself",
+  "unique_name", "character", "no",   "Monera <bacteria>", "the unique variant of this name if name not unique",
+  "name_class",  "character", "yes",  "scientific name",   "type of name",
+) %T>% print_dataframe_specification(
+  "data-raw/download/taxdump/names.dmp",
+  "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
+  "Links taxon IDs to actual species names."
+)
 ```
 
-
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
 string_species <- read_tsv(
   "download/species.v11.0.txt",
   skip = 1,
   col_names = c(
-    "taxon_id",
+    "taxid",
     "string_type",
     "string_name",
     "ncbi_official_name"
   ),
   col_types = cols_only(
-    taxon_id = "c",
+    taxid = "c",
     string_name = "c"
   )
 )
@@ -62,7 +121,7 @@ ncbi_edgelist <- read_delim(
 )
 
 ncbi_taxon_names <- read_delim(
-  "download/taxonomy/names.dmp",
+  "download/taxdump/names.dmp",
   delim = "|",
   trim_ws = TRUE,
   col_names = c("name","ncbi_name","type"),
@@ -70,20 +129,24 @@ ncbi_taxon_names <- read_delim(
 )
 ```
 
-# Creating graph
+#### Updating STRING taxon IDs\
+Some organisms taxon IDs are outdated in STRING. We must update them to work with the most recent NCBI Taxonomy data.
 ```{r}
-# leaving only scientific names
+string_species %<>%
+  left_join(ncbi_merged_ids) %>%
+  mutate(new_taxid = coalesce(new_taxid, taxid))
+```
+
+#### Creating tree graph\
+The first step is to create a directed graph representing the NCBI Taxonomy tree.
+```{r}
+# leaving only "scientific name" rows
 ncbi_taxon_names %<>%
   filter(type == "scientific name") %>%
   select(name, ncbi_name)
 
 # finding Eukaryota taxid
 eukaryota_taxon_id <- subset(ncbi_taxon_names, ncbi_name == "Eukaryota", "name", drop = TRUE)
-
-# updating string taxids
-string_species %<>%
-  left_join(ncbi_merged_ids) %>%
-  mutate(new_taxid = coalesce(new_taxid, taxid))
 
 # creating graph
 g <- graph_from_data_frame(ncbi_edgelist[,2:1], directed = TRUE, vertices = ncbi_taxon_names)
@@ -92,7 +155,8 @@ g <- graph_from_data_frame(ncbi_edgelist[,2:1], directed = TRUE, vertices = ncbi
 rm(ncbi_edgelist, ncbi_merged_ids)
 ```
 
-# Traversing graph from the "Eukaryota" node to its leaves
+#### Traversing the graph\
+The second step is to traverse the graph from the Eukaryota root node to STRING species nodes. This automatically drops all non-eukaryotes and results in a species tree representing only STRING eukaryotes (476).
 ```{r}
 eukaryote_root <- V(g)[eukaryota_taxon_id]
 eukaryote_leaves <- V(g)[string_species[["new_taxid"]]]
@@ -106,7 +170,9 @@ eukaryote_vertices <- eukaryote_paths %>% unlist %>% unique
 eukaryote_tree <- induced_subgraph(g, eukaryote_vertices, impl = "create_from_scratch")
 ```
 
-# Saving
+#### Saving\
+Saving `ncbi_tree` and `string_eukaryotes` for package use. These data files are documented by the package.
+We also create a plain text file `476_ncbi_eukaryotes.txt` containing the updated names of all 476 STRING eukaryotes. This file will be queried against the TimeTree website.
 ```{r}
 ncbi_tree <- treeio::as.phylo(eukaryote_tree)
 
