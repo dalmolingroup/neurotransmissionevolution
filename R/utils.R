@@ -30,17 +30,21 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
     kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Location:", location)), bold = TRUE, background = "#EEEEEE", line = FALSE)
     kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "scale_down", "hold_position"))
     kdf <- kableExtra::column_spec(kdf, ncol_df, width = desc_width)
-    kdf
+    print(kdf)
 }
 
 #' @export
 custom_knit <- function(input, encoding, fig.path = "figs") {
   custom_options <- rmarkdown::knitr_options(
-    opts_knit  = list(
-      base.dir = here::here("manuscripts"),
+    opts_knit        = list(
+      base.dir       = here::here("manuscripts"),
       self.contained = FALSE
     ),
-    opts_chunk = list(fig.path = "figs/", dev = "pdf")
+    opts_chunk = list(
+      fig.path   = "figs/",
+      dev        = "pdf",
+      cache.path = paste0("cache/", tools::file_path_sans_ext(basename(input)), "/latex/")
+    )
   )
 
   custom_format <- rmarkdown::output_format(

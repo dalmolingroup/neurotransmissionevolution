@@ -8,7 +8,16 @@ knit: neurotransmissionevolution::custom_knit
 always_allow_html: yes
 ---
 
+#### Creating tree graph\
+The first step is to create a directed graph representing the NCBI Taxonomy tree.
 ```{r}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE#,
+  # cache.path  = "aaaa" 
+)
+
 library(here)
 library(purrr)
 library(tibble)
@@ -107,8 +116,8 @@ print_dataframe_specification(spec, "a", "b", "caption")
 plot(1,1)
 ```
 
-# Special cases
 ```{r}
+knitr::opts_chunk$get("cache.path")
 # if (!file.exists("download/taxonomy")) {
 #   tmp <- tempfile()
 #   download.file("https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz", tmp)

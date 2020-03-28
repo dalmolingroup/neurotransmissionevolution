@@ -21,6 +21,11 @@ untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ```
 
 # Loading data
+```{r message=FALSE, warning=FALSE}
+
+```
+
+
 ```{r message=FALSE}
 string_species <- read_tsv(
   "download/species.v11.0.txt",
