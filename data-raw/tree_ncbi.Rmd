@@ -19,15 +19,17 @@ library(magrittr)
 library(neurotransmissionevolution)
 ```
 
-#### Downloading data
-```{r message=FALSE}
+#### **Downloading data**
+` `  
+```{r}
 download_if_missing("http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz")
 download_if_missing("stringdb-static.org/download/species.v11.0.txt")
 
 untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ```
 
-#### Loading data
+#### **Loading data**
+` `  
 ```{r results='asis', echo=FALSE}
 ###################
 ## string_species
@@ -85,7 +87,8 @@ ncbi_taxon_names_spec <- tribble(
 )
 ```
 
-```{r message=FALSE, warning=FALSE}
+` `  
+```{r}
 string_species <- read_tsv(
   "download/species.v11.0.txt",
   skip = 1,
@@ -129,7 +132,8 @@ ncbi_taxon_names <- read_delim(
 )
 ```
 
-#### Updating STRING taxon IDs\
+#### **Updating STRING taxon IDs**
+` `  
 Some organisms taxon IDs are outdated in STRING. We must update them to work with the most recent NCBI Taxonomy data.
 ```{r}
 string_species %<>%
@@ -137,7 +141,8 @@ string_species %<>%
   mutate(new_taxid = coalesce(new_taxid, taxid))
 ```
 
-#### Creating tree graph\
+#### **Creating tree graph**
+` `  
 The first step is to create a directed graph representing the NCBI Taxonomy tree.
 ```{r}
 # leaving only "scientific name" rows
@@ -155,7 +160,8 @@ g <- graph_from_data_frame(ncbi_edgelist[,2:1], directed = TRUE, vertices = ncbi
 rm(ncbi_edgelist, ncbi_merged_ids)
 ```
 
-#### Traversing the graph\
+#### **Traversing the graph**
+` `  
 The second step is to traverse the graph from the Eukaryota root node to STRING species nodes. This automatically drops all non-eukaryotes and results in a species tree representing only STRING eukaryotes (476).
 ```{r}
 eukaryote_root <- V(g)[eukaryota_taxon_id]
@@ -170,10 +176,11 @@ eukaryote_vertices <- eukaryote_paths %>% unlist %>% unique
 eukaryote_tree <- induced_subgraph(g, eukaryote_vertices, impl = "create_from_scratch")
 ```
 
-#### Saving\
+#### **Saving**
+` `  
 Saving `ncbi_tree` and `string_eukaryotes` for package use. These data files are documented by the package.
 We also create a plain text file `476_ncbi_eukaryotes.txt` containing the updated names of all 476 STRING eukaryotes. This file will be queried against the TimeTree website.
-```{r}
+```{r message=FALSE, warning=FALSE}
 ncbi_tree <- treeio::as.phylo(eukaryote_tree)
 
 # plot(ncbi_tree %>% ape::ladderize(), type="cladogram")

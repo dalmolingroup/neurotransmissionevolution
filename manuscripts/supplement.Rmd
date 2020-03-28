@@ -58,20 +58,23 @@ output:
 ---
 
 <!--- Project structure -->
-# Project structure
+**Project structure**
+=====================
 This is the title page
 
-# Preprocessing
+**Preprocessing**
+=================
 This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
 
 <!--- Eukaryota species tree -->
-## Eukaryota species tree
+**Eukaryota species tree**
+--------------------------
 We opted to use the TimeTree database in order to obtain an standardized Eukaryota species tree. However, some species were not present in it, so we devised a way to fill them in based on NCBI Taxonomy data. 
 
 ### NCBI Taxonomy tree
 First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes, thus making the task easier.
-<!-- \input{tree_ncbi.tex} -->
-\input{download_files.tex}
+\input{tree_ncbi.tex}
+<!-- \input{download_files.tex} -->
 
 ### Duplicated Genera
 Some species from different kingdoms may share the same genus name. These genera must be noted down because one of the ways we fill in missing species is by looking at genera names.
@@ -80,13 +83,16 @@ Some species from different kingdoms may share the same genus name. These genera
 Explanation
 
 <!--- Kegg annotation -->
-## Gene selection and annotation
+**Gene selection and annotation**
+---------------------------------
 
 <!--- Kegg annotation -->
-## Gene selection and annotation
+**Gene selection and annotation**
+---------------------------------
 
 <!--- Neuroexclusivity -->
-## Neuroexclusivity
+**Neuroexclusivity**
+--------------------
 Explanation
 
 ### Expression
@@ -94,12 +100,15 @@ Explanation
 ### Pathways
 
 <!--- COG data -->
-## COG data
+**COG data**
+------------
 
 <!--- Network -->
-## Network
+**Network**
+-----------
 
-# Analysis
+**Analysis**
+============
 Analysis
 
 ```{r setup}
