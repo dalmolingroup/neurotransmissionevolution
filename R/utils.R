@@ -28,7 +28,7 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
     kdf <- knitr::kable(df, "latex", caption = caption, booktabs = T)
     kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Source:", source)), bold = TRUE, background = "#EEEEEE")
     kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Location:", location)), bold = TRUE, background = "#EEEEEE", line = FALSE)
-    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "scale_down", "hold_position"))
+    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "scale_down", "HOLD_position"))
     kdf <- kableExtra::column_spec(kdf, ncol_df, width = desc_width)
     print(kdf)
 }
