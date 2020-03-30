@@ -1,60 +1,59 @@
 ---
-title: "NCBI eukaryotes info"
-output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
-  html_document:
-    df_print: paged
-    highlight: espresso
-    number_sections: yes
-    theme: default
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
+title: "Duplicated genera"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Packages
-```{r message=FALSE}
-library(readr)
-library(dplyr)
-library(tidyr)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE,
+  cache.extra = file.mtime("download/taxdump.tar.gz")
+)
+
+library(tidyverse)
 library(igraph)
 library(tidylog)
 library(magrittr)
+library(neurotransmissionevolution)
 ```
 
-# Loading data
-```{r message=FALSE}
-taxid_hierarchy <- read_delim(
-  "download/taxonomy/nodes.dmp",
+#### **Loading data**
+` `  
+See \hyperref[tab:ncbi_edgelist]{Table 3} and \hyperref[tab:ncbi_taxon_names]{Table 4}.
+```{r}
+taxid_rank <- read_delim(
+  "download/taxdump/nodes.dmp",
   skip = 1,
   delim = "|",
   trim_ws = TRUE,
-  col_names = c("taxid","hierarchy"),
-  col_types = cols_only("i", "-", "c")
+  col_names = c("taxid","rank"),
+  col_types = "c-c"
 )
 
 ncbi_taxon_names <- read_delim(
-  "download/taxonomy/names.dmp",
+  "download/taxdump/names.dmp",
   delim = "|",
   trim_ws = TRUE,
   col_names = c("taxid","ncbi_name","type"),
-  col_types = cols_only("i", "c", "-", "c")
+  col_types = "cc-c"
 )
 ```
 
-# Finding duplicated genera in the whole ncbi database
+#### **Finding duplicated genera**
+` `  
 ```{r}
-# leaving only genera nodes
-taxid_hierarchy %<>% filter(hierarchy == "genus")
+# keeping genera nodes
+taxid_rank %<>% filter(rank == "genus")
 
-# leaving only scientific names
+# keeping scientific names
 ncbi_taxon_names %<>%
   filter(type == "scientific name") %>%
   select(taxid, ncbi_name) %>%
-  inner_join(taxid_hierarchy)
+  inner_join(taxid_rank)
 
-duplicated_genera <- ncbi_taxon_names[duplicated(ncbi_taxon_names$ncbi_name),] %>% pull(ncbi_name)
-
-write(duplicated_genera, file = "duplicated_genera.txt")
+# extracting and saving duplicated values
+duplicated_genera <- ncbi_taxon_names %>%
+  pull(ncbi_name) %>%
+  extract(duplicated(.)) %>%
+  write("duplicated_genera.txt")
 ```

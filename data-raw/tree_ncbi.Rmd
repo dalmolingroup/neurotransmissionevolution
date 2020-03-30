@@ -15,6 +15,7 @@ library(igraph)
 # library(tidylog)
 library(tibble)
 library(magrittr)
+library(ape)
 
 library(neurotransmissionevolution)
 ```
@@ -30,7 +31,7 @@ untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 
 #### **Loading data**
 ` `  
-```{r results='asis', echo=FALSE}
+```{r results='asis', echo=FALSE, cache=FALSE}
 ###################
 ## string_species
 ###################
@@ -43,7 +44,8 @@ string_species_spec <- tribble(
 ) %T>% print_dataframe_specification(
   "data-raw/download/species.v11.0.txt",
   "stringdb-static.org/download/species.v11.0.txt",
-  "Lists all organisms in STRING v11."
+  "Lists all organisms in STRING v11.",
+  "string_species"
 )
 ###################
 ## ncbi_merged_ids
@@ -55,7 +57,8 @@ ncbi_merged_ids_spec <- tribble(
 ) %T>% print_dataframe_specification(
   "data-raw/download/taxdump/merged.dmp",
   "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
-  "Links outdated taxon IDs to corresponding new ones."
+  "Links outdated taxon IDs to corresponding new ones.",
+  "ncbi_merged_ids"
 )
 ###################
 ## ncbi_edgelist
@@ -69,7 +72,8 @@ ncbi_edgelist_spec <- tribble(
 ) %T>% print_dataframe_specification(
   "data-raw/download/taxdump/nodes.dmp",
   "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
-  "Represents taxonomy nodes."
+  "Represents taxonomy nodes.",
+  "ncbi_edgelist"
 )
 ###################
 ## ncbi_taxon_names
@@ -83,7 +87,8 @@ ncbi_taxon_names_spec <- tribble(
 ) %T>% print_dataframe_specification(
   "data-raw/download/taxdump/names.dmp",
   "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
-  "Links taxon IDs to actual species names."
+  "Links taxon IDs to actual species names.",
+  "ncbi_taxon_names"
 )
 ```
 
@@ -191,6 +196,7 @@ string_eukaryotes <- string_species %>%
 
 write(string_eukaryotes[["ncbi_name"]],"476_ncbi_eukaryotes.txt")
 
-usethis::use_data(ncbi_tree, overwrite = TRUE)
+# usethis::use_data(ncbi_tree, overwrite = TRUE)
+write.tree(ncbi_tree, "ncbi_tree.nwk")
 usethis::use_data(string_eukaryotes, overwrite = TRUE)
 ```

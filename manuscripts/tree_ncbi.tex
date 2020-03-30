@@ -19,9 +19,9 @@ data}}{Loading data}}\label{loading-data}}
 
 \texttt{}\\
 
-\begin{table}[!h]
+\begin{table}[H]
 
-\caption{\label{tab:unnamed-chunk-2}Lists all organisms in STRING v11.}
+\caption{\label{tab:string_species}Lists all organisms in STRING v11.}
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
@@ -38,9 +38,9 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \end{tabular}}
 \end{table}
-\begin{table}[!h]
+\begin{table}[H]
 
-\caption{\label{tab:unnamed-chunk-2}Links outdated taxon IDs to corresponding new ones.}
+\caption{\label{tab:ncbi_merged_ids}Links outdated taxon IDs to corresponding new ones.}
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
@@ -55,9 +55,9 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \end{tabular}}
 \end{table}
-\begin{table}[!h]
+\begin{table}[H]
 
-\caption{\label{tab:unnamed-chunk-2}Represents taxonomy nodes.}
+\caption{\label{tab:ncbi_edgelist}Represents taxonomy nodes.}
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
@@ -74,9 +74,9 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \end{tabular}}
 \end{table}
-\begin{table}[!h]
+\begin{table}[H]
 
-\caption{\label{tab:unnamed-chunk-2}Links taxon IDs to actual species names.}
+\caption{\label{tab:ncbi_taxon_names}Links taxon IDs to actual species names.}
 \centering
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
@@ -230,21 +230,13 @@ against the TimeTree website.
 
 \KeywordTok{write}\NormalTok{(string_eukaryotes[[}\StringTok{"ncbi_name"}\NormalTok{]],}\StringTok{"476_ncbi_eukaryotes.txt"}\NormalTok{)}
 
-\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(ncbi_tree, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## <U+2714> Setting active project to 'C:/R/neuro'
-## <U+2714> Saving 'ncbi_tree' to 'data/ncbi_tree.rda'
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
+\CommentTok{# usethis::use_data(ncbi_tree, overwrite = TRUE)}
+\KeywordTok{write.tree}\NormalTok{(ncbi_tree, }\StringTok{"ncbi_tree.nwk"}\NormalTok{)}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(string_eukaryotes, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
+## <U+2714> Setting active project to 'C:/R/neuro'
 ## <U+2714> Saving 'string_eukaryotes' to 'data/string_eukaryotes.rda'
 \end{verbatim}

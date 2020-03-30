@@ -573,9 +573,7 @@ Glomerella
 Diaspis
 Canarium
 Chelidonium
-Acremonium
 Verticillium
-Acremonium
 Norrisia
 Obba
 Karenia
@@ -821,7 +819,7 @@ Haplolobus
 Kelloggia
 Powellia
 Microtis
-Coniosporium
+Bonordeniella
 Sclerophyton
 Rhexia
 Ophioderma
@@ -900,6 +898,7 @@ Adamsiella
 Crassa
 Placosoma
 Appendicularia
+Howea
 Sergia
 Crassula
 Riopa
@@ -923,5 +922,8 @@ Howella
 Underwoodia
 Osa
 Recchia
+Atkinsonia
 Miyakea
 Fioria
+Munda
+Olla

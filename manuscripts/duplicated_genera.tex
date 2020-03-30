@@ -1,0 +1,54 @@
+\hypertarget{loading-data}{%
+\paragraph{\texorpdfstring{\textbf{Loading
+data}}{Loading data}}\label{loading-data}}
+
+\texttt{}\\
+See \hyperref[tab:ncbi_edgelist]{Table 3} and
+\hyperref[tab:ncbi_taxon_names]{Table 4}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{taxid_rank <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
+  \StringTok{"download/taxdump/nodes.dmp"}\NormalTok{,}
+  \DataTypeTok{skip =} \DecValTok{1}\NormalTok{,}
+  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
+  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
+  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"rank"}\NormalTok{),}
+  \DataTypeTok{col_types =} \StringTok{"c-c"}
+\NormalTok{)}
+
+\NormalTok{ncbi_taxon_names <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
+  \StringTok{"download/taxdump/names.dmp"}\NormalTok{,}
+  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
+  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
+  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"ncbi_name"}\NormalTok{,}\StringTok{"type"}\NormalTok{),}
+  \DataTypeTok{col_types =} \StringTok{"cc-c"}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{finding-duplicated-genera}{%
+\paragraph{\texorpdfstring{\textbf{Finding duplicated
+genera}}{Finding duplicated genera}}\label{finding-duplicated-genera}}
+
+\texttt{}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# keeping genera nodes}
+\NormalTok{taxid_rank }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(rank }\OperatorTok{==}\StringTok{ "genus"}\NormalTok{)}
+
+\CommentTok{# keeping scientific names}
+\NormalTok{ncbi_taxon_names }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(type }\OperatorTok{==}\StringTok{ "scientific name"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(taxid, ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(taxid_rank)}
+
+\CommentTok{# extracting and saving duplicated values}
+\NormalTok{duplicated_genera <-}\StringTok{ }\NormalTok{ncbi_taxon_names }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{pull}\NormalTok{(ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{extract}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(.)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write}\NormalTok{(}\StringTok{"duplicated_genera.txt"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

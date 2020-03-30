@@ -22,12 +22,6 @@ abstract: |
 keywords:
   - Evolution
   - Nervous system
-  
-# header-includes:
-   # - \usepackage[table]{xcolor}
-   # - \usepackage{docmute}
-   # - \usepackage{float}
-   # - \usepackage{booktabs}
    
 header-includes:
   - \usepackage{booktabs}
@@ -44,18 +38,28 @@ header-includes:
   - \usepackage[normalem]{ulem}
   - \usepackage{makecell}
   - \usepackage{xcolor}
+  # small font size for code chunks
+  - \let\oldShaded\Shaded
+  - \let\endoldShaded\endShaded
+  - \renewenvironment{Shaded}{\scriptsize\oldShaded}{\endoldShaded}
+  # small font size for output chunks
+  - \let\oldverbatim\verbatim
+  - \let\endoldverbatim\endverbatim
+  - \renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
 
-## rmarkdown render options
 output:
   pdf_document:
     toc: yes
     toc_depth: 3
+    fig_caption: true
     highlight: zenburn
     # pandoc_args: "--highlight=breezedark"
-    # fig_caption: true
     # template: components/elsarticle.latex
-    keep_tex: false
+    keep_tex: true
 ---
+```{r setup, include=FALSE}
+#a
+```
 
 <!--- Project structure -->
 **Project structure**
@@ -71,16 +75,18 @@ This topic refers mainly to data wrangling done before the actual analysis with 
 --------------------------
 We opted to use the TimeTree database in order to obtain an standardized Eukaryota species tree. However, some species were not present in it, so we devised a way to fill them in based on NCBI Taxonomy data. 
 
-### NCBI Taxonomy tree
+### **NCBI Taxonomy tree**
 First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes, thus making the task easier.
 \input{tree_ncbi.tex}
 <!-- \input{download_files.tex} -->
 
-### Duplicated Genera
+### **Duplicated Genera**
 Some species from different kingdoms may share the same genus name. These genera must be noted down because one of the ways we fill in missing species is by looking at genera names.
+\input{duplicated_genera.tex}
 
-### Hybrid tree
-Explanation
+### **Hybrid tree**
+Once we have both the NCBI eukaryotes tree and the list of duplicated genera, we can start assembling the complete hybrid tree.
+\input{tree_hybrid.tex}
 
 <!--- Kegg annotation -->
 **Gene selection and annotation**
@@ -95,9 +101,9 @@ Explanation
 --------------------
 Explanation
 
-### Expression
+### **Expression**
 
-### Pathways
+### **Pathways**
 
 <!--- COG data -->
 **COG data**
@@ -111,19 +117,8 @@ Explanation
 ============
 Analysis
 
-```{r setup}
-library(magrittr)
-library(neurotransmissionevolution)
-```
-
 <!-- \input{download_files.tex} -->
 
-Test tab2
-```{r}
-tibble::tribble(
-  ~col_name,   ~col_type, ~used, ~ex,                  ~desc,
-  "string_id", "numeric", "yes", "9606.ENSP000000666", "This represents the string protein identifier.",
-  "length",    "numeric", "yes", "666",                "This represents the protein size"
-) %>% print_dataframe_specification("a", "b", "caption")
+```{r end}
+#leave this chunk
 ```
-
