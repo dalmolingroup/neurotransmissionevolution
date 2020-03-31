@@ -91,10 +91,8 @@ Once we have both the NCBI eukaryotes tree and the list of duplicated genera, we
 <!--- Kegg annotation -->
 **Gene selection and annotation**
 ---------------------------------
-
-<!--- Kegg annotation -->
-**Gene selection and annotation**
----------------------------------
+This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table.
+\input{kegg.tex}
 
 <!--- Neuroexclusivity -->
 **Neuroexclusivity**

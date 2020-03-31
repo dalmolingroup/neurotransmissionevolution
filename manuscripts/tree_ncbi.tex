@@ -26,8 +26,7 @@ data}}{Loading data}}\label{loading-data}}
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
 \toprule
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Location: data-raw/download/species.v11.0.txt}}} \\
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Source: stringdb-static.org/download/species.v11.0.txt}}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_species}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -36,6 +35,8 @@ data}}{Loading data}}\label{loading-data}}
 \rowcolor{gray!6}  3 & string\_name & character & yes & Homo sapiens & STRING species name\\
 4 & ncbi\_official\_name & character & no & Homo sapiens & NCBI Taxonomy species name\\
 \bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/species.v11.0.txt}\\
+\multicolumn{6}{l}{\textbf{Source: } stringdb-static.org/download/species.v11.0.txt}\\
 \end{tabular}}
 \end{table}
 \begin{table}[H]
@@ -45,14 +46,15 @@ data}}{Loading data}}\label{loading-data}}
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
 \toprule
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Location: data-raw/download/taxdump/merged.dmp}}} \\
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Source: ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_merged\_ids}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
 \rowcolor{gray!6}  1 & taxid & character & yes & 9606 & id of node that has been merged\\
 2 & new\_taxid & character & yes & core & id of node that is the result of merging\\
 \bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/merged.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
 \end{tabular}}
 \end{table}
 \begin{table}[H]
@@ -62,16 +64,17 @@ data}}{Loading data}}\label{loading-data}}
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
 \toprule
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Location: data-raw/download/taxdump/nodes.dmp}}} \\
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Source: ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_edgelist}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
 \rowcolor{gray!6}  1 & taxid & character & yes & 2 & node id in NCBI taxonomy database\\
 2 & parent\_taxid & character & yes & 131567 & parent node id in NCBI taxonomy database\\
 \rowcolor{gray!6}  3 & rank & character & no & superkingdom & rank of this node\\
-4 & ... &  & no &  & (too many unrelated fields)\\
+4 & ... & ... & no & ... & (too many unrelated fields)\\
 \bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/nodes.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
 \end{tabular}}
 \end{table}
 \begin{table}[H]
@@ -81,8 +84,7 @@ data}}{Loading data}}\label{loading-data}}
 \resizebox{\linewidth}{!}{
 \begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
 \toprule
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Location: data-raw/download/taxdump/names.dmp}}} \\
-\multicolumn{6}{c}{\cellcolor[HTML]{EEEEEE}{\textbf{Source: ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_taxon\_names}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -91,6 +93,8 @@ data}}{Loading data}}\label{loading-data}}
 \rowcolor{gray!6}  3 & unique\_name & character & no & Monera <bacteria> & the unique variant of this name if name not unique\\
 4 & name\_class & character & yes & scientific name & type of name\\
 \bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/names.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
 \end{tabular}}
 \end{table}
 
