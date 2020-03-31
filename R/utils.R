@@ -13,7 +13,7 @@ download_if_missing <- function(url, filename = basename(url)) {
 }
 
 #' @export
-print_dataframe_specification <- function(df, location = "", source = "", caption = NULL, label = NULL, desc_width = "20em") {
+print_dataframe_specification <- function(df, location = "", source = "", caption = NULL, label = NULL) {
 
     df <- cbind(`#` = 1:nrow(df), df) %>% dplyr::rename(
       `Col. name` = col_name,
@@ -25,11 +25,22 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
 
     ncol_df <- ncol(df)
 
-    kdf <- knitr::kable(df, "latex", caption = caption, label = label, booktabs = T)
-    kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Source:", source)), bold = TRUE, background = "#EEEEEE")
-    kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, paste("Location:", location)), bold = TRUE, background = "#EEEEEE", line = FALSE)
-    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "scale_down", "HOLD_position"))
-    kdf <- kableExtra::column_spec(kdf, ncol_df, width = desc_width)
+    # desc_size <- df[[ncol_df]] %>% nchar %>% max
+
+    knitr::opts_knit$set(kable.force.latex = TRUE)
+
+    kdf <- knitr::kable(df, caption = caption, label = label, booktabs = TRUE, longtable = FALSE)
+    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "HOLD_position"))
+
+    # if(desc_size > 25){
+    #   kdf <- kableExtra::column_spec(kdf, ncol_df, width = "20em")
+    # }
+
+    kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, label), bold = TRUE, background = "#EEEEEE", monospace = T, font_size = 12)
+
+    kdf <- kableExtra::footnote(kdf, source, general_title = "Source: ", title_format = "bold", footnote_as_chunk = T)
+    kdf <- kableExtra::footnote(kdf, location, general_title = "Location: ", title_format = "bold", footnote_as_chunk = T)
+
     print(kdf)
 }
 
