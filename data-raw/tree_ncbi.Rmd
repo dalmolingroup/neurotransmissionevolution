@@ -37,7 +37,7 @@ untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ###################
 string_species_spec <- tribble(
   ~col_name,            ~col_type,   ~used, ~ex,            ~desc,
-  "taxid",           "character", "yes", "9606",         "NCBI Taxonomy identifier",
+  "taxid",              "character", "yes", "9606",         "NCBI Taxonomy identifier",
   "string_type",        "character", "no",  "core",         "if the genome of this species is core or periphery",
   "string_name",        "character", "yes", "Homo sapiens", "STRING species name",
   "ncbi_official_name", "character", "no",  "Homo sapiens", "NCBI Taxonomy species name"
@@ -68,7 +68,7 @@ ncbi_edgelist_spec <- tribble(
   "taxid",        "character", "yes",  "2",            "node id in NCBI taxonomy database",
   "parent_taxid", "character", "yes",  "131567",       "parent node id in NCBI taxonomy database",
   "rank",         "character", "no",   "superkingdom", "rank of this node",
-  "...",          "",          "no",   "",             "(too many unrelated fields)",
+  "...",          "...",       "no",   "...",          "(too many unrelated fields)",
 ) %T>% print_dataframe_specification(
   "data-raw/download/taxdump/nodes.dmp",
   "ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz",
