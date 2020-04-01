@@ -1,33 +1,14 @@
-\hypertarget{neurotransmitter-pathways-annotation}{%
-\paragraph{Neurotransmitter pathways
-annotation}\label{neurotransmitter-pathways-annotation}}
+\hypertarget{neurotransmitter-systems-annotation}{%
+\paragraph{Neurotransmitter systems
+annotation}\label{neurotransmitter-systems-annotation}}
 
 \texttt{}\\
 We start by querying the KEGG api for the pathways of interest.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{pathways <-}\StringTok{ }\KeywordTok{tribble}\NormalTok{(}
-  \OperatorTok{~}\NormalTok{pathway_id,      }\OperatorTok{~}\NormalTok{pathway_name, }
-  \StringTok{"path:hsa04724"}\NormalTok{,  }\StringTok{"glutamatergic"}\NormalTok{,}
-  \StringTok{"path:hsa04725"}\NormalTok{,  }\StringTok{"cholinergic"}\NormalTok{,  }
-  \StringTok{"path:hsa04726"}\NormalTok{,  }\StringTok{"serotonergic"}\NormalTok{, }
-  \StringTok{"path:hsa04727"}\NormalTok{,  }\StringTok{"gabaergic"}\NormalTok{,    }
-  \StringTok{"path:hsa04728"}\NormalTok{,  }\StringTok{"dopaminergic"}\NormalTok{, }
-  \StringTok{"path:hsa04721"}\NormalTok{,  }\StringTok{"vesicle"}
-\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\hypertarget{genes-to-pathways-links}{%
-\subparagraph{Genes to pathways links}\label{genes-to-pathways-links}}
-
-Filtering for genes in the selected pathways
+Resulting data is then pivoted to a wider format.
 
 \begin{table}[H]
 
 \caption{\label{tab:link_pathway_entrez}All links between genes and pathways in KEGG.}
-\centering
 \begin{tabular}[t]{rlllll}
 \toprule
 \multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{link\_pathway\_entrez}}}\egroup{}} \\
@@ -44,9 +25,20 @@ Filtering for genes in the selected pathways
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{pathways <-}\StringTok{ }\KeywordTok{tribble}\NormalTok{(}
+  \OperatorTok{~}\NormalTok{pathway_id,      }\OperatorTok{~}\NormalTok{pathway_name, }
+  \StringTok{"path:hsa04724"}\NormalTok{,  }\StringTok{"glutamatergic"}\NormalTok{,}
+  \StringTok{"path:hsa04725"}\NormalTok{,  }\StringTok{"cholinergic"}\NormalTok{,  }
+  \StringTok{"path:hsa04726"}\NormalTok{,  }\StringTok{"serotonergic"}\NormalTok{, }
+  \StringTok{"path:hsa04727"}\NormalTok{,  }\StringTok{"gabaergic"}\NormalTok{,    }
+  \StringTok{"path:hsa04728"}\NormalTok{,  }\StringTok{"dopaminergic"}\NormalTok{, }
+  \StringTok{"path:hsa04721"}\NormalTok{,  }\StringTok{"vesicle"}
+\NormalTok{)}
+
 \CommentTok{# removing hsa prefix}
 \NormalTok{link_pathway_entrez[[}\StringTok{"entrez_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{":"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
+\CommentTok{# filtering for pathways of interest and pivoting}
 \NormalTok{gene_pathways <-}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(link_pathway_entrez, pathways) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{n =} \DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{pivot_wider}\NormalTok{(}
@@ -61,9 +53,14 @@ Filtering for genes in the selected pathways
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{system_count =} \KeywordTok{rowSums}\NormalTok{(}\KeywordTok{select}\NormalTok{(., }\OperatorTok{-}\NormalTok{entrez_id, }\OperatorTok{-}\NormalTok{vesicle)))}
 
 \CommentTok{# exporting for package use}
-\CommentTok{# usethis::use_data(gene_pathways, overwrite = TRUE)}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_pathways, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
+
+\begin{verbatim}
+## <U+2714> Setting active project to 'C:/R/neuro'
+## <U+2714> Saving 'gene_pathways' to 'data/gene_pathways.rda'
+\end{verbatim}
 
 \begin{table}[H]
 \centering
@@ -86,10 +83,15 @@ entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & 
 \hypertarget{base-id-lookup-table}{%
 \paragraph{Base ID lookup table}\label{base-id-lookup-table}}
 
+\texttt{}\\
+Now we start building a base ID lookup table containing entrez gene IDs,
+STRING ensembl protein IDs, ensembl gene IDs, STRING protein names and
+entrez gene names. Every piece of data in subsequent analyses will be
+progressively joined to it.
+
 \begin{table}[H]
 
 \caption{\label{tab:link_entrez_string}Conversion dictionary from entrez ID to STRING's ensembl protein ID.}
-\centering
 \begin{tabular}[t]{rlllll}
 \toprule
 \multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{link\_entrez\_string}}}\egroup{}} \\
@@ -107,7 +109,6 @@ entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & 
 \begin{table}[H]
 
 \caption{\label{tab:string_names}Conversion dictionary from STRING ID to protein name.}
-\centering
 \begin{tabular}[t]{rlllll}
 \toprule
 \multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_names}}}\egroup{}} \\
@@ -125,7 +126,6 @@ entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & 
 \begin{table}[H]
 
 \caption{\label{tab:entrez_names}Conversion dictionary from entrez ID to gene name.}
-\centering
 \begin{tabular}[t]{rlllll}
 \toprule
 \multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{entrez\_names}}}\egroup{}} \\
@@ -144,7 +144,6 @@ entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & 
 \begin{table}[H]
 
 \caption{\label{tab:link_ensembl_entrez}Conversion dictionary from entrez ID to ensembl gene (ENSG) ID.}
-\centering
 \begin{tabular}[t]{rlllll}
 \toprule
 \multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{link\_ensembl\_entrez}}}\egroup{}} \\
@@ -174,10 +173,8 @@ entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & 
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{updating-missing-info}{%
-\paragraph{Updating missing info}\label{updating-missing-info}}
-
-Printing incomplete rows
+Some STRING proteins couldn't be automatically resolved, so we perform
+it manually
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -185,9 +182,6 @@ Printing incomplete rows
 \end{Highlighting}
 \end{Shaded}
 
-\begin{table}[H]
-\centering
-\resizebox{\linewidth}{!}{
 \begin{tabular}{lllll}
 \toprule
 entrez\_id & ensembl\_id & string\_id & string\_name & entrez\_name\\
@@ -206,10 +200,7 @@ entrez\_id & ensembl\_id & string\_id & string\_name & entrez\_name\\
 \addlinespace
 \rowcolor{gray!6}  808 & ENSG00000160014 & NA & NA & CALM3\\
 \bottomrule
-\end{tabular}}
-\end{table}
-
-Incomplete rows are filled manually
+\end{tabular}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -230,16 +221,15 @@ Incomplete rows are filled manually
 
 \CommentTok{# removing incomplete cases and adding updated ones}
 \NormalTok{gene_ids }\OperatorTok{%<>%}\StringTok{ }\NormalTok{na.omit }\OperatorTok{%>%}\StringTok{ }\KeywordTok{bind_rows}\NormalTok{(complete_info)}
-\end{Highlighting}
-\end{Shaded}
 
-Exporting base table for package use
-
-\begin{Shaded}
-\begin{Highlighting}[]
+\CommentTok{# removing taxid prefix from STRING IDs}
 \NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
-\CommentTok{# usethis::use_data(gene_ids, overwrite = TRUE)}
+\CommentTok{# exporting for package use}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_ids, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
+\begin{verbatim}
+## <U+2714> Saving 'gene_ids' to 'data/gene_ids.rda'
+\end{verbatim}

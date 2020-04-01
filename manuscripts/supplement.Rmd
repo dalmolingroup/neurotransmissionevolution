@@ -46,6 +46,12 @@ header-includes:
   - \let\oldverbatim\verbatim
   - \let\endoldverbatim\endverbatim
   - \renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
+  # table caption left alignment
+  - \usepackage{caption}
+  - \captionsetup{justification=raggedright,singlelinecheck=false}
+  - \captionsetup{margin={2pt,0pt}}
+  # hold figure position
+  - \floatplacement{figure}{H}
 
 output:
   pdf_document:
@@ -91,7 +97,7 @@ Once we have both the NCBI eukaryotes tree and the list of duplicated genera, we
 <!--- Kegg annotation -->
 **Gene selection and annotation**
 ---------------------------------
-This markdown aims to collect entrez ids, ensemble protein ids and gene symbols in a single table.
+The anchoring point for this study is basic annotation about genes and the pathways in which they participate. This section describes the process of structuring such data. In the end we will have a table to which all kinds of additional data will be left joined into.
 \input{kegg.tex}
 
 <!--- Neuroexclusivity -->

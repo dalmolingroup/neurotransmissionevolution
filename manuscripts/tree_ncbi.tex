@@ -1,32 +1,16 @@
-\hypertarget{downloading-data}{%
-\paragraph{\texorpdfstring{\textbf{Downloading
-data}}{Downloading data}}\label{downloading-data}}
-
 \texttt{}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{download_if_missing}\NormalTok{(}\StringTok{"http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz"}\NormalTok{)}
-\KeywordTok{download_if_missing}\NormalTok{(}\StringTok{"stringdb-static.org/download/species.v11.0.txt"}\NormalTok{)}
-
-\KeywordTok{untar}\NormalTok{(}\StringTok{"download/taxdump.tar.gz"}\NormalTok{, }\DataTypeTok{exdir =} \StringTok{"download/taxdump"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\hypertarget{loading-data}{%
-\paragraph{\texorpdfstring{\textbf{Loading
-data}}{Loading data}}\label{loading-data}}
+\hypertarget{resources}{%
+\paragraph{\texorpdfstring{\textbf{Resources}}{Resources}}\label{resources}}
 
 \texttt{}\\
 
 \begin{table}[H]
 
 \caption{\label{tab:string_species}Lists all organisms in STRING v11.}
-\centering
-\resizebox{\linewidth}{!}{
-\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
 \toprule
-\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_species}}}\egroup{}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_species}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -37,34 +21,30 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \multicolumn{6}{l}{\textbf{Location: } data-raw/download/species.v11.0.txt}\\
 \multicolumn{6}{l}{\textbf{Source: } stringdb-static.org/download/species.v11.0.txt}\\
-\end{tabular}}
+\end{tabular}
 \end{table}
 \begin{table}[H]
 
 \caption{\label{tab:ncbi_merged_ids}Links outdated taxon IDs to corresponding new ones.}
-\centering
-\resizebox{\linewidth}{!}{
-\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
 \toprule
-\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_merged\_ids}}}\egroup{}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_merged\_ids}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
-\rowcolor{gray!6}  1 & taxid & character & yes & 9606 & id of node that has been merged\\
-2 & new\_taxid & character & yes & core & id of node that is the result of merging\\
+\rowcolor{gray!6}  1 & taxid & character & yes & 140100 & id of node that has been merged\\
+2 & new\_taxid & character & yes & 666 & id of node that is the result of merging\\
 \bottomrule
 \multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/merged.dmp}\\
 \multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
-\end{tabular}}
+\end{tabular}
 \end{table}
 \begin{table}[H]
 
 \caption{\label{tab:ncbi_edgelist}Represents taxonomy nodes.}
-\centering
-\resizebox{\linewidth}{!}{
-\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
 \toprule
-\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_edgelist}}}\egroup{}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_edgelist}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -75,16 +55,14 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/nodes.dmp}\\
 \multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
-\end{tabular}}
+\end{tabular}
 \end{table}
 \begin{table}[H]
 
 \caption{\label{tab:ncbi_taxon_names}Links taxon IDs to actual species names.}
-\centering
-\resizebox{\linewidth}{!}{
-\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{20em}}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
 \toprule
-\multicolumn{6}{c}{\bgroup\fontsize{14}{16}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_taxon\_names}}}\egroup{}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_taxon\_names}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -95,56 +73,10 @@ data}}{Loading data}}\label{loading-data}}
 \bottomrule
 \multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/names.dmp}\\
 \multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
-\end{tabular}}
+\end{tabular}
 \end{table}
 
 \texttt{}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{string_species <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}
-  \StringTok{"download/species.v11.0.txt"}\NormalTok{,}
-  \DataTypeTok{skip =} \DecValTok{1}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}
-    \StringTok{"taxid"}\NormalTok{,}
-    \StringTok{"string_type"}\NormalTok{,}
-    \StringTok{"string_name"}\NormalTok{,}
-    \StringTok{"ncbi_official_name"}
-\NormalTok{  ),}
-  \DataTypeTok{col_types =} \KeywordTok{cols_only}\NormalTok{(}
-    \DataTypeTok{taxid =} \StringTok{"c"}\NormalTok{,}
-    \DataTypeTok{string_name =} \StringTok{"c"}
-\NormalTok{  )}
-\NormalTok{)}
-
-\CommentTok{# these .dmp files are very tricky to read}
-\CommentTok{# the following read_delims are very hacky}
-\NormalTok{ncbi_merged_ids <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
-  \StringTok{"download/taxdump/merged.dmp"}\NormalTok{,}
-  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
-  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"new_taxid"}\NormalTok{),}
-  \DataTypeTok{col_types =} \StringTok{"cc"}
-\NormalTok{)}
-
-\NormalTok{ncbi_edgelist <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
-  \StringTok{"download/taxdump/nodes.dmp"}\NormalTok{,}
-  \DataTypeTok{skip =} \DecValTok{1}\NormalTok{,}
-  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
-  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"n1"}\NormalTok{,}\StringTok{"n2"}\NormalTok{),}
-  \DataTypeTok{col_types =} \StringTok{"cc"}
-\NormalTok{)}
-
-\NormalTok{ncbi_taxon_names <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
-  \StringTok{"download/taxdump/names.dmp"}\NormalTok{,}
-  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
-  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"name"}\NormalTok{,}\StringTok{"ncbi_name"}\NormalTok{,}\StringTok{"type"}\NormalTok{),}
-  \DataTypeTok{col_types =} \StringTok{"cc-c"}
-\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
 \hypertarget{updating-string-taxon-ids}{%
 \paragraph{\texorpdfstring{\textbf{Updating STRING taxon
