@@ -1,4 +1,5 @@
 data-raw/download/*
+manuscripts/*.log
 
 # History files
 .Rhistory
