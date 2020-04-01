@@ -25,16 +25,16 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
 
     ncol_df <- ncol(df)
 
-    # desc_size <- df[[ncol_df]] %>% nchar %>% max
+    desc_size <- df[[ncol_df]] %>% nchar %>% max
 
     knitr::opts_knit$set(kable.force.latex = TRUE)
 
     kdf <- knitr::kable(df, caption = caption, label = label, booktabs = TRUE, longtable = FALSE)
-    kdf <- kableExtra::kable_styling(kdf, latex_options = c("striped", "HOLD_position"))
+    kdf <- kableExtra::kable_styling(kdf, position = "left", latex_options = c("striped", "HOLD_position"))
 
-    # if(desc_size > 25){
-    #   kdf <- kableExtra::column_spec(kdf, ncol_df, width = "20em")
-    # }
+    if(desc_size > 35){
+      kdf <- kableExtra::column_spec(kdf, ncol_df, width = "18em")
+    }
 
     kdf <- kableExtra::add_header_above(kdf, setNames(ncol_df, label), bold = TRUE, background = "#EEEEEE", monospace = T, font_size = 12)
 
