@@ -1,8 +1,7 @@
 \hypertarget{neurotransmitter-systems-annotation}{%
-\paragraph{Neurotransmitter systems
+\subsubsection{Neurotransmitter systems
 annotation}\label{neurotransmitter-systems-annotation}}
 
-\texttt{}\\
 We start by querying the KEGG api for the pathways of interest.
 Resulting data is then pivoted to a wider format.
 
@@ -67,23 +66,24 @@ Resulting data is then pivoted to a wider format.
 \resizebox{\linewidth}{!}{
 \begin{tabular}{lrrrrrrr}
 \toprule
+\multicolumn{8}{c}{\ttfamily{tail(gene\_pathways)}} \\
+\cmidrule(l{3pt}r{3pt}){1-8}
 entrez\_id & vesicle & glutamatergic & cholinergic & serotonergic & gabaergic & dopaminergic & system\_count\\
 \midrule
-\rowcolor{gray!6}  10312 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
-10497 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
-\rowcolor{gray!6}  10814 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
-10815 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
-\rowcolor{gray!6}  112755 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+\rowcolor{gray!6}  805 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
+808 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
+\rowcolor{gray!6}  810 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
+84152 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
+\rowcolor{gray!6}  91860 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
 \addlinespace
-1173 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+9575 & 0 & 0 & 0 & 0 & 0 & 1 & 1\\
 \bottomrule
 \end{tabular}}
 \end{table}
 
 \hypertarget{base-id-lookup-table}{%
-\paragraph{Base ID lookup table}\label{base-id-lookup-table}}
+\subsubsection{Base ID lookup table}\label{base-id-lookup-table}}
 
-\texttt{}\\
 Now we start building a base ID lookup table containing entrez gene IDs,
 STRING ensembl protein IDs, ensembl gene IDs, STRING protein names and
 entrez gene names. Every piece of data in subsequent analyses will be

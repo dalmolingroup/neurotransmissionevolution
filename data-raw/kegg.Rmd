@@ -6,7 +6,7 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
   warning     = FALSE,
   message     = FALSE,
-  # cache       = TRUE,
+  cache       = TRUE,
   cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
 library(neurotransmissionevolution)
@@ -22,8 +22,7 @@ download_if_missing("https://string-db.org/mapping_files/entrez/human.entrez_2_s
 download_if_missing("http://rest.genome.jp/link/ensembl/hsa", "link_ensembl_entrez.tsv")
 download_if_missing("http://rest.kegg.jp/link/pathway/hsa", "link_pathway_entrez.tsv")
 ```
-#### Neurotransmitter systems annotation
-` `  
+### Neurotransmitter systems annotation
 We start by querying the KEGG api for the pathways of interest. Resulting data is then pivoted to a wider format.
 ```{r results="asis", echo=FALSE}
 link_pathway_entrez <- read_tsv(
@@ -76,14 +75,14 @@ usethis::use_data(gene_pathways, overwrite = TRUE)
 ```
 ```{r echo=FALSE}
 gene_pathways %>%
-  head %>%
+  tail %>%
   knitr::kable(booktabs = T) %>%
-  kableExtra::kable_styling(latex_options = c("striped", "scale_down", "HOLD_position"))
+  kableExtra::kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
+  kableExtra::add_header_above(c(`tail(gene_pathways)` = 8), monospace = T)
 ```
 
 
-#### Base ID lookup table
-` `  
+### Base ID lookup table
 Now we start building a base ID lookup table containing entrez gene IDs, STRING ensembl protein IDs, ensembl gene IDs, STRING protein names and entrez gene names. Every piece of data in subsequent analyses will be progressively joined to it.
 ```{r results="asis", echo=FALSE}
 ##########################

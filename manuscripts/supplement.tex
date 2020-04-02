@@ -123,6 +123,7 @@
 \usepackage{caption}
 \captionsetup{justification=raggedright,singlelinecheck=false}
 \captionsetup{margin={2pt,0pt}}
+\floatplacement{figure}{H}
 
 \title{Ionotropic receptors as the driving force behind human synapse
 establishment}
@@ -154,35 +155,31 @@ a tipping point might exist.
 \tableofcontents
 }
 \hypertarget{project-structure}{%
-\section{\texorpdfstring{\textbf{Project
-structure}}{Project structure}}\label{project-structure}}
+\section{Project structure}\label{project-structure}}
 
 This is the title page
 
 \hypertarget{preprocessing}{%
-\section{\texorpdfstring{\textbf{Preprocessing}}{Preprocessing}}\label{preprocessing}}
+\section{Preprocessing}\label{preprocessing}}
 
 This topic refers mainly to data wrangling done before the actual
 analysis with the intent of making it simpler.
 
 \hypertarget{eukaryota-species-tree}{%
-\subsection{\texorpdfstring{\textbf{Eukaryota species
-tree}}{Eukaryota species tree}}\label{eukaryota-species-tree}}
+\subsection{Eukaryota species tree}\label{eukaryota-species-tree}}
 
 We opted to use the TimeTree database in order to obtain an standardized
 Eukaryota species tree. However, some species were not present in it, so
 we devised a way to fill them in based on NCBI Taxonomy data.
 
 \hypertarget{ncbi-taxonomy-tree}{%
-\subsubsection{\texorpdfstring{\textbf{NCBI Taxonomy
-tree}}{NCBI Taxonomy tree}}\label{ncbi-taxonomy-tree}}
+\subsubsection{NCBI Taxonomy tree}\label{ncbi-taxonomy-tree}}
 
 First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes,
 thus making the task easier. \input{tree_ncbi.tex}
 
 \hypertarget{duplicated-genera}{%
-\subsubsection{\texorpdfstring{\textbf{Duplicated
-Genera}}{Duplicated Genera}}\label{duplicated-genera}}
+\subsubsection{Duplicated Genera}\label{duplicated-genera}}
 
 Some species from different kingdoms may share the same genus name.
 These genera must be noted down because one of the ways we fill in
@@ -190,16 +187,15 @@ missing species is by looking at genera names.
 \input{duplicated_genera.tex}
 
 \hypertarget{hybrid-tree}{%
-\subsubsection{\texorpdfstring{\textbf{Hybrid
-tree}}{Hybrid tree}}\label{hybrid-tree}}
+\subsubsection{Hybrid tree}\label{hybrid-tree}}
 
 Once we have both the NCBI eukaryotes tree and the list of duplicated
 genera, we can start assembling the complete hybrid tree.
 \input{tree_hybrid.tex}
 
 \hypertarget{gene-selection-and-annotation}{%
-\subsection{\texorpdfstring{\textbf{Gene selection and
-annotation}}{Gene selection and annotation}}\label{gene-selection-and-annotation}}
+\subsection{Gene selection and
+annotation}\label{gene-selection-and-annotation}}
 
 The anchoring point for this study is basic annotation about genes and
 the pathways in which they participate. This section describes the
@@ -208,25 +204,24 @@ which all kinds of additional data will be left joined into.
 \input{kegg.tex}
 
 \hypertarget{neuroexclusivity}{%
-\subsection{\texorpdfstring{\textbf{Neuroexclusivity}}{Neuroexclusivity}}\label{neuroexclusivity}}
+\subsection{Neuroexclusivity}\label{neuroexclusivity}}
 
 Explanation
 
 \hypertarget{expression}{%
-\subsubsection{\texorpdfstring{\textbf{Expression}}{Expression}}\label{expression}}
+\subsubsection{Expression}\label{expression}}
 
 \hypertarget{pathways}{%
-\subsubsection{\texorpdfstring{\textbf{Pathways}}{Pathways}}\label{pathways}}
+\subsubsection{Pathways}\label{pathways}}
 
 \hypertarget{cog-data}{%
-\subsection{\texorpdfstring{\textbf{COG
-data}}{COG data}}\label{cog-data}}
+\subsection{COG data}\label{cog-data}}
 
 \hypertarget{network}{%
-\subsection{\texorpdfstring{\textbf{Network}}{Network}}\label{network}}
+\subsection{Network}\label{network}}
 
 \hypertarget{analysis}{%
-\section{\texorpdfstring{\textbf{Analysis}}{Analysis}}\label{analysis}}
+\section{Analysis}\label{analysis}}
 
 Analysis
 

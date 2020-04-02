@@ -68,56 +68,60 @@ output:
 ```
 
 <!--- Project structure -->
-**Project structure**
+Project structure
 =====================
 This is the title page
 
-**Preprocessing**
+<!-- Preprocessing -->
+Preprocessing
 =================
 This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
 
 <!--- Eukaryota species tree -->
-**Eukaryota species tree**
+Eukaryota species tree
 --------------------------
 We opted to use the TimeTree database in order to obtain an standardized Eukaryota species tree. However, some species were not present in it, so we devised a way to fill them in based on NCBI Taxonomy data. 
 
-### **NCBI Taxonomy tree**
+<!-- NCBI Taxonomy tree -->
+### NCBI Taxonomy tree
 First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes, thus making the task easier.
 \input{tree_ncbi.tex}
 <!-- \input{download_files.tex} -->
 
-### **Duplicated Genera**
+<!-- Duplicated Genera -->
+### Duplicated Genera
 Some species from different kingdoms may share the same genus name. These genera must be noted down because one of the ways we fill in missing species is by looking at genera names.
 \input{duplicated_genera.tex}
 
-### **Hybrid tree**
+<!-- Hybrid tree -->
+### Hybrid tree
 Once we have both the NCBI eukaryotes tree and the list of duplicated genera, we can start assembling the complete hybrid tree.
 \input{tree_hybrid.tex}
 
 <!--- Kegg annotation -->
-**Gene selection and annotation**
+Gene selection and annotation
 ---------------------------------
 The anchoring point for this study is basic annotation about genes and the pathways in which they participate. This section describes the process of structuring such data. In the end we will have a table to which all kinds of additional data will be left joined into.
 \input{kegg.tex}
 
 <!--- Neuroexclusivity -->
-**Neuroexclusivity**
+Neuroexclusivity
 --------------------
 Explanation
 
-### **Expression**
+### Expression
 
-### **Pathways**
+### Pathways
 
 <!--- COG data -->
-**COG data**
+COG data
 ------------
 
 <!--- Network -->
-**Network**
+Network
 -----------
 
-**Analysis**
+Analysis
 ============
 Analysis
 
