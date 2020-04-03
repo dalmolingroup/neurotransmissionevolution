@@ -1,74 +1,66 @@
 ---
-title: "Notebook 3: espécies e cogs"
-output:
-  html_document:
-  df_print: paged
-theme: default
-highlight: espresso
-toc: true
-toc_depth: 2
-toc_float: true
-number_sections: true
+title: "COGs"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Intro
-This markdown exports COG related data for the geneplast package
-```{r}
-library(dplyr)
-library(readr)
-library(tidyr)
+```{r message=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE,
+  cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+)
+library(tidyverse)
 library(magrittr)
 library(data.table)
+library(neurotransmissionevolution)
 
-data(string_eukaryotes, gene_ids, package = "neurotransmission")
+load("../data/gene_ids.rda")
+load("../data/string_eukaryotes.rda")
 ```
 
-# COGs
-Downloading STRING COG mappings (https://string-db.org/cgi/download.pl)
-```{r rows.print=5}
-if (!file.exists("download/COG.mappings.v11.0.txt.gz")) {
-  download.file(
-    "https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz",
-    "download/COG.mappings.v11.0.txt.gz"
-  )
-}
-
-#protein	start_position	end_position	orthologous_group	protein_annotation
-# cogs <- read_tsv(
-#   "download/COG.mappings.v11.0.txt.gz"
-#   ,skip=1
-#   ,col_names = c("taxid.string_id","cog_id")
-#   ,col_types = cols_only("c","-","-","c","-")
-#   ,quote = ""
-# )
+```{r echo=FALSE}
+download_if_missing("https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz")
 
 cogs <- fread(
   "download/COG.mappings.v11.0.txt.gz",
-  header = F,
+  header           = F,
   stringsAsFactors = F,
-  skip = 1,
-  sep = "\t",
-  # col.names = c("taxid.string_id","s","e","cog_id","anno"),
-  col.names = c("taxid.string_id","cog_id"),
-  select = c(1,4),
-  quote = ""
+  skip             = 1,
+  sep              = "\t",
+  col.names        = c("taxid.string_id","cog_id"),
+  select           = c(1,4),
+  quote            = ""
 )
+#protein  start_position  end_position  orthologous_group protein_annotation
+cogs_spec <- tribble(
+  ~col_name,           ~col_type,  ~used,  ~ex,                                ~desc,
+  "taxid.string_id",   "character", "yes", "9606.ENSP00000269305",             "STRING protein ID",
+  "start_position",    "numeric",   "no",  "1",                                "residue where orthogroup mapping starts",
+  "end_position",      "numeric",   "no",  "393",                              "residue where orthogroup mapping ends",
+  "cog_id",            "character", "yes", "NOG08732",                         "orthologous group ID",
+  "protein_annotation","character", "no",  "Cellular tumor antigen p53; [...]","protein description"
+) %T>% print_dataframe_specification(
+  "data-raw/download/COG.mappings.v11.0.txt.gz",
+  "https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz",
+  "Orthologous groups (COGs, NOGs, KOGs) and their proteins.",
+  "cogs"
+)
+```
 
+```{r}
 # spliting first column into taxid and string_id
 cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
 
-# keeping eukaryotes
-cogs %<>% filter(taxid %in% string_eukaryotes[["taxid"]])
+# subsetting cogs of interest
+cogs_of_interest <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
+
+cogs %<>%
+  # leave only eukaryotes
+  filter(taxid %in% string_eukaryotes[["taxid"]]) %>%
+  # leave only proteins which are part of cogs of interest
+  filter(cog_id %in% cogs_of_interest[["cog_id"]])
 
 # exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)
-```
-
-Separando a data.frame com cogs de neurotransmissores
-```{r rows.print=5}
-neurotransmission_cogs <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
-
-# exporting for package use
-usethis::use_data(neurotransmission_cogs, overwrite = TRUE)
-
-neurotransmission_cogs
+usethis::use_data(cogs_of_interest, overwrite = TRUE)
 ```

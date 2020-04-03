@@ -110,10 +110,11 @@ Neuroexclusivity
 Neuroexclusivity data consists of gene expression collected from Gexe Expression Atlas and the KEGG pathways themselves.
 \input{neuroexclusivity.tex}
 
-
 <!--- COG data -->
-COG data
+Orthology data
 ------------
+This section refers to orthology data exported for geneplast use. Essentialy, we subset the global STRING mapping between proteins and orthologous groups into a smaller dataset containing only information about the orthogroups related to our selected genes.
+\input{cogs.tex}
 
 <!--- Network -->
 Network
