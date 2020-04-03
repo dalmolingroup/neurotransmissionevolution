@@ -1,95 +1,129 @@
 ---
-title: 'STRING edgelist'
-output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
-  html_document:
-    df_print: paged
-    highlight: espresso
-    number_sections: yes
-    theme: default
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
+title: 'Network'
+knit: neurotransmissionevolution::custom_knit
 ---
-
-# Intro
-Coletar e filtrar as interações PPI dos genes obtidos via STRING.
-```{r message = FALSE}
+```{r message=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE,
+  cache.extra = file.mtime("../data/gene_ids.rda")
+)
 library(RCurl)
-library(dplyr)
-library(readr)
-library(tidyr)
+library(tidyverse)
 library(tidylog)
 library(magrittr)
+library(neurotransmissionevolution)
 
-combine_scores <- function(string_interactions, sources){
-  #sources = nscore,fscore,pscore,ascore,escore,dscore,tscore
-  cs <- 1 - string_interactions[, sources, drop = FALSE]
-  cs <- apply(X = cs, MARGIN = 1, FUN = function(x) 1 - prod(x))
-  return(cs)
+load("../data/gene_ids.rda")
+```
+
+### Retrieving network data
+Querying the API endpoint for the STRING IDs we collected.
+```{r download}
+identifiers <- gene_ids %>% pull(string_id) %>% na.omit %>% paste0(collapse="%0d")
+
+if (!file.exists("download/api_ids.tsv")) {
+    postForm("http://string-db.org/api/tsv/get_string_ids",
+             identifiers = identifiers,
+             echo_query = "1",
+             species = "9606") %>%
+    write("download/api_ids.tsv")
 }
 ```
-
-# Data
-```{r}
-data(gene_ids, package = "neurotransmission")
+```{r results="asis", echo=FALSE}
+api_ids_spec <- tibble::tribble(
+      ~col_name,   ~col_type, ~used,                                      ~ex,                   ~desc,
+    "queryItem", "character", "yes",                        "ENSP00000258400",          "queried term",
+   "queryIndex",   "numeric", "yes",                                    "266", "index of queried term",
+     "stringId", "character", "yes",                   "9606.ENSP00000258400",             "STRING ID",
+  "ncbiTaxonId",   "numeric", "yes",                                   "9606",      "NCBI Taxonomy ID",
+    "taxonName", "character", "yes",                           "Homo sapiens",          "species name",
+"preferredName", "character", "yes",                                  "HTR2B",   "common protein name",
+   "annotation", "character", "yes", "5-hydroxytryptamine receptor 2B; [...]",    "protein annotation"
+) %T>% print_dataframe_specification(
+  "data-raw/download/api_ids.tsv",
+  "http://string-db.org/api/tsv/get_string_ids",
+  "STRING interaction network with channel specific scores.",
+  "api_ids"
+)
 ```
 
-# STRING API
-```{r rows.print=5}
-identifiers <- gene_ids[["string_id"]] %>% na.omit %>% paste(collapse="%0d",sep="")
+Now we need to make sure that the API succesfully resolves the protein IDs we searched for.
+```{r}
+api_ids <- read_tsv("download/api_ids.tsv", comment = "", quote = "")
 
-api_ids <- read_tsv(
-  postForm("http://string-db.org/api/tsv/get_string_ids"
-           ,identifiers = identifiers
-           ,echo_query = "1"
-           ,species = "9606"
-           ,style = "post"
-  )
-  ,comment = ""
-  ,quote = ""
-)
+# removing taxid prefix
+api_ids %<>% mutate(stringId = str_split_n(stringId, "\\.", 2))
 
-# removing taxid
-api_ids %<>% separate(stringId, c(NA, "stringId"), extra = "merge", sep = "\\.")
-
-# removing duplicates
+# removing inexact matches (queried id is different from resolved id)
 api_ids %<>% group_by(queryItem) %>% filter(queryItem == stringId)
 
-# checking
-gene_ids$string_id[!gene_ids$string_id %in% api_ids$queryItem]
-api_ids$queryItem[!api_ids$queryItem %in% gene_ids$string_id]
-
-# checking if string resolved differently
-gene_ids$string_id[!gene_ids$string_id %in% api_ids$stringId]
-```
-
-
-Baixamos a tabela de interações pela API do string
-```{r rows.print=5}
-# identifiers <- api_ids[["stringId"]] %>% na.omit %>% paste(collapse="%0d",sep="")
-
-identifiers <- api_ids[["stringId"]] %>% na.omit
-identifiers <- paste0("9606.", identifiers, collapse="%0d",sep="")
-
-string_edgelist <- read_tsv(
-  postForm("http://string-db.org/api/tsv/network", identifiers = identifiers, species = "9606")
+# setequal must return true if ids matched exatcly
+setequal(
+  gene_ids %>% pull(string_id) %>% na.omit,
+  api_ids  %>% pull(stringId)
 )
-
-string_edgelist
 ```
 
-# Recalculating scores
-Recalculamos o combinedscore apenas com as colunas `escore` (experimental) e `dscore` (database)
-```{r rows.print=5}
-string_edgelist[,"cs"] <- combine_scores(string_edgelist, c("escore","dscore"))
-string_edgelist %<>% filter(cs >= 0.7) %>% select(stringId_A, stringId_B)
+Once IDs are correct, we can query the network API endpoint to obtain the protein interaction edgelist.
+```{r}
+# it is important to query this endpoint with the species prefix ("9606.")
+identifiers <- api_ids %>% pull(stringId) %>% na.omit %>% { paste0("9606.", ., collapse="%0d") }
 
-# checking
-edgelist_ids <- unique(c(string_edgelist[["stringId_A"]], string_edgelist[["stringId_B"]]))
-edgelist_ids[!edgelist_ids %in% gene_ids$string_id]
+if (!file.exists("download/string_edgelist.tsv")) {
+    postForm("http://string-db.org/api/tsv/network",
+             identifiers = identifiers,
+             species = "9606") %>%
+    write("download/string_edgelist.tsv")
+}
+```
+```{r results="asis", echo=FALSE}
+string_edgelist_spec <- tibble::tribble(
+          ~col_name,   ~col_type, ~used,               ~ex,                             ~desc,
+       "stringId_A", "character", "yes", "ENSP00000215659",           "STRING ID (protein A)",
+       "stringId_B", "character", "yes", "ENSP00000211287",           "STRING ID (protein B)",
+  "preferredName_A", "character", "yes",          "MAPK12", "common protein name (protein A)",
+  "preferredName_B", "character", "yes",          "MAPK13", "common protein name (protein B)",
+      "ncbiTaxonId",   "numeric", "yes",            "9606",                "NCBI Taxonomy ID",
+            "score",   "numeric", "yes",           "0.948",                  "combined score",
+           "nscore",   "numeric", "yes",               "0",         "gene neighborhood score",
+           "fscore",   "numeric", "yes",               "0",               "gene fusion score",
+           "pscore",   "numeric", "yes",        "0.014223",      "phylogenetic profile score",
+           "ascore",   "numeric", "yes",               "0",              "coexpression score",
+           "escore",   "numeric", "yes",           "0.485",              "experimental score",
+           "dscore",   "numeric", "yes",             "0.9",                  "database score",
+           "tscore",   "numeric", "yes",         "0.02772",                "textmining score"
+) %T>% print_dataframe_specification(
+  "data-raw/download/string_edgelist.tsv",
+  "http://string-db.org/api/tsv/network",
+  "STRING interaction network with channel specific scores.",
+  "string_edgelist"
+)
+```
+
+### Recomputing scores
+From [string-db.org](https://string-db.org/cgi/info.pl?footer_active_subpage=scores):
+
+> In STRING, each protein-protein interaction is annotated with one or more 'scores'.
+Importantly, these scores do not indicate the strength or the specificity of the interaction. Instead, they are indicators of confidence, i.e. how likely STRING judges an interaction to be true, given the available evidence. All scores rank from 0 to 1, with 1 being the highest possible confidence.
+
+For the sake of this project, we will only use experimental and database scores with a combined value >= 0.7, a high confidence threshold according to the STRING database. The combined score is given by the following expression, as stated in [von Mering C et al, 2005](https://doi.org/10.1093/nar/gki005):
+
+$$S\ =\ 1\ {-}\ {{\prod}_{i}}\left(1\ {-}\ S_{i}\right)$$
+```{r results="hide", echo=TRUE}
+string_edgelist <- read_tsv("download/string_edgelist.tsv")
+
+string_edgelist %<>%
+  mutate(cs = combine_scores(., c("e","d"))) %>%
+  filter(cs >= 0.7) %>%
+  select(stringId_A, stringId_B)
+
+# how many edgelist proteins are absent in gene_ids (should return 0)
+setdiff(
+  string_edgelist %$% c(stringId_A, stringId_B),
+  gene_ids %>% pull(string_id)
+)
 
 # exporting for package use
 usethis::use_data(string_edgelist, overwrite = TRUE)
