@@ -5,6 +5,14 @@ linMap <- function(x, from, to) approxfun(range(x), c(from, to))(x)
 darken <- function(color, intensity=0.5) rgb(t(col2rgb(color)*(1-intensity)/255))
 
 #' @export
+combine_scores <- function(string_interactions, sources = c("n","f","p","a","e","d","t")){
+  sources <- paste0(sources, "score")
+  cs <- 1 - string_interactions[, sources, drop = FALSE]
+  cs <- apply(X = cs, MARGIN = 1, FUN = function(x) 1 - prod(x))
+  return(cs)
+}
+
+#' @export
 download_if_missing <- function(url, filename = basename(url)) {
   filename <- here::here("data-raw/download", filename)
   if (!file.exists(filename)) {
@@ -13,7 +21,7 @@ download_if_missing <- function(url, filename = basename(url)) {
 }
 
 #' @export
-print_dataframe_specification <- function(df, location = "", source = "", caption = NULL, label = NULL) {
+print_dataframe_specification <- function(df, location = "", source = "", caption = NULL, label = NULL, extra_styling = NULL) {
 
     df <- cbind(`#` = 1:nrow(df), df) %>% dplyr::rename(
       `Col. name` = col_name,
@@ -30,7 +38,7 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
     knitr::opts_knit$set(kable.force.latex = TRUE)
 
     kdf <- knitr::kable(df, caption = caption, label = label, booktabs = TRUE, longtable = FALSE)
-    kdf <- kableExtra::kable_styling(kdf, position = "left", latex_options = c("striped", "HOLD_position"))
+    kdf <- kableExtra::kable_styling(kdf, position = "left", latex_options = c("striped", "HOLD_position", extra_styling))
 
     if(desc_size > 35){
       kdf <- kableExtra::column_spec(kdf, ncol_df, width = "18em")
