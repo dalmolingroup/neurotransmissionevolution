@@ -1,0 +1,33 @@
+---
+title: "Neuroexclusivity"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r message=FALSE}
+library(tidyverse)
+library(magrittr)
+
+load("../data/gene_ids.rda")
+load("../data/ex")
+```
+
+# Data
+Loading all expression data files contained in the `dados/gxa` folder.
+```{r message=FALSE}
+tissue_classification <- read_tsv("../data/tissue_classification.tsv", col_types = "ci")
+```
+
+# Maths
+```{r}
+avg_by_tissue <- expression_data %>%
+  group_by(ensembl_id, tissue) %>%
+  summarise(tpm_avg = mean(tpm))
+
+#attaching neural tissue information
+avg_by_tissue %<>% left_join(tissue_classification)
+
+#measuring neuroexclusivity
+expression_neuroexclusivity <- avg_by_tissue %>%
+  filter(tpm_avg >= 0.5) %>%
+  group_by(ensembl_id) %>%
+  summarise(expression_neuroexclusivity = sum(tpm_avg[is_nervous == 1])/sum(tpm_avg))
+```
