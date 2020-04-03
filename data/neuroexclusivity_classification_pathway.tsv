@@ -1,4 +1,4 @@
-pathway_id	pathway_name	neural
+pathway_id	pathway_name	is_nervous
 path:hsa00140	Steroid hormone biosynthesis - Homo sapiens (human)	0
 path:hsa00190	Oxidative phosphorylation - Homo sapiens (human)	0
 path:hsa00220	Arginine biosynthesis - Homo sapiens (human)	0
@@ -229,3 +229,4 @@ path:hsa05412	Arrhythmogenic right ventricular cardiomyopathy (ARVC) - Homo sapi
 path:hsa05414	Dilated cardiomyopathy (DCM) - Homo sapiens (human)	0
 path:hsa05416	Viral myocarditis - Homo sapiens (human)	0
 path:hsa05418	Fluid shear stress and atherosclerosis - Homo sapiens (human)	0
+path:hsa05017	Spinocerebellar ataxia - Homo sapiens (human)	1
