@@ -1,22 +1,12 @@
 ---
 title: "Expression neuroexclusivity"
-output:
-  html_document:
-    df_print: paged
-    theme: default
-    highlight: espresso
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    number_sections: true
+knit: neurotransmissionevolution::custom_knit
 ---
-# Objectives
-Compile multiple expression data downloaded from gxa into `n11_expression.tsv`.
 ```{r message=FALSE}
 library(tidyverse)
 library(magrittr)
 
-data(gene_ids, package = "neurotransmission")
+load("../data/gene_ids.rda")
 ```
 
 # Downloading experiment data
@@ -34,12 +24,10 @@ experiments <- c(
 )
 
 for(experiment in experiments) {
-  if (!file.exists(paste0("download/gxa/", experiment, ".tsv"))) {
-    download.file(
-      paste0("https://www.ebi.ac.uk/gxa/experiments-content/", experiment, "/resources/ExperimentDownloadSupplier.RnaSeqBaseline/tpms.tsv"),
-      paste0("download/gxa/", experiment, ".tsv")
-    )
-  }
+  download_if_missing(
+    paste0("https://www.ebi.ac.uk/gxa/experiments-content/", experiment, "/resources/ExperimentDownloadSupplier.RnaSeqBaseline/tpms.tsv"),
+    paste0("gxa/", experiment, ".tsv")
+  )
 }
 ```
 
@@ -57,19 +45,16 @@ expression_data <- sapply(
 
 # Reshaping
 ```{r}
-expression_data %<>%
-  lapply(pivot_longer, cols = -(1:2), names_to = "tissue", values_to = "tpm") %>%
-  bind_rows %>%
+expression_data2 <- expression_data %>%
+  map_dfr(pivot_longer, cols = -(1:2), names_to = "tissue", values_to = "tpm") %>%
   na.omit %>%
   select(ensembl_id = `Gene ID`, tissue, tpm)
 ```
 
 # Cleaning
 ```{r}
-# E-MTAB-4840 has comma separated developmental stage info (removing evrthng before ", ")
+# E-MTAB-4840 has comma separated developmental stage info (removing everything before ", ")
 expression_data %<>% mutate(tissue = str_remove(tissue, "^.+, "))
-
-# expression_data %>% pull(tissue) %>% unique %>% sort
 
 tissue_names_fix <- c(
   "brain fragment"                     = "brain",
@@ -97,9 +82,10 @@ expression_data %>%
   unique %>%
   arrange %>%
   mutate(is_nervous = NA) %>%
-  write_tsv("temp_tissue_classification.tsv")
+  write_tsv("temp/temp_tissue_classification.tsv")
 
-# usethis::use_data(expression_data, overwrite = TRUE)
+# exporting for package use
+usethis::use_data(gene_tissue_expression, overwrite = TRUE)
 ```
 
 # loading manual classification

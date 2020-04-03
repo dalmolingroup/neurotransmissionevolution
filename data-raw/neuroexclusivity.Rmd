@@ -1,0 +1,175 @@
+---
+title: "Expression neuroexclusivity"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE,
+  cache       = TRUE,
+  cache.extra = list(
+     list.files("download/gxa/")
+  )
+)
+library(tidyverse)
+library(magrittr)
+
+load("../data/gene_ids.rda")
+```
+
+### Expression neuroexclusivity
+In this section we preprocess multiple wide .tsv files into a single long data.frame. We also create a template file for classifying tissues into nervous or non-nervous.
+
+#### **Resources**
+` `  
+We start by searching Gene Expression Atlas for experiments that have human baseline expression data at the tissue level. For each experiment, TPM expression data is downloaded to the `data-raw/download/gxa/` directory.
+Found experiments:
+
+  * [E-MTAB-513](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-513)
+  * [E-MTAB-2836](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2836)
+  * [E-MTAB-3358](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3358)
+  * [E-MTAB-3708](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3708)
+  * [E-MTAB-3716](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3716)
+  * [E-MTAB-4344](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-4344)
+  * [E-MTAB-4840](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-4840)
+  * [E-MTAB-5214](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-5214)
+```{r include=FALSE}
+experiments <- c(
+  "E-MTAB-513",
+  "E-MTAB-2836",
+  # "E-MTAB-2919",
+  "E-MTAB-3358",
+  "E-MTAB-3708",
+  "E-MTAB-3716",
+  "E-MTAB-4344",
+  "E-MTAB-4840",
+  "E-MTAB-5214"
+)
+
+for(experiment in experiments) {
+  download_if_missing(
+    paste0("https://www.ebi.ac.uk/gxa/experiments-content/", experiment, "/resources/ExperimentDownloadSupplier.RnaSeqBaseline/tpms.tsv"),
+    paste0("gxa/", experiment, ".tsv")
+  )
+}
+```
+
+#### **Reshaping data**
+` `  
+We load and pivot all files to a long format.
+```{r}
+gene_expression <- sapply(
+  list.files("download/gxa/", full.names = T),
+  read_tsv,
+  comment = "#",
+  simplify = FALSE,
+  USE.NAMES = TRUE
+)
+
+# pivoting
+gene_expression %<>%
+  map_dfr(pivot_longer, cols = -(1:2), names_to = "tissue", values_to = "tpm") %>%
+  na.omit %>%
+  select(ensembl_id = `Gene ID`, tissue, tpm)
+```
+
+#### **Cleaning**
+` `  
+A lot of tissue information can be collapsed into a single level (e.g. "brain" and "brain fragment" can be considered the same tissue). The cleaning is performed and expression data is exported for analysis.
+```{r}
+# E-MTAB-4840 has comma separated developmental stage info (removing everything before ", ")
+gene_expression %<>% mutate(tissue = str_remove(tissue, "^.+, "))
+
+tissue_names_fix <- c(
+  "brain fragment"                     = "brain",
+  "forebrain fragment"                 = "forebrain",
+  "forebrain and midbrain"             = "forebrain",
+  "hindbrain fragment"                 = "hindbrain",
+  "hindbrain without cerebellum"       = "hindbrain",
+  "hippocampus proper"                 = "hippocampus",
+  "hippocampal formation"              = "hippocampus",
+  "diencephalon and midbrain"          = "diencephalon",
+  "visceral (omentum) adipose tissue"  = "adipose tissue",
+  "subcutaneous adipose tissue"        = "adipose tissue",
+  "spinal cord (cervical c-1)"         = "spinal cord",
+  "C1 segment of cervical spinal cord" = "spinal cord"
+)
+
+gene_expression %<>% mutate(tissue = recode(tissue, !!!tissue_names_fix))
+           
+# subseting for genes of interest
+gene_expression %<>% filter(ensembl_id %in% gene_ids[["ensembl_id"]])
+
+# exporting for package use
+usethis::use_data(gene_expression, overwrite = TRUE)
+```
+```{r results="asis", echo=FALSE}
+gene_expression %>%
+  head %>%
+  knitr::kable(booktabs = T) %>%
+  # knitr::kable(ifelse(knitr::is_latex_output(), "latex", "html"), booktabs = T) %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position")) %>%
+  kableExtra::add_header_above(c(`head(gene_expression)` = 3), monospace = T)
+```
+
+#### **Tissue classification**
+` `  
+For subsequent analyses, we need to distinguish if a tissue is part of the nervous system or not. This is done by hand. The first step is to write a temp file to `data-raw/temp/temp_tissue_classification.tsv` with all tissue names. This serves as a base for the completed `data/neuroexclusivity_classification_tissue` file.
+```{r}
+gene_expression %>%
+  select(tissue) %>%
+  unique %>%
+  arrange %>%
+  mutate(is_nervous = NA) %>%
+  write_tsv("temp/temp_tissue_classification.tsv")
+```
+
+### Pathway neuroexclusivity
+In this section we create a template file for classifying pathways into nervous or non-nervous.
+
+#### **Resources**
+` `  
+For `link_pathway_entrez` see \hyperref[tab:link_pathway_entrez]{Table 5}.
+```{r include=FALSE}
+download_if_missing("http://rest.kegg.jp/list/pathway/hsa", "pathway_names.tsv")
+```
+```{r results="asis", echo=FALSE}
+link_pathway_entrez <- read_tsv(
+  "download/link_pathway_entrez.tsv"
+  ,col_names = c("entrez_id", "pathway_id")
+  ,col_types = "cc"
+)
+
+pathway_names <- read_tsv(
+  "download/pathway_names.tsv",
+  col_names = c("pathway_id", "pathway_name"),
+  col_types = "cc"
+)
+
+pathway_names_spec <- tribble(
+  ~col_name,      ~col_type,   ~used, ~ex,                                           ~desc,
+  "pathway_id",   "character", "yes", "path:hsa04726",                               "KEGG pathway ID",
+  "pathway_name", "character", "yes", "Serotonergic synapse - Homo sapiens (human)", "pathway name",
+) %T>% print_dataframe_specification(
+  "data-raw/download/pathway_names.tsv",
+  "http://rest.kegg.jp/list/pathway/hsa",
+  "KEGG pathway names.",
+  "pathway_names"
+)
+```
+
+#### **Pathway classification**
+` `  
+Just like tissues, we need to distinguish if a pathway is related to the nervous system or not. This is done by hand. The first step is to write a temp file to `data-raw/temp/temp_pathway_classification.tsv` with all pathway names. This serves as a base for the completed `data/neuroexclusivity_classification_pathway.tsv` file.
+```{r}
+# removing species prefix "hsa:"
+link_pathway_entrez[["entrez_id"]] %<>% str_split_n("\\:", 2)
+
+selected_genes_pathways <- link_pathway_entrez %>% filter(entrez_id %in% gene_ids[["entrez_id"]])
+
+unique_pathway_ids <- selected_genes_pathways %>% pull(pathway_id) %>% unique
+
+pathway_names %<>% filter(pathway_id %in% unique_pathway_ids) %>%
+  mutate(is_nervous = NA) %>%
+  write_tsv("temp/temp_pathway_classification.tsv")
+```

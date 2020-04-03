@@ -161,7 +161,7 @@ progressively joined to it.
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# removing all kegg prefixes (e.g. "hsa:")}
-\NormalTok{link_ensembl_entrez }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate_all}\NormalTok{(}\OperatorTok{~}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(., }\StringTok{":"}\NormalTok{, }\DecValTok{2}\NormalTok{))}
+\NormalTok{link_ensembl_entrez }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate_all}\NormalTok{(str_split_n, }\StringTok{":"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
 \CommentTok{# joining all data}
 \NormalTok{gene_ids <-}\StringTok{ }\NormalTok{gene_pathways }\OperatorTok{%>%}

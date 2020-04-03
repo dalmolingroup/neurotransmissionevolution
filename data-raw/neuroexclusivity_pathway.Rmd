@@ -16,9 +16,7 @@ output:
 # Intro
 This markdown aims to measure the proportion of neural pathways for each gene
 ```{r message=FALSE}
-library(readr)
-library(tidyr)
-library(dplyr)
+library(tidyverse)
 library(tidylog)
 library(magrittr)
 ```

@@ -163,7 +163,7 @@ link_ensembl_entrez_spec <- tribble(
 ```
 ```{r}
 # removing all kegg prefixes (e.g. "hsa:")
-link_ensembl_entrez %<>% mutate_all(~ str_split_n(., ":", 2))
+link_ensembl_entrez %<>% mutate_all(str_split_n, ":", 2)
 
 # joining all data
 gene_ids <- gene_pathways %>%
@@ -178,7 +178,7 @@ Some STRING proteins couldn't be automatically resolved, so we perform it manual
 ```{r eval=FALSE}
 gene_ids[!complete.cases(gene_ids),]
 ```
-```{r resulsts="asis", echo=FALSE}
+```{r results="asis", echo=FALSE}
 gene_ids[!complete.cases(gene_ids),] %>%
   knitr::kable(booktabs = T) %>%
   kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))

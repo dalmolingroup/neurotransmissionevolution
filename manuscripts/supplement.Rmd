@@ -107,11 +107,9 @@ The anchoring point for this study is basic annotation about genes and the pathw
 <!--- Neuroexclusivity -->
 Neuroexclusivity
 --------------------
-Explanation
+Neuroexclusivity data consists of gene expression collected from Gexe Expression Atlas and the KEGG pathways themselves.
+\input{neuroexclusivity.tex}
 
-### Expression
-
-### Pathways
 
 <!--- COG data -->
 COG data
