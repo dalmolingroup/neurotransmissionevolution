@@ -154,7 +154,8 @@ pathway_names_spec <- tribble(
   "data-raw/download/pathway_names.tsv",
   "http://rest.kegg.jp/list/pathway/hsa",
   "KEGG pathway names.",
-  "pathway_names"
+  "pathway_names",
+  "scale_down"
 )
 ```
 
