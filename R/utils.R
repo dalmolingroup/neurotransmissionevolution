@@ -48,8 +48,9 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
 custom_knit <- function(input, encoding, fig.path = "figs") {
   custom_options <- rmarkdown::knitr_options(
     opts_knit = list(
-      base.dir       = here::here("manuscripts"),
-      self.contained = FALSE
+      base.dir          = here::here("manuscripts"),
+      self.contained    = FALSE,
+      kable.force.latex = TRUE
     ),
     opts_chunk = list(
       fig.path   = "figs/",
