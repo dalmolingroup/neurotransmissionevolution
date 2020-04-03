@@ -119,12 +119,12 @@ From
 \href{https://string-db.org/cgi/info.pl?footer_active_subpage=scores}{string-db.org}:
 
 \begin{quote}
-In STRING, each protein-protein interaction is annotated with one or
+``In STRING, each protein-protein interaction is annotated with one or
 more `scores'. Importantly, these scores do not indicate the strength or
 the specificity of the interaction. Instead, they are indicators of
 confidence, i.e.~how likely STRING judges an interaction to be true,
 given the available evidence. All scores rank from 0 to 1, with 1 being
-the highest possible confidence.
+the highest possible confidence.''
 \end{quote}
 
 For the sake of this project, we will only use experimental and database
@@ -132,7 +132,6 @@ scores with a combined value \textgreater= 0.7, a high confidence
 threshold according to the STRING database. The combined score is given
 by the following expression, as stated in
 \href{https://doi.org/10.1093/nar/gki005}{von Mering C et al, 2005}:
-
 \[S\ =\ 1\ {-}\ {{\prod}_{i}}\left(1\ {-}\ S_{i}\right)\]
 
 \begin{Shaded}
