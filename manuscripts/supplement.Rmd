@@ -64,7 +64,8 @@ output:
     keep_tex: true
 ---
 ```{r setup, include=FALSE}
-#a
+knitr::knit_meta(clean=T)
+gc()
 ```
 
 <!--- Project structure -->
@@ -112,13 +113,15 @@ Neuroexclusivity data consists of gene expression collected from Gexe Expression
 
 <!--- COG data -->
 Orthology data
-------------
+--------------------
 This section refers to orthology data exported for geneplast use. Essentialy, we subset the global STRING mapping between proteins and orthologous groups into a smaller dataset containing only information about the orthogroups related to our selected genes.
 \input{cogs.tex}
 
 <!--- Network -->
 Network
 -----------
+In this section we search the STRING API for our proteins of interest and recompute the combined interaction score.
+\input{string_edgelist.tex}
 
 Analysis
 ============

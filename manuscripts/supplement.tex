@@ -210,11 +210,20 @@ Neuroexclusivity data consists of gene expression collected from Gexe
 Expression Atlas and the KEGG pathways themselves.
 \input{neuroexclusivity.tex}
 
-\hypertarget{cog-data}{%
-\subsection{COG data}\label{cog-data}}
+\hypertarget{orthology-data}{%
+\subsection{Orthology data}\label{orthology-data}}
+
+This section refers to orthology data exported for geneplast use.
+Essentialy, we subset the global STRING mapping between proteins and
+orthologous groups into a smaller dataset containing only information
+about the orthogroups related to our selected genes. \input{cogs.tex}
 
 \hypertarget{network}{%
 \subsection{Network}\label{network}}
+
+In this section we search the STRING API for our proteins of interest
+and recompute the combined interaction score.
+\input{string_edgelist.tex}
 
 \hypertarget{analysis}{%
 \section{Analysis}\label{analysis}}
