@@ -1,17 +1,7 @@
 ---
 title: "Network"
-output:
-  html_document:
-    df_print: paged
-    theme: default
-    highlight: espresso
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    number_sections: true
+knit: neurotransmissionevolution::custom_knit
 ---
-# Intro
-Obter o layout da rede no RedeR
 ```{r message=FALSE}
 library(tidyverse)
 library(igraph)
@@ -22,7 +12,7 @@ library(Hmisc)
 library(scatterpie)
 library(UpSetR)
 
-library(neurotransmission)
+library(neurotransmissionevolution)
 ```
 
 # Dados
@@ -31,13 +21,13 @@ data(
   gene_ids,
   gene_pathways,
   string_edgelist,
-  neurotransmission_cogs,
+  cogs_of_interest,
   pathway_neuroexclusivity,
   # layout,
-  package = "neurotransmission"
+  package = "neurotransmissionevolution"
 )
 
-gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
     grepl("clearance",   annotation) ~ "depletion",
     grepl("degradation", annotation) ~ "depletion",
@@ -45,14 +35,17 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("geneplast_roots_modified.tsv", col_types = "ci")
+cog_roots <- read_tsv("geneplast_roots.tsv", col_types = "ci")
 
-roots_extant_clades <- read_tsv("geneplast_clade_names_modified.tsv", col_types = "ic")
+roots_extant_clades <- read_tsv("geneplast_clade_names.tsv", col_types = "ic")
+
+pathway_neuroexclusivity    <- read_tsv("neuroexclusivity_pathway.tsv", col_types = "cn")
+expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_types = "cn")
 ```
 
 # RedeR
 ```{r}
-neurotransmission_cogs %<>%
+cogs_of_interest %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root)) %>%
@@ -62,7 +55,7 @@ vertices <- gene_ids %>%
   na.omit %>%
   inner_join(gene_pathways) %>%
   inner_join(gene_annotation) %>%
-  inner_join(neurotransmission_cogs) %>%
+  inner_join(cogs_of_interest) %>%
   inner_join(pathway_neuroexclusivity) %>%
   mutate(ne = pathway_neuroexclusivity >= 0.9) %>%
   select(string_id, everything())
@@ -206,7 +199,7 @@ complete_systems <- ggplot() + plot_theme + plot_edges + plot_pies + plot_pie_fi
 
 complete_systems
   
-ggsave("plots/fig1a.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
+# ggsave("plots/fig1a.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 # functions
@@ -232,7 +225,7 @@ complete_functions <- ggplot() + plot_theme + plot_edges + plot_nodes + plot_sca
 
 complete_functions
   
-ggsave("plots/fig1b.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
+# ggsave("plots/fig1b.pdf", width = 7, height = 7,onefile=F,useDingbats=FALSE)
 ```
 
 ### Rede Diferencial
@@ -332,7 +325,7 @@ fig4 <- map2(roots[idx], roots_titles[idx], ~ {
   base + plot_current_nodes + plot_scales + plot_size + plot_text + legend_hack
 })
 
-ggsave(file = "plots/fig4_2.pdf", arrangeGrob(grobs = fig4, ncol = 5), width = 9*0.8, height = 5*0.8, onefile=F, useDingbats=FALSE)
+ggsave(file = "plots/fig4_3.pdf", arrangeGrob(grobs = fig4, ncol = 5), width = 9*0.8, height = 5*0.8, onefile=F, useDingbats=FALSE)
 ```
 
 Fig 3A

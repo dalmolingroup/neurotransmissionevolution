@@ -1,28 +1,21 @@
 ---
-title: "NCBI geneplast"
-output:
-  pdf_document:
-    toc: yes
-    toc_depth: '2'
-  html_document:
-    df_print: paged
-    highlight: espresso
-    number_sections: yes
-    theme: default
-    toc: yes
-    toc_depth: 2
-    toc_float: yes
+title: "Geneplast"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Objetivo
-Obter os enraizamentos
-```{r message=FALSE}
+```{r message=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE#,
+  # cache       = TRUE,
+  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+)
 library(tidyverse)
 library(magrittr)
 library(geneplast)
 library(ape)
-
 library(XML)
 library(rentrez)
+library(neurotransmissionevolution)
 ```
 
 # Dados
@@ -30,9 +23,9 @@ Carregamos o arquivo gerados no notebook anterior
 ```{r rows.print=5}
 data(
   cogs,
-  neurotransmission_cogs,
+  cogs_of_interest,
   string_eukaryotes,
-  package = "neurotransmission"
+  package = "neurotransmissionevolution"
 )
 
 cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
@@ -42,28 +35,32 @@ cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, 
 Gerando objeto phytool da arvore curada
 ```{r rows.print=5}
 # carregando newick
-phyloTree <- read.tree("../inst/extdata/hybrid_tree_modified.nwk")
+phyloTree <- read.tree("../data/hybrid_tree_modified.nwk")
 
-# renomeando tip.alias com base no match entre ssp_ids
-phyloTree[["tip.alias"]] <- string_eukaryotes[["string_name"]][match(phyloTree[["tip.label"]], string_eukaryotes[["taxid"]])]
+phyloTree %<>% list_modify(
+  tip.alias = string_eukaryotes %$% string_name[match(phyloTree[["tip.label"]], taxid)]
+)
 ```
 
 # Geneplast
 ## Raizes
-```{r message=F, warning=F, include=FALSE, quiet=T}
+```{r message=FALSE, warning=FALSE, include=FALSE, quiet=T, eval=T}
 ogr <- groot.preprocess(
   cogdata   = cogs,
   phyloTree = phyloTree,
   spid      = "9606",
-  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+  cogids    = cogs_of_interest %>% pull(cog_id) %>% unique
 )
 
 ogp <- gplast.preprocess(
   cogdata   = cogs,
-  cogids    = neurotransmission_cogs %>% pull(cog_id) %>% unique
+  cogids    = cogs_of_interest %>% pull(cog_id) %>% unique
 )
 
 ogr <- groot(ogr, nPermutations=1)
+```
+```{r include=F}
+# data(ogr, ogp, package = "neurotransmissionevolution")
 ```
 
 ```{r rows.print=5}
@@ -72,7 +69,7 @@ roots <- groot.get(ogr, what="results") %>%
   select(cog_id, Root) %>%
   rename(root = Root)
 
-write_tsv(roots, "geneplast_roots_modified.tsv")
+write_tsv(roots, "geneplast_roots.tsv")
 ```
 
 # extant clades' names
@@ -124,10 +121,44 @@ roots_names <- string_eukaryotes %>%
   mutate(clade_name = coalesce(clade_name, fallback_name)) %>%
   select(root, clade_name)
 
-write_tsv(roots_names, "geneplast_clade_names_modified.tsv")
+write_tsv(roots_names, "temp/temp_geneplast_clade_names.tsv")
 ```
 
 # plotting all patterns
+```{r message=FALSE, include=FALSE}
+library(treeio)
+library(ggtree)
+library(tidytree)
+```
+```{r}
+tree_heatmap <- ogr@orthoct %>%
+  as_tibble(rownames = NA) %>%
+  select(-1)
+
+phyloTreedata <- phyloTree %>%
+  rotatePhyloTree("9606") %>%
+  as_tibble %>%
+  left_join(string_eukaryotes %>% select(label = taxid, ncbi_name, root)) %>%
+  as.treedata
+
+p <- ggtree(phyloTreedata, branch.length = "none", ladderize = F) +
+  geom_tiplab(aes(label = ncbi_name), offset = 1, hjust = 0, align = T) +
+  xlim(0,300)
+
+gheatmap(
+  p,
+  tree_heatmap,
+  offset=50,
+  width=5,
+  font.size=2,
+  colnames_angle=45,
+  hjust=1,
+  low = "#DDDDDD",
+  high = "#00AA44"
+)
+```
+
+
 ```{r}
 groot.plot(ogr, plot.lcas = TRUE, width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
 

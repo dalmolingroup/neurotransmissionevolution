@@ -6,19 +6,18 @@ knit: neurotransmissionevolution::custom_knit
 library(tidyverse)
 library(magrittr)
 
-load("../data/gene_ids.rda")
-load("../data/ex")
+data(
+  gene_ids,
+  gene_pathways,
+  gene_expression,
+  package = "neurotransmissionevolution"
+)
 ```
 
-# Data
-Loading all expression data files contained in the `dados/gxa` folder.
-```{r message=FALSE}
-tissue_classification <- read_tsv("../data/tissue_classification.tsv", col_types = "ci")
-```
-
-# Maths
 ```{r}
-avg_by_tissue <- expression_data %>%
+tissue_classification <- read_tsv("../data/neuroexclusivity_classification_tissue.tsv", col_types = "ci")
+
+avg_by_tissue <- gene_expression %>%
   group_by(ensembl_id, tissue) %>%
   summarise(tpm_avg = mean(tpm))
 
@@ -30,4 +29,29 @@ expression_neuroexclusivity <- avg_by_tissue %>%
   filter(tpm_avg >= 0.5) %>%
   group_by(ensembl_id) %>%
   summarise(expression_neuroexclusivity = sum(tpm_avg[is_nervous == 1])/sum(tpm_avg))
+
+write_tsv(expression_neuroexclusivity, "neuroexclusivity_expression.tsv")
 ```
+
+```{r}
+pathway_classification <- read_tsv("../data/neuroexclusivity_classification_pathway.tsv", col_types = "cci")
+
+link_pathway_entrez <- read_tsv(
+  "../data-raw/download/link_pathway_entrez.tsv"
+  ,col_names = c("entrez_id", "pathway_id")
+  ,col_types = "cc"
+)
+
+link_pathway_entrez[["entrez_id"]] %<>% str_split_n("\\:", 2)
+
+selected_genes_pathways <- link_pathway_entrez %>% filter(entrez_id %in% gene_ids[["entrez_id"]])
+
+pathway_neuroexclusivity <- selected_genes_pathways %>%
+  inner_join(pathway_classification) %>%
+  drop_na %>%
+  group_by(entrez_id) %>%
+  summarise(pathway_neuroexclusivity = sum(is_nervous)/length(is_nervous))
+
+write_tsv(pathway_neuroexclusivity, "neuroexclusivity_pathway.tsv")
+```
+

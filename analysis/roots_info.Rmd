@@ -1,24 +1,21 @@
 ---
-title: "Network"
-output:
-  html_document:
-    df_print: paged
-    theme: default
-    highlight: espresso
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    number_sections: true
+title: "Roots plots"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Intro
-Obter o layout da rede no RedeR
-```{r message=FALSE}
+```{r message=FALSE, include=FALSE}
+knitr::opts_chunk$set(
+  warning     = FALSE,
+  message     = FALSE#,
+  # cache       = TRUE,
+  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+)
 library(tidyverse)
 library(magrittr)
 
 library(treeio)
 library(ggtree)
 library(tidytree)
+library(neurotransmissionevolution)
 ```
 
 # Dados
@@ -28,13 +25,12 @@ data(
   ogp,
   gene_ids,
   gene_pathways,
-  pathway_neuroexclusivity,
-  neurotransmission_cogs,
+  cogs_of_interest,
   string_eukaryotes,
-  package = "neurotransmission"
+  package = "neurotransmissionevolution"
 )
 
-gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
     grepl("clearance",annotation) ~ "depletion",
     grepl("degradation",annotation) ~ "depletion",
@@ -42,21 +38,24 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+pathway_neuroexclusivity    <- read_tsv("neuroexclusivity_pathway.tsv", col_types = "cn")
+expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_types = "cn")
 
-roots_extant_clades <- read_tsv("extant_clades.tsv", col_types = "ic")
+cog_roots <- read_tsv("geneplast_roots.tsv", col_types = "ci")
+
+roots_extant_clades <- read_tsv("geneplast_clade_names.tsv", col_types = "ic")
 ```
 
 # joining data
 ```{r}
-neurotransmission_cogs %<>% inner_join(cog_roots) %>% group_by(string_id) %>% filter(root == max(root))
+cogs_of_interest %<>% inner_join(cog_roots) %>% group_by(string_id) %>% filter(root == max(root))
 
 info <- gene_ids %>%
   na.omit %>%
   inner_join(gene_pathways) %>%
   inner_join(pathway_neuroexclusivity) %>%
   inner_join(gene_annotation) %>%
-  inner_join(neurotransmission_cogs) %>%
+  inner_join(cogs_of_interest) %>%
   mutate(ne = pathway_neuroexclusivity >= 0.9)
 ```
 
@@ -108,8 +107,8 @@ ggplot() +
 ggsave("plots/roots_ne.pdf", width = 10, height = 6)
 ```
 
-```{r message=FALSE}
-hybrid_tree <- read.newick("../inst/extdata/hybrid_tree.nwk")
+```{r message=FALSE, include=F, eval=F}
+hybrid_tree <- read.newick("../data/hybrid_tree_modified.nwk")
 
 iono_cogs <- info %>% filter(annotation == "ionotropic receptor") %>% pull(cog_id) %>% unique
 

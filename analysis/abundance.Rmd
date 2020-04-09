@@ -1,20 +1,12 @@
 ---
-title: "Network"
-output:
-  html_document:
-    df_print: paged
-    theme: default
-    highlight: espresso
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    number_sections: true
+title: "Abundances"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Intro
-Obter o layout da rede no RedeR
 ```{r message=FALSE}
 library(tidyverse)
 library(magrittr)
+
+library(neurotransmissionevolution)
 ```
 
 # Dados
@@ -24,12 +16,12 @@ data(
   ogp,
   gene_ids,
   gene_pathways,
-  neurotransmission_cogs,
+  cogs_of_interest,
   string_eukaryotes,
-  package = "neurotransmission"
+  package = "neurotransmissionevolution"
 )
 
-gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
     grepl("clearance",annotation) ~ "depletion",
     grepl("degradation",annotation) ~ "depletion",
@@ -37,14 +29,16 @@ gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "
     TRUE ~ annotation
   ))
 
-cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
+cog_roots <- read_tsv("geneplast_roots.tsv", col_types = "ci")
+
+roots_extant_clades <- read_tsv("geneplast_clade_names.tsv", col_types = "ic")
 
 spbranches <- ogr@spbranches %>% select(taxid = ssp_id, root = `9606`)
 ```
 
 # joining data
 ```{r}
-neurotransmission_cogs %<>%
+cogs_of_interest %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root))
@@ -53,7 +47,7 @@ info <- gene_ids %>%
   na.omit %>%
   inner_join(gene_pathways) %>%
   inner_join(gene_annotation) %>%
-  inner_join(neurotransmission_cogs)
+  inner_join(cogs_of_interest)
 ```
 
 # wrangle
