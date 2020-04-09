@@ -1,6 +1,5 @@
-\hypertarget{downloading-data}{%
-\paragraph{\texorpdfstring{\textbf{Downloading
-data}}{Downloading data}}\label{downloading-data}}
+\hypertarget{resources}{%
+\paragraph{Resources}\label{resources}}
 
 \texttt{}\\
 Besides downloading all TimeTree species data
@@ -23,16 +22,15 @@ results.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{loading-data}{%
-\paragraph{\texorpdfstring{\textbf{Loading
-data}}{Loading data}}\label{loading-data}}
-
-\texttt{}
+\texttt{timetree\_newick} is the tree obtained by manually uploading
+\texttt{476\_ncbi\_eukaryotes.txt} to the TimeTree website.
+\texttt{tree\_85k} is the complete Eukaryota tree we have just
+downloaded.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# loading species names and taxon ids}
-\KeywordTok{data}\NormalTok{(string_eukaryotes, }\DataTypeTok{package =} \StringTok{"neurotransmissionevolution"}\NormalTok{)}
+\KeywordTok{load}\NormalTok{(}\StringTok{"../data/string_eukaryotes.rda"}\NormalTok{)}
 
 \CommentTok{# loading newick tree manually obtained from timetree}
 \NormalTok{timetree_newick <-}\StringTok{ }\KeywordTok{read.tree}\NormalTok{(}\StringTok{"download/timetree_335_eukaryotes.nwk"}\NormalTok{)}

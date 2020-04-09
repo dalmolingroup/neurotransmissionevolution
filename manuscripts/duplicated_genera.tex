@@ -1,37 +1,6 @@
-\hypertarget{loading-data}{%
-\paragraph{\texorpdfstring{\textbf{Loading
-data}}{Loading data}}\label{loading-data}}
-
-\texttt{}\\
-See \hyperref[tab:ncbi_edgelist]{Table 3} and
-\hyperref[tab:ncbi_taxon_names]{Table 4}.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{taxid_rank <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
-  \StringTok{"download/taxdump/nodes.dmp"}\NormalTok{,}
-  \DataTypeTok{skip =} \DecValTok{1}\NormalTok{,}
-  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
-  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"rank"}\NormalTok{),}
-  \DataTypeTok{col_types =} \StringTok{"c-c"}
-\NormalTok{)}
-
-\NormalTok{ncbi_taxon_names <-}\StringTok{ }\KeywordTok{read_delim}\NormalTok{(}
-  \StringTok{"download/taxdump/names.dmp"}\NormalTok{,}
-  \DataTypeTok{delim =} \StringTok{"|"}\NormalTok{,}
-  \DataTypeTok{trim_ws =} \OtherTok{TRUE}\NormalTok{,}
-  \DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"ncbi_name"}\NormalTok{,}\StringTok{"type"}\NormalTok{),}
-  \DataTypeTok{col_types =} \StringTok{"cc-c"}
-\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\hypertarget{finding-duplicated-genera}{%
-\paragraph{\texorpdfstring{\textbf{Finding duplicated
-genera}}{Finding duplicated genera}}\label{finding-duplicated-genera}}
-
-\texttt{}
+For \texttt{taxid\_rank} and \texttt{ncbi\_taxon\_names} see
+\hyperref[tab:ncbi_edgelist]{Table 3} and
+\hyperref[tab:ncbi_taxon_names]{Table 4}, respectively.
 
 \begin{Shaded}
 \begin{Highlighting}[]

@@ -16,11 +16,7 @@ library(tidylog)
 library(magrittr)
 library(neurotransmissionevolution)
 ```
-
-#### **Loading data**
-` `  
-See \hyperref[tab:ncbi_edgelist]{Table 3} and \hyperref[tab:ncbi_taxon_names]{Table 4}.
-```{r}
+```{r include=FALSE}
 taxid_rank <- read_delim(
   "download/taxdump/nodes.dmp",
   skip = 1,
@@ -39,8 +35,7 @@ ncbi_taxon_names <- read_delim(
 )
 ```
 
-#### **Finding duplicated genera**
-` `  
+For `taxid_rank` and `ncbi_taxon_names` see \hyperref[tab:ncbi_edgelist]{Table 3} and \hyperref[tab:ncbi_taxon_names]{Table 4}, respectively.
 ```{r}
 # keeping genera nodes
 taxid_rank %<>% filter(rank == "genus")

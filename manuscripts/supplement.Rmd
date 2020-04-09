@@ -9,15 +9,7 @@ author:
   - Maria Cátira Bortolini
   - Rodrigo J. S. Dalmolin
 abstract: |
-  Model uncertainty and limited data are fundamental challenges to
-  robust management of human intervention in a natural system.
-  These challenges are acutely highlighted by concerns that
-  many ecological systems may contain tipping points, such as
-  Allee population sizes.  Before a collapse, we do not know
-  where the tipping points lie, if they exist at all.  Hence,
-  we know neither a complete model of the system dynamics nor
-  do we have access to data in some large region of state-space
-  where such a tipping point might exist.
+  The origin of nervous systems is a main theme in biology and its mechanisms are largely underlied by synaptic neurotransmission. The search for pan-neuronal genes has failed to explain synapses emergence since synaptic elements are present in multiple aneural organisms. We questioned how the interactions among these elements evolved and to what extent does it relate to our understanding of the nervous systems complexity. We infer the human neurotransmission gene network based on genes present in GABAergic, glutamatergic, serotonergic, dopaminergic, and cholinergic systems, and reconstruct the evolutionary scenario of synapse emergence. Our results outline the distribution of neurotransmitter systems and synaptic functions as taxa diverge. We find that the ionotropic receptors emergence in the cnidarian last common ancestor was the driving force behind the advent of the anatomical synapse and the development of nervous systems. We suggest that after Placozoa origin there was a positive selection under a more restricted and specific activation of ionotropic receptors. This different selective pressure counterparting the broader amino acid activation in plants could be striking for the evolution of the nervous system.
   
 keywords:
   - Evolution
@@ -123,9 +115,26 @@ Network
 In this section we search the STRING API for our proteins of interest and recompute the combined interaction score.
 \input{string_edgelist.tex}
 
+
+<!-- Analysis -->
 Analysis
 ============
 Analysis
+
+Root inference
+---------------
+
+Root info
+-----------
+
+Network
+-----------
+
+Neuroexclusivity
+-----------------
+
+Abundance
+-----------
 
 <!-- \input{download_files.tex} -->
 

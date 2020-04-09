@@ -58,9 +58,10 @@ cogs_of_interest <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% 
 
 cogs %<>%
   # leave only eukaryotes
-  filter(taxid %in% string_eukaryotes[["taxid"]]) %>%
+  filter(taxid %in% string_eukaryotes[["taxid"]]) #%>%
   # leave only proteins which are part of cogs of interest
-  filter(cog_id %in% cogs_of_interest[["cog_id"]])
+  # (affects abundance metrics so we won't filter)
+  # filter(cog_id %in% cogs_of_interest[["cog_id"]])
 
 # exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)

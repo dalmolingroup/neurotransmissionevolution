@@ -29,9 +29,10 @@
 
 \NormalTok{cogs }\OperatorTok{%<>%}
 \StringTok{  }\CommentTok{# leave only eukaryotes}
-\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]]) }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# leave only proteins which are part of cogs of interest}
-\StringTok{  }\KeywordTok{filter}\NormalTok{(cog_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{cogs_of_interest[[}\StringTok{"cog_id"}\NormalTok{]])}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]]) }\CommentTok{#%>%}
+  \CommentTok{# leave only proteins which are part of cogs of interest}
+  \CommentTok{# (affects abundance metrics so we won't filter)}
+  \CommentTok{# filter(cog_id %in% cogs_of_interest[["cog_id"]])}
 
 \CommentTok{# exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
