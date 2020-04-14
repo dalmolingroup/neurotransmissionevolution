@@ -35,7 +35,7 @@ cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, 
 Gerando objeto phytool da arvore curada
 ```{r rows.print=5}
 # carregando newick
-phyloTree <- read.tree("../data/hybrid_tree_modified.nwk")
+phyloTree <- read.tree("../data/hybrid_tree_modified.nwk") #%>% rotatePhyloTree("9606")
 
 phyloTree %<>% list_modify(
   tip.alias = string_eukaryotes %$% string_name[match(phyloTree[["tip.label"]], taxid)]
@@ -159,7 +159,7 @@ gheatmap(
 ```
 
 
-```{r}
+```{r include=FALSE}
 groot.plot(ogr, plot.lcas = TRUE, width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
 
 for (i in roots$cog_id) {
