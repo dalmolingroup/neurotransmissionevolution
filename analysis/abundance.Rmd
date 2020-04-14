@@ -86,7 +86,7 @@ annotation_abundance <- orthodist_annotation %>%
   inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
   mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
 
-porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Amphimedon queenslandica")
+porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Mnemiopsis leidyi")
 
 plot_config <- list(
   facet_grid(annotation ~ ., scales = "free_y"),
