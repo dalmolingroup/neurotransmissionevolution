@@ -7,22 +7,22 @@ Querying the API endpoint for the STRING IDs we collected.
 \begin{Highlighting}[]
 \NormalTok{identifiers <-}\StringTok{ }\NormalTok{gene_ids }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(string_id) }\OperatorTok{%>%}\StringTok{ }\NormalTok{na.omit }\OperatorTok{%>%}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\DataTypeTok{collapse=}\StringTok{"%0d"}\NormalTok{)}
 
-\ControlFlowTok{if}\NormalTok{ (}\OperatorTok{!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{"download/api_ids.tsv"}\NormalTok{)) \{}
+\ControlFlowTok{if}\NormalTok{ (}\OperatorTok{!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{"download/string_ids.tsv"}\NormalTok{)) \{}
     \KeywordTok{postForm}\NormalTok{(}\StringTok{"http://string-db.org/api/tsv/get_string_ids"}\NormalTok{,}
              \DataTypeTok{identifiers =}\NormalTok{ identifiers,}
              \DataTypeTok{echo_query =} \StringTok{"1"}\NormalTok{,}
              \DataTypeTok{species =} \StringTok{"9606"}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{    }\KeywordTok{write}\NormalTok{(}\StringTok{"download/api_ids.tsv"}\NormalTok{)}
+\StringTok{    }\KeywordTok{write}\NormalTok{(}\StringTok{"download/string_ids.tsv"}\NormalTok{)}
 \NormalTok{\}}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{table}[H]
 
-\caption{\label{tab:api_ids}STRING interaction network with channel specific scores.}
+\caption{\label{tab:string_ids}STRING interaction network with channel specific scores.}
 \begin{tabular}[t]{rlllll}
 \toprule
-\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{api\_ids}}}\egroup{}} \\
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_ids}}}\egroup{}} \\
 \cmidrule(l{3pt}r{3pt}){1-6}
 \# & Col. name & Col. type & Used? & Example & Description\\
 \midrule
@@ -35,7 +35,7 @@ Querying the API endpoint for the STRING IDs we collected.
 6 & preferredName & character & yes & HTR2B & common protein name\\
 \rowcolor{gray!6}  7 & annotation & character & yes & 5-hydroxytryptamine receptor 2B; [...] & protein annotation\\
 \bottomrule
-\multicolumn{6}{l}{\textbf{Location: } data-raw/download/api\_ids.tsv}\\
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/string\_ids.tsv}\\
 \multicolumn{6}{l}{\textbf{Source: } http://string-db.org/api/tsv/get\_string\_ids}\\
 \end{tabular}
 \end{table}
@@ -45,7 +45,7 @@ IDs we searched for.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{api_ids <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"download/api_ids.tsv"}\NormalTok{, }\DataTypeTok{comment =} \StringTok{""}\NormalTok{, }\DataTypeTok{quote =} \StringTok{""}\NormalTok{)}
+\NormalTok{api_ids <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"download/string_ids.tsv"}\NormalTok{, }\DataTypeTok{comment =} \StringTok{""}\NormalTok{, }\DataTypeTok{quote =} \StringTok{""}\NormalTok{)}
 
 \CommentTok{# removing taxid prefix}
 \NormalTok{api_ids }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{stringId =} \KeywordTok{str_split_n}\NormalTok{(stringId, }\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DecValTok{2}\NormalTok{))}

@@ -6,12 +6,12 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
   warning     = FALSE,
   message     = FALSE,
-  cache       = TRUE,
-  cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+  cache       = TRUE#,
+  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
 library(neurotransmissionevolution)
 library(tidyverse)
-# library(tidylog)
+library(tidylog)
 library(magrittr)
 ```
 
@@ -22,6 +22,7 @@ download_if_missing("https://string-db.org/mapping_files/entrez/human.entrez_2_s
 download_if_missing("http://rest.genome.jp/link/ensembl/hsa", "link_ensembl_entrez.tsv")
 download_if_missing("http://rest.kegg.jp/link/pathway/hsa", "link_pathway_entrez.tsv")
 ```
+
 ### Neurotransmitter systems annotation
 We start by querying the KEGG api for the pathways of interest. Resulting data is then pivoted to a wider format.
 ```{r results="asis", echo=FALSE}
@@ -49,8 +50,7 @@ pathways <- tribble(
   "path:hsa04725",  "cholinergic",  
   "path:hsa04726",  "serotonergic", 
   "path:hsa04727",  "gabaergic",    
-  "path:hsa04728",  "dopaminergic", 
-  "path:hsa04721",  "vesicle"
+  "path:hsa04728",  "dopaminergic"
 )
 
 # removing hsa prefix
@@ -60,15 +60,13 @@ link_pathway_entrez[["entrez_id"]] %<>% str_split_n(":", 2)
 gene_pathways <- inner_join(link_pathway_entrez, pathways) %>%
   mutate(n = 1) %>%
   pivot_wider(
-    id_cols = entrez_id,
-    names_from = pathway_name, 
+    id_cols     = entrez_id,
+    names_from  = pathway_name, 
     values_from = n,
-    values_fn = list(n = length),
+    values_fn   = list(n = length),
     values_fill = list(n = 0)
   ) %>%
-  # filling 1's in all systems for synaptic vesicle genes
-  # mutate_at(pathways[["pathway_name"]], ~ ifelse(vesicle == 1, 1L, .)) %>%
-  mutate(system_count = rowSums(select(., -entrez_id, -vesicle)))
+  mutate(system_count = rowSums(select(., -entrez_id)))
 
 # exporting for package use
 usethis::use_data(gene_pathways, overwrite = TRUE)
@@ -78,7 +76,7 @@ gene_pathways %>%
   tail %>%
   knitr::kable(booktabs = T) %>%
   kableExtra::kable_styling(latex_options = c("striped", "scale_down", "HOLD_position")) %>%
-  kableExtra::add_header_above(c(`tail(gene_pathways)` = 8), monospace = T)
+  kableExtra::add_header_above(c(`tail(gene_pathways)` = ncol(gene_pathways)), monospace = T)
 ```
 
 
@@ -186,19 +184,21 @@ gene_ids[!complete.cases(gene_ids),] %>%
 
 ```{r}
 complete_info <- tribble(
-  ~entrez_id,    ~ensembl_id,        ~string_id,              ~string_name,     ~entrez_name,  
-  "9296",       "ENSG00000128524",  "9606.ENSP00000417378",  "ATP6V1F",        "ATP6V1F",      
-  "100137049",  "ENSG00000243708",  "9606.ENSP00000396045",  "PLA2G4B",        "PLA2G4B",      
-  "85358",      "ENSG00000251322",  NA,                      NA,               "SHANK3",       
-  "8681",       "ENSG00000168970",  "9606.ENSP00000371886",  "JMJD7-PLA2G4B",  "JMJD7-PLA2G4B",
-  "1139",       "ENSG00000175344",  "9606.ENSP00000407546",  "CHRNA7",         "CHRNA7",       
-  "107987478",  NA,                 NA,                      NA,               "LOC107987478", 
-  "107987479",  NA,                 NA,                      NA,               "LOC107987479", 
-  "1564",       "ENSG00000205702",  NA,                      NA,               "CYP2D7",       
-  "801",        "ENSG00000198668",  "9606.ENSP00000349467",  "CALM1",          "CALM1",        
-  "805",        "ENSG00000143933",  "9606.ENSP00000272298",  "CALM2",          "CALM2",        
-  "808",        "ENSG00000160014",  "9606.ENSP00000291295",  "CALM3",          "CALM3"
+##########################################################################################
+ ~entrez_id,       ~ensembl_id,             ~string_id,    ~string_name,    ~entrez_name,#
+"100137049", "ENSG00000243708", "9606.ENSP00000396045",       "PLA2G4B",       "PLA2G4B",#
+    "85358", "ENSG00000251322",                     NA,              NA,        "SHANK3",#
+     "8681", "ENSG00000168970", "9606.ENSP00000371886", "JMJD7-PLA2G4B", "JMJD7-PLA2G4B",#
+     "1139", "ENSG00000175344", "9606.ENSP00000407546",        "CHRNA7",        "CHRNA7",#
+"107987478",                NA,                     NA,              NA,  "LOC107987478",#
+"107987479",                NA,                     NA,              NA,  "LOC107987479",#
+     "1564", "ENSG00000205702",                     NA,              NA,        "CYP2D7",#
+      "801", "ENSG00000198668", "9606.ENSP00000349467",         "CALM1",         "CALM1",#
+      "805", "ENSG00000143933", "9606.ENSP00000272298",         "CALM2",         "CALM2",#
+      "808", "ENSG00000160014", "9606.ENSP00000291295",         "CALM3",         "CALM3" #
+##########################################################################################
 )
+
 
 # removing incomplete cases and adding updated ones
 gene_ids %<>% na.omit %>% bind_rows(complete_info)

@@ -6,8 +6,8 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
   warning     = FALSE,
   message     = FALSE,
-  cache       = TRUE,
-  cache.extra = file.mtime("../data/gene_ids.rda")
+  cache       = TRUE#,
+  # cache.extra = file.mtime("../data/gene_ids.rda")
 )
 library(tidyverse)
 library(magrittr)
@@ -54,7 +54,7 @@ cogs_spec <- tribble(
 cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
 
 # subsetting cogs of interest
-cogs_of_interest <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
+gene_cogs <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
 
 cogs %<>%
   # leave only eukaryotes
@@ -65,5 +65,5 @@ cogs %<>%
 
 # exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)
-usethis::use_data(cogs_of_interest, overwrite = TRUE)
+usethis::use_data(gene_cogs, overwrite = TRUE)
 ```

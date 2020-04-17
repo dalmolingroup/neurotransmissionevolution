@@ -6,10 +6,10 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
   warning     = FALSE,
   message     = FALSE,
-  cache       = TRUE,
-  cache.extra = list(
-     list.files("download/gxa/")
-  )
+  cache       = TRUE#,
+  # cache.extra = list(
+  #    list.files("download/gxa/")
+  # )
 )
 library(tidyverse)
 library(magrittr)

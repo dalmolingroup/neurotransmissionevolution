@@ -6,8 +6,8 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
   warning     = FALSE,
   message     = FALSE,
-  cache       = TRUE,
-  cache.extra = file.mtime("../data/gene_ids.rda")
+  cache       = TRUE#,
+  # cache.extra = file.mtime("../data/gene_ids.rda")
 )
 library(RCurl)
 library(tidyverse)
@@ -23,12 +23,12 @@ Querying the API endpoint for the STRING IDs we collected.
 ```{r download}
 identifiers <- gene_ids %>% pull(string_id) %>% na.omit %>% paste0(collapse="%0d")
 
-if (!file.exists("download/api_ids.tsv")) {
+if (!file.exists("download/string_ids.tsv")) {
     postForm("http://string-db.org/api/tsv/get_string_ids",
              identifiers = identifiers,
              echo_query = "1",
              species = "9606") %>%
-    write("download/api_ids.tsv")
+    write("download/string_ids.tsv")
 }
 ```
 ```{r results="asis", echo=FALSE}
@@ -42,16 +42,16 @@ api_ids_spec <- tibble::tribble(
 "preferredName", "character", "yes",                                  "HTR2B",   "common protein name",
    "annotation", "character", "yes", "5-hydroxytryptamine receptor 2B; [...]",    "protein annotation"
 ) %T>% print_dataframe_specification(
-  "data-raw/download/api_ids.tsv",
+  "data-raw/download/string_ids.tsv",
   "http://string-db.org/api/tsv/get_string_ids",
   "STRING interaction network with channel specific scores.",
-  "api_ids"
+  "string_ids"
 )
 ```
 
 Now we need to make sure that the API succesfully resolves the protein IDs we searched for.
 ```{r}
-api_ids <- read_tsv("download/api_ids.tsv", comment = "", quote = "")
+api_ids <- read_tsv("download/string_ids.tsv", comment = "", quote = "")
 
 # removing taxid prefix
 api_ids %<>% mutate(stringId = str_split_n(stringId, "\\.", 2))

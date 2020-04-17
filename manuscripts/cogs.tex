@@ -25,7 +25,7 @@
 \NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{separate}\NormalTok{(taxid.string_id, }\DataTypeTok{into =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"string_id"}\NormalTok{), }\DataTypeTok{sep =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DataTypeTok{extra =} \StringTok{"merge"}\NormalTok{)}
 
 \CommentTok{# subsetting cogs of interest}
-\NormalTok{cogs_of_interest <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
+\NormalTok{gene_cogs <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
 
 \NormalTok{cogs }\OperatorTok{%<>%}
 \StringTok{  }\CommentTok{# leave only eukaryotes}
@@ -46,10 +46,10 @@
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(cogs_of_interest, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## <U+2714> Saving 'cogs_of_interest' to 'data/cogs_of_interest.rda'
+## <U+2714> Saving 'gene_cogs' to 'data/gene_cogs.rda'
 \end{verbatim}

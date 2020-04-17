@@ -1,6 +1,5 @@
 pathway_id	pathway_name	is_nervous
 path:hsa00140	Steroid hormone biosynthesis - Homo sapiens (human)	NA
-path:hsa00190	Oxidative phosphorylation - Homo sapiens (human)	NA
 path:hsa00220	Arginine biosynthesis - Homo sapiens (human)	NA
 path:hsa00230	Purine metabolism - Homo sapiens (human)	NA
 path:hsa00250	Alanine, aspartate and glutamate metabolism - Homo sapiens (human)	NA
@@ -53,14 +52,11 @@ path:hsa04080	Neuroactive ligand-receptor interaction - Homo sapiens (human)	NA
 path:hsa04110	Cell cycle - Homo sapiens (human)	NA
 path:hsa04114	Oocyte meiosis - Homo sapiens (human)	NA
 path:hsa04115	p53 signaling pathway - Homo sapiens (human)	NA
-path:hsa04130	SNARE interactions in vesicular transport - Homo sapiens (human)	NA
 path:hsa04136	Autophagy - other - Homo sapiens (human)	NA
 path:hsa04137	Mitophagy - animal - Homo sapiens (human)	NA
 path:hsa04140	Autophagy - animal - Homo sapiens (human)	NA
 path:hsa04141	Protein processing in endoplasmic reticulum - Homo sapiens (human)	NA
-path:hsa04142	Lysosome - Homo sapiens (human)	NA
 path:hsa04144	Endocytosis - Homo sapiens (human)	NA
-path:hsa04145	Phagosome - Homo sapiens (human)	NA
 path:hsa04150	mTOR signaling pathway - Homo sapiens (human)	NA
 path:hsa04151	PI3K-Akt signaling pathway - Homo sapiens (human)	NA
 path:hsa04152	AMPK signaling pathway - Homo sapiens (human)	NA
@@ -153,7 +149,6 @@ path:hsa04960	Aldosterone-regulated sodium reabsorption - Homo sapiens (human)	N
 path:hsa04961	Endocrine and other factor-regulated calcium reabsorption - Homo sapiens (human)	NA
 path:hsa04962	Vasopressin-regulated water reabsorption - Homo sapiens (human)	NA
 path:hsa04964	Proximal tubule bicarbonate reclamation - Homo sapiens (human)	NA
-path:hsa04966	Collecting duct acid secretion - Homo sapiens (human)	NA
 path:hsa04970	Salivary secretion - Homo sapiens (human)	NA
 path:hsa04971	Gastric acid secretion - Homo sapiens (human)	NA
 path:hsa04972	Pancreatic secretion - Homo sapiens (human)	NA
@@ -164,6 +159,7 @@ path:hsa05010	Alzheimer disease - Homo sapiens (human)	NA
 path:hsa05012	Parkinson disease - Homo sapiens (human)	NA
 path:hsa05014	Amyotrophic lateral sclerosis (ALS) - Homo sapiens (human)	NA
 path:hsa05016	Huntington disease - Homo sapiens (human)	NA
+path:hsa05017	Spinocerebellar ataxia - Homo sapiens (human)	NA
 path:hsa05020	Prion diseases - Homo sapiens (human)	NA
 path:hsa05030	Cocaine addiction - Homo sapiens (human)	NA
 path:hsa05031	Amphetamine addiction - Homo sapiens (human)	NA
