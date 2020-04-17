@@ -2,6 +2,7 @@
 title: "Geneplast"
 knit: neurotransmissionevolution::custom_knit
 ---
+a
 ```{r message=FALSE, include=FALSE}
 knitr::opts_chunk$set(
   warning     = FALSE,
@@ -17,10 +18,8 @@ library(XML)
 library(rentrez)
 library(neurotransmissionevolution)
 ```
-
-# Dados
-Carregamos o arquivo gerados no notebook anterior
-```{r rows.print=5}
+b
+```{r}
 data(
   cogs,
   cogs_of_interest,
@@ -28,23 +27,24 @@ data(
   package = "neurotransmissionevolution"
 )
 
-cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
+phyloTree <- read.tree("../data/hybrid_tree_modified.nwk")
 ```
 
-# Arvore
-Gerando objeto phytool da arvore curada
-```{r rows.print=5}
-# carregando newick
-phyloTree <- read.tree("../data/hybrid_tree_modified.nwk") #%>% rotatePhyloTree("9606")
+Some minor data formatting is done before feeding it to geneplast
+```{r}
+# formating cogdata column names for geneplast
+cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
 
+# adding species names to taxid tree
 phyloTree %<>% list_modify(
   tip.alias = string_eukaryotes %$% string_name[match(phyloTree[["tip.label"]], taxid)]
 )
 ```
 
-# Geneplast
-## Raizes
-```{r message=FALSE, warning=FALSE, include=FALSE, quiet=T, eval=T}
+### Geneplast
+Geneplast's groot.preprocess function structures an `ogr` object which the `groot` will perform the rooting on.
+We then retrieve the numeric root (`groot.get("results")`) for the `cogs_of_interest`, that is, orthologous groups pertaining to neurotransmission genes.
+```{r echo=T, results="hide"}
 ogr <- groot.preprocess(
   cogdata   = cogs,
   phyloTree = phyloTree,
@@ -52,27 +52,17 @@ ogr <- groot.preprocess(
   cogids    = cogs_of_interest %>% pull(cog_id) %>% unique
 )
 
-ogp <- gplast.preprocess(
-  cogdata   = cogs,
-  cogids    = cogs_of_interest %>% pull(cog_id) %>% unique
-)
-
-ogr <- groot(ogr, nPermutations=1)
-```
-```{r include=F}
-# data(ogr, ogp, package = "neurotransmissionevolution")
-```
-
-```{r rows.print=5}
-roots <- groot.get(ogr, what="results") %>%
+roots <- groot(ogr, nPermutations = 1) %>%
+  groot.get("results") %>%
   rownames_to_column("cog_id") %>%
-  select(cog_id, Root) %>%
-  rename(root = Root)
+  select(cog_id, root = Root)
 
 write_tsv(roots, "geneplast_roots.tsv")
 ```
 
-# extant clades' names
+
+#### Clade names
+Each root branches to a clade that diverged from humans some time in the past. It is nice to have these clades taxonomically named to ease our interpretation. Unlike NCBI Taxonomy, TimeTree's internal nodes are not named. Therefore, we query the NCBI Taxonomy API to try to find most clade names automatically. It is important to note that we are using a hybrid tree primarily built from TimeTree data. This means NCBI Taxonomy naming will not perfectly match clades in our tree. For instance, root #36 branches to a clade containing 38 species from the SAR supergroup, but also 1 species from the Haptista rank, namely _Emiliania huxleyi_. The Haptista group is a sister clade to SAR, so it might be the case that _Emiliania huxleyi_ is actually correctly placed together with SAR species by TimeTree, given their evolutionary proximity. Resolving these naming conflicts is not trivial and falls out of our scope.
 ```{r}
 lineages <- entrez_fetch(
   db      = "taxonomy",
@@ -124,13 +114,34 @@ roots_names <- string_eukaryotes %>%
 write_tsv(roots_names, "temp/temp_geneplast_clade_names.tsv")
 ```
 
-# plotting all patterns
+#### Plotting roots
+a
 ```{r message=FALSE, include=FALSE}
 library(treeio)
 library(ggtree)
 library(tidytree)
 ```
 ```{r}
+long_pam <- ogr@orthoct %>%
+  rownames_to_column("ssp_id") %>%
+  select(-`9606`) %>%
+  pivot_longer(-1, names_to = "cog_id") %>%
+  # mutate(value = ifelse(value == 0, NA, 1)) %>%
+  filter(value == 1)
+
+pam <- ggplot(long_pam, aes(cog_id, ssp_id, fill = value)) +
+  geom_tile() +
+  theme(legend.position="none")
+
+tree <- as.ggplot(
+  ~{
+    phyloTree %>%
+    rotatePhyloTree("9606") %>%
+    plot.phylo("cladogram", show.tip.label = F, no.margin = T)
+  }, 1, vjust = -0.05)
+
+plot.phylo(phyloTree %>% rotatePhyloTree("9606"), "cladogram", no.margin = T)
+
 tree_heatmap <- ogr@orthoct %>%
   as_tibble(rownames = NA) %>%
   select(-1)
@@ -159,18 +170,22 @@ gheatmap(
 ```
 
 
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
+setwd("plots/roots/")
+
 groot.plot(ogr, plot.lcas = TRUE, width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
 
-for (i in roots$cog_id) {
-  groot.plot(
-    ogr, 
-    whichOG = i, 
-    width=10, 
-    height=20, 
-    cex.lab = 0.2, 
-    cex.nodes = 0.4
-  )
-}
+setwd("../../")
+
+# for (i in roots$cog_id) {
+#   groot.plot(
+#     ogr, 
+#     whichOG = i, 
+#     width=10, 
+#     height=20, 
+#     cex.lab = 0.2, 
+#     cex.nodes = 0.4
+#   )
+# }
 ```
 

@@ -19,9 +19,9 @@ library(neurotransmissionevolution)
 ```{r rows.print=5}
 data(
   gene_ids,
+  gene_cogs,
   gene_pathways,
   string_edgelist,
-  cogs_of_interest,
   pathway_neuroexclusivity,
   # layout,
   package = "neurotransmissionevolution"
@@ -45,7 +45,7 @@ expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_t
 
 # RedeR
 ```{r}
-cogs_of_interest %<>%
+gene_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root)) %>%
@@ -55,20 +55,17 @@ vertices <- gene_ids %>%
   na.omit %>%
   inner_join(gene_pathways) %>%
   inner_join(gene_annotation) %>%
-  inner_join(cogs_of_interest) %>%
+  inner_join(gene_cogs) %>%
   inner_join(pathway_neuroexclusivity) %>%
   mutate(ne = pathway_neuroexclusivity >= 0.9) %>%
   select(string_id, everything())
 
 # color hack
 vertices %<>%
-  unite(color, vesicle:dopaminergic, remove = F) %>%
+  unite(color, glutamatergic:dopaminergic, remove = F) %>%
   mutate(color = rainbow(color %>% unique %>% length)[color %>% as.factor])
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
-
-# removing vesicle cycle-only nodes
-g %<>% delete_vertices(which(V(g)$system_count == 0))
 
 V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 ```

@@ -12,7 +12,7 @@ root	clade_name
 11	Scandentia
 12	Glires
 13	Laurasiatheria
-14	Afrotheria (6); Xenarthra (1)
+14	Afrotheria
 15	Metatheria
 16	Prototheria
 17	Sauropsida
@@ -21,8 +21,8 @@ root	clade_name
 20	Actinopterygii
 21	Tunicata
 22	Cephalochordata
-23	Echinodermata (1); Hemichordata (1)
-24	Ecdysozoa (43); Spiralia (2)
+23	Echinodermata/Hemichordata
+24	Ecdysozoa
 25	Spiralia
 26	Cnidaria
 27	Placozoa
@@ -32,7 +32,7 @@ root	clade_name
 31	Fungi
 32	Amoebozoa
 33	Viridiplantae
-34	Discoba (6); Metamonada (1); Sar (1)
+34	Discoba
 35	Rhodophyta
-36	Sar (38); Haptista (1)
+36	SAR
 37	Metamonada
