@@ -72,8 +72,8 @@ V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 
 # Layout
 ```{r}
-if(file.exists("layout.tsv")) {
-  layout <- read_tsv("layout.tsv", col_types = "dd") %>% as.matrix
+if(file.exists("network_layout.tsv")) {
+  layout <- read_tsv("network_layout.tsv", col_types = "dd") %>% as.matrix
 } else {
   layout <- vivagraph(g, precompute_multiplier = 200, precompute_niter = 1000)
 }
