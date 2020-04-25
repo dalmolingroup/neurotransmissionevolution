@@ -2,7 +2,10 @@
 linMap <- function(x, from, to) approxfun(range(x), c(from, to))(x)
 
 #' @export
-darken <- function(color, intensity=0.5) rgb(t(col2rgb(color)*(1-intensity)/255))
+darken <- function(color, by = 0.5) {
+  d <- rgb(t(col2rgb(color)*(1-by)/255))
+  setNames(d, names(color))
+}
 
 #' @export
 combine_scores <- function(string_interactions, sources = c("n","f","p","a","e","d","t")){
