@@ -56,7 +56,10 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
 }
 
 #' @export
-custom_knit <- function(input, encoding, fig.path = "figs") {
+custom_knit <- function(input, encoding, fig.path = "figs/") {
+  current_directory <- basename(dirname(input))
+  current_file <- tools::file_path_sans_ext(basename(input))
+
   custom_options <- rmarkdown::knitr_options(
     opts_knit = list(
       base.dir          = here::here("manuscripts"),
@@ -64,9 +67,9 @@ custom_knit <- function(input, encoding, fig.path = "figs") {
       kable.force.latex = TRUE
     ),
     opts_chunk = list(
-      fig.path   = "figs/",
+      fig.path   = paste0(fig.path, current_directory, ".", current_file, ".", collapse=""),
       dev        = "pdf",
-      cache.path = paste0("cache/", tools::file_path_sans_ext(basename(input)), "/latex/")
+      cache.path = paste0("cache/", current_file, "/latex/")
     )
     # knit_hooks = list(
     #   size = function(before, options, envir) {
@@ -91,15 +94,4 @@ custom_knit <- function(input, encoding, fig.path = "figs") {
     output_format  = custom_format,
     output_options = list(always_allow_html = "yes")
   )
-}
-
-custom_knit_old <- function(input, encoding) {
-  knitr::opts_knit$set(base.dir = here::here("manuscripts"));
-  knitr::opts_chunk$set(fig.path = "figs/");
-  knitr::opts_chunk$set(dev = "pdf");
-  knitr::knit(input, here::here("manuscripts", paste0(tools::file_path_sans_ext(basename(input)), ".md")))
-}
-
-custom_ezknit <- function(input, encoding) {
-  ezknitr::ezknit(input, out_dir = here::here("manuscripts"), fig_dir = "figs", keep_html = F)
 }
