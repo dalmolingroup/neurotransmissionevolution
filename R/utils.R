@@ -67,8 +67,8 @@ custom_knit <- function(input, encoding, fig.path = "figs/") {
       kable.force.latex = TRUE
     ),
     opts_chunk = list(
-      fig.path   = paste0(fig.path, current_directory, ".", current_file, ".", collapse=""),
       dev        = "pdf",
+      fig.path   = paste0(fig.path, current_directory, ".", current_file, ".", collapse = ""),
       cache.path = paste0("cache/", current_file, "/latex/")
     )
     # knit_hooks = list(
@@ -90,6 +90,7 @@ custom_knit <- function(input, encoding, fig.path = "figs/") {
   rmarkdown::render(
     input,
     encoding       = encoding,
+    output_file    = paste0(current_directory, ".", current_file, collapse = ""),
     output_dir     = here::here("manuscripts"),
     output_format  = custom_format,
     output_options = list(always_allow_html = "yes")
