@@ -4,87 +4,90 @@ knit: neurotransmissionevolution::custom_knit
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = TRUE
+  # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
 ```
 
-### Setting up
+### Graph data
 Loading resources.
 ```{r}
-# data manipulation
+# Data manipulation
 library(tidyverse)
 library(igraph)
 library(magrittr)
 
-# plotting dependencies
+# Plotting dependencies
 library(scatterpie)
 library(UpSetR)
 library(gridExtra)
 library(patchwork)
 
-# utils
+# Utils
 library(neurotransmissionevolution)
 
+# Packaged data
 data(
-  gene_ids,
-  gene_cogs,
-  gene_pathways,
-  string_edgelist,
-  pathway_neuroexclusivity,
-  package = "neurotransmissionevolution"
+   gene_ids
+  ,gene_cogs
+  ,gene_pathways
+  ,string_edgelist
+  ,pathway_neuroexclusivity
+  ,expression_neuroexclusivity
+  ,package = "neurotransmissionevolution"
 )
 
+# Fresh analysis data
+cog_roots                   <- read_tsv("geneplast_roots.tsv",             col_types = "ci")
+roots_extant_clades         <- read_tsv("geneplast_clade_names.tsv",       col_types = "ic")
+pathway_neuroexclusivity    <- read_tsv("neuroexclusivity_pathway.tsv",    col_types = "cn")
+expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_types = "cn")
+
+# Collapsing similar functions
 gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
-    grepl("clearance",   annotation) ~ "depletion",
-    grepl("degradation", annotation) ~ "depletion",
-    grepl("transport",   annotation) ~ "synthesis",
-    TRUE ~ annotation
+     grepl("clearance",   annotation) ~ "depletion"
+    ,grepl("degradation", annotation) ~ "depletion"
+    ,grepl("transport",   annotation) ~ "synthesis"
+    ,TRUE ~ annotation
   ))
-
-cog_roots <- read_tsv("geneplast_roots.tsv", col_types = "ci")
-
-roots_extant_clades <- read_tsv("geneplast_clade_names.tsv", col_types = "ic")
-
-pathway_neuroexclusivity    <- read_tsv("neuroexclusivity_pathway.tsv", col_types = "cn")
-expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_types = "cn")
 ```
 
-Gathering gene data and creating the network graph object.
+Joining all gene data and creating the network graph object.
 ```{r}
-# if a gene has more than 1 COG, select the oldest one.
-# this is unusual, but can happen in cases of gene fusion, for instance.
+# If a gene has more than 1 COG, select the oldest one.
+# This is unusual, but can happen in cases of gene fusion, for instance.
 gene_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root)) %>%
   inner_join(roots_extant_clades)
 
-# gathering all gene info available
+# Gathering all gene info available
 vertices <- gene_ids %>%
   na.omit %>%
+  inner_join(gene_cogs) %>%
   inner_join(gene_pathways) %>%
   inner_join(gene_annotation) %>%
-  inner_join(gene_cogs) %>%
   inner_join(pathway_neuroexclusivity) %>%
+  inner_join(expression_neuroexclusivity) %>%
   mutate(ne = pathway_neuroexclusivity >= 0.9) %>%
   select(string_id, everything())
 
-# quick color hack to aid visualization
+# Quick color hack to aid visualization
 vertices %<>%
   unite(color, glutamatergic:dopaminergic, remove = F) %>%
   mutate(color = rainbow(color %>% n_distinct)[color %>% as.factor])
 
 g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 
-# setting node sizes
+# Setting node sizes
 V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 ```
 
-Generating the network layout (i.e. nodes' coordinates).
+Generating the network layout (i.e. node coordinates).
 ```{r}
 if(file.exists("network_layout.tsv")) {
   layout <- read_tsv("network_layout.tsv", col_types = "dd") %>% as.matrix
@@ -106,12 +109,12 @@ V(g)$y <- -layout[, 2]
 # write_tsv(layout %>% as.data.frame, "layout.tsv")
 ```
 
-Preparing data for plotting.
+Generating tidy edge coordinates for plotting.
 ```{r}
-# recreating the vertices data.frame, now with layout coordinates
+# Recreating the vertices data.frame, now with layout coordinates (lazy)
 vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
 
-# the edges data.frame will be used to draw lines with ggplot
+# The edges data.frame will be used to draw lines with geom_line
 edges <- string_edgelist %>%
     map(match, vertices[["string_id"]]) %>%
     map_dfr(~ vertices[.x,]) %>%
@@ -119,414 +122,243 @@ edges <- string_edgelist %>%
     cbind(group = 1:nrow(string_edgelist))
 ```
 
-Setting up reusable aesthetic parameters.
+Setting up reusable aesthetic parameters for the plots.
 ```{r}
 pie_colors <- c(
-  "cholinergic"   = "#D84315",
-  "dopaminergic"  = "#F9A825",
-  "gabaergic"     = "#558B2F",
-  "glutamatergic" = "#1565C0",
-  "serotonergic"  = "#6A1B9A"
+   "cholinergic"   = "#D84315"
+  ,"dopaminergic"  = "#F9A825"
+  ,"gabaergic"     = "#558B2F"
+  ,"glutamatergic" = "#1565C0"
+  ,"serotonergic"  = "#6A1B9A"
 )
+plot_pie_fill <- scale_fill_manual(values = pie_colors)
 
 element_colors <- c(
-  "depletion"             = "#F40000",
-  "excitability"          = "#FFAB00",
-  "receptor-associated"   = "#D6EE00",
-  "ionotropic receptor"   = "#43FF1C",
-  "metabotropic receptor" = "#18FFFF",
-  "signaling"             = "#0091EA",
-  "g-protein"             = "#0033ff",
-  "synthesis"             = "#AA00FF",
-  "vesicle"               = "#FF00AA"
+   "depletion"             = "#F40000"
+  ,"excitability"          = "#FFAB00"
+  ,"receptor-associated"   = "#D6EE00"
+  ,"ionotropic receptor"   = "#43FF1C"
+  ,"metabotropic receptor" = "#18FFFF"
+  ,"signaling"             = "#0091EA"
+  ,"g-protein"             = "#0033ff"
+  ,"synthesis"             = "#AA00FF"
+  ,"vesicle"               = "#FF00AA"
+)
+# Color and size scales for neurotransmission functions
+plot_scales <- list(
+   scale_fill_manual(values = element_colors)
+  ,scale_color_manual(values = element_colors %>% darken(0.25))
+  ,scale_radius(range = c(1.75, 5.00), guide = FALSE)
 )
 
 systems <- names(pie_colors)
 
-edge_color <- rgb(0.7,0.7,0.7,alpha = 0.3)
+edge_color <- rgb(0.7, 0.7, 0.7, alpha = 0.3)
 
-past_fill  <- "#FFFFFF"
-past_color <- "#888888"
+past_fill  <- "#FFFFFF" # past nodes' fill color
+past_color <- "#888888" # past nodes' border color
 
+# Baking some aesthetic properties into the vertices data.frame
 vertices %<>% mutate(
-  shape      = ifelse(ne, 22, 21),
+  shape      = ifelse(ne, "square filled", "circle filled"),
   color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.2)),
   color_pie  = ifelse(ne, "#000000", NA),
 )
 
-# reusable ggplot aesthetics
+# Some recurrent ggplot aesthetics
 edge_aes <- aes(x = x, y = y, group = group)
 text_aes <- aes(x = x, y = y, label = string_name)
 pie_aes  <- aes(x = x, y = y, group = string_id, r = size^(0.94) - 1.5)
 
-#xy boundaries
+# Fixing xy limits across all plots
 xy_lim <- list(
   scale_x_continuous(limits = range(vertices[["x"]]) + c(-50, 50)),
   scale_y_continuous(limits = range(vertices[["y"]]) + c(-50, 50))
 )
 
+# Emptying theme defaults
+plot_theme <- list(coord_equal(), theme_void())
+
+# Allowing more space for multiple network plots
 diff_theme <- list(
   coord_equal(),
   theme_void(),
   theme(
-    plot.title         = element_text(size = 8, hjust = 0.5),
-    legend.text        = element_text(size = 6),
-    legend.title       = element_text(size = 8),
-    legend.key.size    = unit( 1, "mm"),
-    legend.box.spacing = unit(-2, "mm"),
-    legend.box.margin  = unit(c(0, 2, 0, 0), "mm"),
-    plot.margin        = unit(c(0, 0, 0, 0), "mm")
+     plot.title         = element_text(size = 8, hjust = 0.5)
+    ,legend.text        = element_text(size = 6)
+    ,legend.title       = element_text(size = 8)
+    ,legend.key.size    = unit( 1, "mm")
+    ,legend.box.spacing = unit(-2, "mm")
+    ,legend.box.margin  = unit(c(0, 2, 0, 0), "mm")
+    ,plot.margin        = unit(c(0, 0, 0, 0), "mm")
   )
 )
 
-roots <- vertices %>% arrange(-root) %>% pull(root) %>% unique
-roots_titles <- vertices %>%
+# Numeric vector named with clade names
+roots <- vertices %>%
   arrange(-root) %>%
-  pull(clade_name) %>%
-  unique %>%
-  paste0(" LCA (", roots, ")")
+  distinct(root, clade_name) %$%
+  set_names(root, clade_name)
 
 upset_texts <- c(
-  3,   #ytitle
-  2,   #ytick
-  1,   #setsizetitle
-  1.5, #setsizetick
-  2,   #setnames
-  2.5  #barnums
+   3   #ytitle
+  ,2   #ytick
+  ,1   #setsizetitle
+  ,1.5 #setsizetick
+  ,2   #setnames
+  ,2.5 #barnums
 )
 ```
 
 ### Figure 1
-
-#### Figure 1A
-```{r}
-# edge lines
-plot_edges <- geom_path(data = edges, edge_aes, color = edge_color, size = 0.1)
-
-#piecharts
-plot_pies <- geom_scatterpie(data = vertices, pie_aes, cols = systems, color = NA)
-
-# plor scale
-plot_pie_fill <- scale_fill_manual(values = pie_colors)
-
-#labels
-plot_text <- geom_text(
-  data    = vertices,
-  text_aes,
-  size    = 1,
-  vjust   = 0,
-  nudge_y = 6,
-  alpha   = 0.5
+```{r fig.align="center", fig.height=6, fig.width=14, fig.cap="The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right)."}
+####################
+## Common elements
+####################
+plot_edges <- geom_path(
+   data    = edges
+  ,mapping = edge_aes
+  ,color   = edge_color
+  ,size    = 0.1
 )
 
-# misc
-plot_theme <- list(coord_equal(), theme_void())
+plot_text <- geom_text(
+   data    = vertices
+  ,mapping = text_aes
+  ,size    = 1
+  ,vjust   = 0
+  ,nudge_y = 6
+  ,alpha   = 0.5
+)
 
-complete_systems <- ggplot() +
+##############
+## Figure 1A
+##############
+plot_pies <- geom_scatterpie(
+   data    = vertices
+  ,mapping = pie_aes
+  ,cols    = systems
+  ,color   = NA
+)
+
+fig1a <- ggplot() +
   plot_theme +
   plot_edges +
   plot_pies +
   plot_pie_fill +
   plot_text
 
-complete_systems
-  
-ggsave("plots/fig1a_raw.pdf", width = 7, height = 7, onefile = F, useDingbats = F)
-```
-
-#### Figure 1B
-```{r}
+##############
+## Figure 1B
+##############
 plot_nodes <- geom_point(
-   data   = vertices
-  ,aes(
-     x
-    ,y
-    ,fill  = annotation
-    ,color = annotation
-    ,size  = size
-  ),
-   shape  = 21
-  ,stroke = 0.5
-)
-
-# color and size scales
-plot_scales <- list(
-   scale_fill_manual(values = element_colors)
-  ,scale_color_manual(values = element_colors %>% darken(0.25) %>% setNames(names(element_colors)))
-  ,scale_radius(range = c(1.75, 5.00), guide = FALSE)
+   data    = vertices
+  ,mapping = aes(x, y, fill = annotation, color = annotation, size = size)
+  ,shape   = 21
+  ,stroke  = 0.5
 )
   
-complete_functions <- ggplot() +
+fig1b <- ggplot() +
   plot_theme +
   plot_edges +
   plot_nodes +
   plot_scales +
   plot_text
 
-complete_functions
-  
-ggsave("plots/fig1b_raw.pdf", width = 7, height = 7, onefile = F, useDingbats = F)
+# Plotting and saving
+fig1a + fig1b
+ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
-
-### Supplementary Figures 2 and 3 
+### Figure 2
 ```{r}
-plot_size <- scale_radius(range = c(0.5, 1.3), guide = FALSE)
+# Retrieving the largest connected component
+subgraphs <- decompose.graph(g)
+lcc_index <- which.max(sapply(subgraphs, vcount))
+lcc       <- subgraphs[[lcc_index]]
 
-system_plots   <- list()
-function_plots <- list()
-
-walk2(roots, roots_titles, ~ {
-  
-  #finding which genes should be drawn
-  current_genes <- vertices %>% filter(root == .x)
-  past_genes    <- vertices %>% filter(root  > .x)
-  
-  #finding which edges should be drawn
-  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-  partial_edges <- edges[which_edges,]
-  
-  ############
-  ## COMMON
-  ############
-  plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
-  
-  plot_past <- geom_point(
-     data   = past_genes
-    ,aes(
-       x
-      ,y
-      ,size = size
-    )
-    ,fill   = past_fill
-    ,color  = past_color
-    ,shape  = past_genes$shape
-    ,stroke = 0.25
-  )
-  
-  #labels
-  plot_text <- geom_text(
-     data    = current_genes
-    ,text_aes
-    ,size    = 1
-    ,vjust   = 0
-    ,nudge_y = 1.75
-    ,alpha   = 0.5
-  )
-  
-  ############
-  ## SYSTEMS
-  ############
-  plot_current_pies <- geom_scatterpie(
-    data  = current_genes,
-    pie_aes,
-    cols  = systems,
-    color = NA
-  )
-  
-  ##############
-  ## FUNCTIONS
-  ##############
-  plot_current_nodes <- geom_point(
-     data   = current_genes
-    ,aes(
-       x
-      ,y
-      ,fill = annotation
-      ,size = size
-    )
-    ,color  = current_genes$color_node
-    ,shape  = current_genes$shape
-    ,stroke = 0.25
-  )
-  
-  ############
-  ## SAVING
-  ############
-  base <- ggplot() +
-    ggtitle(.y) +
-    diff_theme +
-    xy_lim +
-    plot_edges +
-    plot_past +
-    plot_size
-  
-  system_plots[[as.character(.x)]] <<- base +
-    plot_current_pies +
-    plot_pie_fill +
-    plot_text
-  
-  legend_hack <- guides(fill = guide_legend(override.aes = list(shape = 21)))
-  
-  function_plots[[as.character(.x)]] <<- base +
-    plot_current_nodes +
-    plot_scales +
-    plot_size +
-    plot_text +
-    legend_hack
-})
-
-#saving pdfs
-ggsave(
-  "plots/sup_systems_emergence.pdf",
-  arrangeGrob(grobs = rev(system_plots), ncol = 3),
-  width       = 210,
-  height      = 297,
-  units       = "mm",
-  onefile     = F,
-  useDingbats = F
+# Writing network data to viacomplex's custom format (similar to pajek)
+# xy_hack adds some extra margin to the plot
+xy_hack <- data.frame(
+   name                        = c("top", "bot")
+  ,x                           = range(V(lcc)$x) + c(-75, 75)
+  ,y                           = range(V(lcc)$y) + c(-75, 75)
+  ,pathway_neuroexclusivity    = 0
+  ,expression_neuroexclusivity = 0
+  ,stringsAsFactors            = F
 )
-ggsave(
-  "plots/sup_functions_emergence.pdf",
-  arrangeGrob(grobs = rev(function_plots), ncol = 3),
-  width       = 210,
-  height      = 297,
-  units       = "mm",
-  onefile     = F,
-  useDingbats = F
+
+pajek_nodes <- lcc %>%
+  igraph::as_data_frame("vertices") %>%
+  bind_rows(xy_hack) %>%
+  mutate(id = row_number(), y = -y)
+
+pajek_edges <- igraph::as_data_frame(lcc, "edges")
+
+# Creating the network_viacomplex.net file and sequentially populating it
+write("*edges", "network_viacomplex.net")
+write_tsv(
+   x            = pajek_edges
+  ,path         = "network_viacomplex.net"
+  ,append       = T
+  ,col_names    = F
+  ,quote_escape = F
+)
+write("*nodes", "network_viacomplex.net", append = T)
+write_tsv(
+   x            = pajek_nodes %>% select(name, x, y)
+  ,path         = "network_viacomplex.net"
+  ,append       = T
+  ,col_names    = F
+  ,quote_escape = F
+)
+
+write_tsv(
+   x    = pajek_nodes %>% select(id, name, pathway_neuroexclusivity)
+  ,path = "network_viacomplex_pathway.dat"
+)
+write_tsv(
+   x    = pajek_nodes %>% select(id, name, expression_neuroexclusivity)
+  ,path = "network_viacomplex_expression.dat"
 )
 ```
 
-
-### Figure 4
+### Figure 3  
+The process for generating Figures 3 and 4 (as well as Supplementary Figures 2 and 3) is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the furthest human common ancestor in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root #1 is represented by _Homo sapiens_ itself.  
+The nodes we need to draw are either `current_nodes` (roots in a specified numeric range), or `past_nodes` (roots > such specified range). The edges we need to draw are all edges between both sets of nodes.  
+**Figure 3A**
 ```{r}
-idx <- which(roots >= 26 & roots <= 30)
-
-fig4 <- map2(roots[idx], roots_titles[idx], ~ {
-  
-  #finding which genes should be drawn
-  current_genes <- vertices %>% filter(root == .x)
-  past_genes    <- vertices %>% filter(root  > .x)
-  
-  #finding which edges should be drawn
-  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-  partial_edges <- edges[which_edges,]
-  
-  ############
-  ## COMMON
-  ############
-  plot_edges <- geom_path(
-    data  = partial_edges,
-    edge_aes,
-    color = edge_color,
-    size  = 0.1
-  )
-  
-  plot_past <- geom_point(
-    data   = past_genes,
-    aes(
-      x,
-      y,
-      size = size
-    ),
-    fill   = past_fill,
-    color  = past_color,
-    shape  = past_genes$shape,
-    stroke = 0.25
-  )
-  
-  #labels
-  plot_text <- geom_text(
-    data    = current_genes,
-    text_aes,
-    size    = 0.8,
-    vjust   = -0.5,
-    nudge_y = 1,
-    alpha   = 0.5
-  )
-  
-  ##############
-  ## FUNCTIONS
-  ##############
-  plot_current_nodes <- geom_point(
-    data   = current_genes,
-    aes(
-       x
-      ,y
-      ,fill = annotation
-      ,size = size
-    ),
-    color  = current_genes$color_node,
-    shape  = current_genes$shape,
-    stroke = 0.25
-  )
-  
-  ############
-  ## SAVING
-  ############
-  base <- ggplot() +
-    ggtitle(.y) +
-    diff_theme +
-    xy_lim +
-    plot_edges +
-    plot_past +
-    plot_size
-  
-  legend_hack <- guides(fill = "none", colour = "none")
-  
-  base +
-    plot_current_nodes +
-    plot_scales +
-    plot_size +
-    plot_text +
-    legend_hack
-})
-
-ggsave(
-  "plots/fig4_raw.pdf",
-  arrangeGrob(grobs = fig4, ncol = 5),
-  width       = 9*0.8,
-  height      = 5*0.8,
-  onefile     = F,
-  useDingbats = F
-)
-```
-
-### Figure 3
-
-#### Figure 3A
-```{r}
-#finding which genes should be drawn
+# Finding which genes should be drawn
 current_genes <- vertices %>% filter(root == 37)
 
-#finding which edges should be drawn
+# Finding which edges should be drawn
 partial_ids   <- current_genes %>% pull(string_id)
 which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
 partial_edges <- edges[which_edges,]
 
-############
-## COMMON
-############
 plot_edges <- geom_path(
-   data  = partial_edges
-  ,edge_aes
-  ,color = edge_color
-  ,size  = 0.1
+   data    = partial_edges
+  ,mapping = edge_aes
+  ,color   = edge_color
+  ,size    = 0.1
 )
 
 plot_text <- geom_text(
    data    = current_genes
-  ,text_aes
+  ,mapping = text_aes
   ,size    = 1
   ,vjust   = 0
   ,nudge_y = 1.75
   ,alpha   = 0.5
 )
 
-############
-## SYSTEMS
-############
 plot_current_pies <- geom_scatterpie(
-   data  = current_genes
-  ,pie_aes
-  ,cols  = systems
-  ,color = NA
+   data    = current_genes
+  ,mapping = pie_aes
+  ,cols    = systems
+  ,color   = NA
 )
 
-############
-## SAVING
-############
+# Assembling
 fig3a <- ggplot() +
   plot_edges +
   plot_scales +
@@ -535,59 +367,53 @@ fig3a <- ggplot() +
   plot_pie_fill +
   plot_text +
   plot_theme
-
-fig3a
-
-ggsave("plots/fig3a_raw.pdf", onefile = F, useDingbats = F, )
 ```
 
-#### Figure 3B
-```{r message=FALSE}
-#finding which genes should be drawn
+**Figure 3B**  
+For Figure 3B, we want to see what nodes have numeric roots < 37 (Human-Metamonada LCA) and >= 26 (Human-Cnidaria LCA).
+```{r fig.align="center", fig.height=5.5, fig.width=14, fig.cap="The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
+# Finding which genes should be drawn
 current_genes <- vertices %>% filter(root < 37 & root >= 26)
 past_genes    <- vertices %>% filter(root == 37)
 
-#finding which edges should be drawn
+# Finding which edges should be drawn
 partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
 which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
 partial_edges <- edges[which_edges,]
 
-############
-## COMMON
-############
-plot_edges <- geom_path(data = partial_edges, edge_aes, color = edge_color, size = 0.1)
-
-plot_past <- geom_point(
-   data   = past_genes
-  ,aes(
-     x    = x
-    ,y    = y
-    ,size = size
-  )
-  ,fill   = past_fill
-  ,color  = past_color
-  ,shape  = past_genes$shape
-  ,stroke = 0.25
+plot_edges <- geom_path(
+   data    = partial_edges
+  ,mapping = edge_aes
+  ,color   = edge_color
+  ,size    = 0.1
 )
 
-#labels
+plot_past <- geom_point(
+   data    = past_genes
+  ,mapping = aes(x, y, size = size)
+  ,fill    = past_fill
+  ,color   = past_color
+  ,shape   = past_genes$shape
+  ,stroke  = 0.25
+)
+
 plot_text <- geom_text(
    data    = current_genes
-  ,text_aes
+  ,mapping = text_aes
   ,size    = 1
   ,vjust   = 0
   ,nudge_y = 1.75
   ,alpha   = 0.5
 )
 
-############
-## SYSTEMS
-############
-plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = systems, color=NA)
+plot_current_pies <- geom_scatterpie(
+   data    = current_genes
+  ,mapping = pie_aes
+  ,cols    = systems
+  ,color   = NA
+)
 
-############
-## SAVING
-############
+# Assembling
 fig3b <- ggplot() +
   plot_edges +
   plot_past +
@@ -598,14 +424,92 @@ fig3b <- ggplot() +
   plot_text +
   plot_theme
 
-fig3b
-
-ggsave("plots/fig3b_raw.pdf", onefile = F, useDingbats = F)
+# Plotting and saving
+fig3a + fig3b
+ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
 
-# upset
-```{r}
-# we have to manually find the correct color order
+### Figure 4  
+Visualizing nodes with roots <= 30 (Human-Porifera LCA) and >= 26 (Human-Cnidaria LCA) at every distinct root.
+```{r fig.align="center", fig.height=2, fig.width=10, fig.cap="The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
+plot_size <- scale_radius(range = c(0.5, 1.3), guide = FALSE)
+
+fig4 <- roots[roots >= 26 & roots <= 30] %>%
+  imap(~ {
+  # Finding which genes should be drawn
+  current_genes <- vertices %>% filter(root == .x)
+  past_genes    <- vertices %>% filter(root  > .x)
+  
+  # Finding which edges should be drawn
+  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
+  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+  partial_edges <- edges[which_edges,]
+  
+  plot_edges <- geom_path(
+     data    = partial_edges
+    ,mapping = edge_aes
+    ,color   = edge_color
+    ,size    = 0.1
+  )
+  
+  plot_past <- geom_point(
+     data    = past_genes
+    ,mapping = aes(x, y, size = size)
+    ,fill    = past_fill
+    ,color   = past_color
+    ,shape   = past_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  plot_text <- geom_text(
+     data    = current_genes
+    ,mapping = text_aes
+    ,size    = 0.8
+    ,vjust   = -0.5
+    ,nudge_y = 1
+    ,alpha   = 0.5
+  )
+  
+  plot_current_nodes <- geom_point(
+     data    = current_genes
+    ,mapping = aes(x, y, fill = annotation, size = size)
+    ,color   = current_genes$color_node
+    ,shape   = current_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  remove_legend <- guides(fill = "none", colour = "none")
+  
+  # Assembling
+  ggplot() +
+    ggtitle(paste(.y, "LCA")) +
+    diff_theme +
+    xy_lim +
+    plot_edges +
+    plot_past +
+    plot_current_nodes +
+    plot_scales +
+    plot_size +
+    plot_text +
+    remove_legend
+})
+
+fig4 <- invoke(grid.arrange, fig4, ncol = 5)
+
+ggsave(
+  "plots/fig4_raw.pdf"
+  ,plot        = fig4
+  ,width       = 9*0.8
+  ,height      = 5*0.8
+  ,onefile     = F
+  ,useDingbats = F
+)
+```
+
+### Set diagrams  
+Given the dificulties of joining ggplot and base plots, the set diagrams have to be plotted by themselves:
+```{r results='hide', fig.cap='Set diagrams', fig.subcap=c('Set diagram for Figure 1A', 'Set diagram for Figure 3A', 'Set diagram for Figure 3B'), fig.width=20, fig.height=5, fig.ncol = 1}
+# we have to manually find the correct order of colors
 # because UpSetR does not understand named vectors
 get_colors <- function(df) {
   ordered_systems <- df %>%
@@ -617,46 +521,156 @@ get_colors <- function(df) {
   pie_colors[names(ordered_systems)]
 }
 
-pdf("plots/fig1a_set_raw.pdf",width=18,height=10,onefile=F,useDingbats=FALSE)
-  upset(
-     vertices %>% select(systems)
-    ,mb.ratio        = c(0.7, 0.3)
-    ,order.by        = "freq"
-    ,mainbar.y.label = "System Intersections"
-    ,sets.x.label    = "Genes per system"
-    ,text.scale      = upset_texts
-    ,point.size      = 3.5
-    ,line.size       = 1
-    ,sets.bar.color  = get_colors(vertices)
-  )
-dev.off()
+# Figure 1A set diagram
+upset(
+   select(vertices, systems)
+  ,mb.ratio        = c(0.7, 0.3)
+  ,order.by        = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label    = "Genes per system"
+  ,text.scale      = upset_texts
+  ,point.size      = 3.5
+  ,line.size       = 1
+  ,sets.bar.color  = get_colors(vertices)
+)
+dev.print(pdf, "plots/fig1a_set_raw.pdf", width = 18, height = 10, onefile = F, useDingbats = F)
 
-pdf("plots/fig3a_set_raw.pdf",width=16,height=8,onefile=F,useDingbats=FALSE)
-  upset(
-     vertices %>% filter(root == 37) %>% select(systems)
-    ,mb.ratio        = c(0.7, 0.3)
-    ,order.by        = "freq"
-    ,mainbar.y.label = "System Intersections"
-    ,sets.x.label    = "Genes per system"
-    ,text.scale      = upset_texts
-    ,point.size      = 3.5
-    ,line.size       = 1
-    ,sets.bar.color  = vertices %>% filter(root == 37) %>% get_colors
-  )
-dev.off()
+# Figure 3A set diagram
+fig3a_set <- vertices %>% filter(root == 37) %>% select(systems)
+upset(
+   fig3a_set
+  ,mb.ratio        = c(0.7, 0.3)
+  ,order.by        = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label    = "Genes per system"
+  ,text.scale      = upset_texts
+  ,point.size      = 3.5
+  ,line.size       = 1
+  ,sets.bar.color  = get_colors(fig3a_set)
+)
+dev.print(pdf, "plots/fig3a_set_raw.pdf", width = 16, height = 8, onefile = F, useDingbats = F)
 
-pdf("plots/fig3b_set_raw.pdf",width=16,height=8,onefile=F,useDingbats=FALSE)
-  upset(
-     vertices %>% filter(root < 37 & root >= 26) %>% select(systems)
-    ,mb.ratio        = c(0.7, 0.3)
-    ,order.by        = "freq"
-    ,mainbar.y.label = "System Intersections"
-    ,sets.x.label    = "Genes per system"
-    ,text.scale      = upset_texts
-    ,point.size      = 3.5
-    ,line.size       = 1
-    ,sets.bar.color  = vertices %>% filter(root < 37 & root >= 26) %>% get_colors
-  )
-dev.off()
+# Figure 3B set diagram
+fig3b_set <- vertices %>% filter(root < 37 & root >= 26) %>% select(systems)
+upset(
+   fig3b_set
+  ,mb.ratio        = c(0.7, 0.3)
+  ,order.by        = "freq"
+  ,mainbar.y.label = "System Intersections"
+  ,sets.x.label    = "Genes per system"
+  ,text.scale      = upset_texts
+  ,point.size      = 3.5
+  ,line.size       = 1
+  ,sets.bar.color  = get_colors(fig3b_set)
+)
+dev.print(pdf, "plots/fig3b_set_raw.pdf", width = 16, height = 8, onefile = F, useDingbats = F)
 ```
 
+### Supplementary Figures 2 and 3  
+Supplementary figures 2 and 3 help us see what nodes have been rooted at each LCA. Nodes rooted at previous LCAs are painted white.
+```{r}
+system_plots   <- list()
+function_plots <- list()
+
+iwalk(roots, ~ {
+  #finding which genes should be drawn
+  current_genes <- vertices %>% filter(root == .x)
+  past_genes    <- vertices %>% filter(root  > .x)
+  
+  #finding which edges should be drawn
+  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
+  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+  partial_edges <- edges[which_edges,]
+  
+  ####################
+  ## Common elements
+  ####################
+  plot_edges <- geom_path(
+     data    = partial_edges
+    ,mapping = edge_aes
+    ,color   = edge_color
+    ,size    = 0.1
+  )
+  
+  plot_past <- geom_point(
+     data    = past_genes
+    ,mapping = aes(x, y, size = size)
+    ,fill    = past_fill
+    ,color   = past_color
+    ,shape   = past_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  plot_text <- geom_text(
+     data    = current_genes
+    ,mapping = text_aes
+    ,size    = 1
+    ,vjust   = 0
+    ,nudge_y = 1.75
+    ,alpha   = 0.5
+  )
+  
+  base <- ggplot() +
+    ggtitle(paste0(.y, " LCA (#", .x, ")")) +
+    diff_theme +
+    xy_lim +
+    plot_edges +
+    plot_past +
+    plot_size
+  
+  ###########################
+  ## Supplementary Figure 2
+  ###########################
+  plot_current_pies <- geom_scatterpie(
+     data    = current_genes
+    ,mapping = pie_aes
+    ,cols    = systems
+    ,color   = NA
+  )
+  
+  system_plots[[as.character(.x)]] <<- base +
+    plot_current_pies +
+    plot_pie_fill +
+    plot_text
+  
+  ###########################
+  ## Supplementary Figure 3
+  ###########################
+  plot_current_nodes <- geom_point(
+     data    = current_genes
+    ,mapping = aes(x, y, fill = annotation, size = size)
+    ,color   = current_genes$color_node
+    ,shape   = current_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  legend_hack <- guides(fill = guide_legend(override.aes = list(shape = 21)))
+  
+  function_plots[[as.character(.x)]] <<- base +
+    plot_current_nodes +
+    plot_scales +
+    plot_size +
+    plot_text +
+    legend_hack
+})
+
+# Saving pdfs
+ggsave(
+  "plots/sup_systems_emergence.pdf"
+  ,arrangeGrob(grobs = rev(system_plots), ncol = 3)
+  ,width       = 210
+  ,height      = 297
+  ,units       = "mm"
+  ,onefile     = F
+  ,useDingbats = F
+)
+ggsave(
+  "plots/sup_functions_emergence.pdf"
+  ,arrangeGrob(grobs = rev(function_plots), ncol = 3)
+  ,width       = 210
+  ,height      = 297
+  ,units       = "mm"
+  ,onefile     = F
+  ,useDingbats = F
+)
+```

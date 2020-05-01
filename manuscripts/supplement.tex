@@ -114,6 +114,7 @@
 \usepackage[normalem]{ulem}
 \usepackage{makecell}
 \usepackage{xcolor}
+\usepackage{subfig}
 \let\oldShaded\Shaded
 \let\endoldShaded\endShaded
 \renewenvironment{Shaded}{\scriptsize\oldShaded}{\endoldShaded}
@@ -186,7 +187,7 @@ we devised a way to fill them in based on NCBI Taxonomy data.
 \subsubsection{NCBI Taxonomy tree}\label{ncbi-taxonomy-tree}}
 
 First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes,
-thus making the task easier. \input{tree_ncbi.tex}
+thus making the task easier. \input{data-raw.tree_ncbi.tex}
 
 \hypertarget{duplicated-genera}{%
 \subsubsection{Duplicated Genera}\label{duplicated-genera}}
@@ -194,14 +195,14 @@ thus making the task easier. \input{tree_ncbi.tex}
 Some species from different kingdoms may share the same genus name.
 These genera must be noted down because one of the ways we fill in
 missing species is by looking at genera names.
-\input{duplicated_genera.tex}
+\input{data-raw.duplicated_genera.tex}
 
 \hypertarget{hybrid-tree}{%
 \subsubsection{Hybrid tree}\label{hybrid-tree}}
 
 Once we have both the NCBI eukaryotes tree and the list of duplicated
 genera, we can start assembling the complete hybrid tree.
-\input{tree_hybrid.tex}
+\input{data-raw.tree_hybrid.tex}
 
 \hypertarget{gene-selection-and-annotation}{%
 \subsection{Gene selection and
@@ -211,14 +212,14 @@ The anchoring point for this study is basic annotation about genes and
 the pathways in which they participate. This section describes the
 process of structuring such data. In the end we will have a table to
 which all kinds of additional data will be left joined into.
-\input{kegg.tex}
+\input{data-raw.kegg.tex}
 
 \hypertarget{neuroexclusivity}{%
 \subsection{Neuroexclusivity}\label{neuroexclusivity}}
 
 Neuroexclusivity data consists of gene expression collected from Gexe
 Expression Atlas and the KEGG pathways themselves.
-\input{neuroexclusivity.tex}
+\input{data-raw.neuroexclusivity.tex}
 
 \hypertarget{orthology-data}{%
 \subsection{Orthology data}\label{orthology-data}}
@@ -226,14 +227,15 @@ Expression Atlas and the KEGG pathways themselves.
 This section refers to orthology data exported for geneplast use.
 Essentialy, we subset the global STRING mapping between proteins and
 orthologous groups into a smaller dataset containing only information
-about the orthogroups related to our selected genes. \input{cogs.tex}
+about the orthogroups related to our selected genes.
+\input{data-raw.cogs.tex}
 
 \hypertarget{network}{%
 \subsection{Network}\label{network}}
 
 In this section we search the STRING API for our proteins of interest
 and recompute the combined interaction score.
-\input{string_edgelist.tex}
+\input{data-raw.string_edgelist.tex}
 
 \hypertarget{analysis}{%
 \section{Analysis}\label{analysis}}
@@ -248,16 +250,22 @@ from which its genetic archetype (orthologous group) is vertically
 inherited, we use orthologous group annotation from the STRING database.
 The presence and absence of orthologous groups in the species of a
 cladogram are used to determine its most likely ancestor.
-\input{geneplast.tex}
+\input{analysis.geneplast.tex}
 
-\hypertarget{root-info}{%
-\subsection{Root info}\label{root-info}}
+\hypertarget{neuroexclusivity-1}{%
+\subsection{Neuroexclusivity}\label{neuroexclusivity-1}}
+
+We characterize genes' relevance to the nervous system by inspecting
+what proportion of its activity is related to nervous processes. We
+relied on tissue RNA-Seq data, as well as KEGG's pathways themselves.
+\input{analysis.neuroexclusivity.tex}
 
 \hypertarget{network-1}{%
 \subsection{Network}\label{network-1}}
 
-\hypertarget{neuroexclusivity-1}{%
-\subsection{Neuroexclusivity}\label{neuroexclusivity-1}}
+In this section we search the STRING API for our proteins of interest
+and recompute the combined interaction score.
+\input{analysis.network.tex}
 
 \hypertarget{abundance}{%
 \subsection{Abundance}\label{abundance}}
