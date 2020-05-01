@@ -198,6 +198,6 @@ string_eukaryotes <- string_species %>%
 write(string_eukaryotes[["ncbi_name"]],"476_ncbi_eukaryotes.txt")
 
 # usethis::use_data(ncbi_tree, overwrite = TRUE)
-write.tree(ncbi_tree, "ncbi_tree.nwk")
+write.tree(ncbi_tree, "tree_ncbi.nwk")
 usethis::use_data(string_eukaryotes, overwrite = TRUE)
 ```
