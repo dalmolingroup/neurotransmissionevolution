@@ -1,0 +1,178 @@
+\texttt{}
+
+\hypertarget{resources}{%
+\paragraph{\texorpdfstring{\textbf{Resources}}{Resources}}\label{resources}}
+
+\texttt{}\\
+
+\begin{table}[H]
+
+\caption{\label{tab:string_species}Lists all organisms in STRING v11.}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{string\_species}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & taxid & character & yes & 9606 & NCBI Taxonomy identifier\\
+2 & string\_type & character & no & core & if the genome of this species is core or periphery\\
+\rowcolor{gray!6}  3 & string\_name & character & yes & Homo sapiens & STRING species name\\
+4 & ncbi\_official\_name & character & no & Homo sapiens & NCBI Taxonomy species name\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/species.v11.0.txt}\\
+\multicolumn{6}{l}{\textbf{Source: } stringdb-static.org/download/species.v11.0.txt}\\
+\end{tabular}
+\end{table}
+\begin{table}[H]
+
+\caption{\label{tab:ncbi_merged_ids}Links outdated taxon IDs to corresponding new ones.}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_merged\_ids}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & taxid & character & yes & 140100 & id of node that has been merged\\
+2 & new\_taxid & character & yes & 666 & id of node that is the result of merging\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/merged.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
+\end{tabular}
+\end{table}
+\begin{table}[H]
+
+\caption{\label{tab:ncbi_edgelist}Represents taxonomy nodes.}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_edgelist}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & taxid & character & yes & 2 & node id in NCBI taxonomy database\\
+2 & parent\_taxid & character & yes & 131567 & parent node id in NCBI taxonomy database\\
+\rowcolor{gray!6}  3 & rank & character & no & superkingdom & rank of this node\\
+4 & ... & ... & no & ... & (too many unrelated fields)\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/nodes.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
+\end{tabular}
+\end{table}
+\begin{table}[H]
+
+\caption{\label{tab:ncbi_taxon_names}Links taxon IDs to actual species names.}
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{ncbi\_taxon\_names}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & taxid & character & yes & 2 & the id of node associated with this name\\
+2 & name & character & yes & Monera & name itself\\
+\rowcolor{gray!6}  3 & unique\_name & character & no & Monera <bacteria> & the unique variant of this name if name not unique\\
+4 & name\_class & character & yes & scientific name & type of name\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/taxdump/names.dmp}\\
+\multicolumn{6}{l}{\textbf{Source: } ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz}\\
+\end{tabular}
+\end{table}
+
+\texttt{}
+
+\hypertarget{updating-string-taxon-ids}{%
+\paragraph{\texorpdfstring{\textbf{Updating STRING taxon
+IDs}}{Updating STRING taxon IDs}}\label{updating-string-taxon-ids}}
+
+\texttt{}\\
+Some organisms taxon IDs are outdated in STRING. We must update them to
+work with the most recent NCBI Taxonomy data.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{string_species }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(ncbi_merged_ids) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{new_taxid =} \KeywordTok{coalesce}\NormalTok{(new_taxid, taxid))}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{creating-tree-graph}{%
+\paragraph{\texorpdfstring{\textbf{Creating tree
+graph}}{Creating tree graph}}\label{creating-tree-graph}}
+
+\texttt{}\\
+The first step is to create a directed graph representing the NCBI
+Taxonomy tree.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# leaving only "scientific name" rows}
+\NormalTok{ncbi_taxon_names }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(type }\OperatorTok{==}\StringTok{ "scientific name"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(name, ncbi_name)}
+
+\CommentTok{# finding Eukaryota taxid}
+\NormalTok{eukaryota_taxon_id <-}\StringTok{ }\KeywordTok{subset}\NormalTok{(ncbi_taxon_names, ncbi_name }\OperatorTok{==}\StringTok{ "Eukaryota"}\NormalTok{, }\StringTok{"name"}\NormalTok{, }\DataTypeTok{drop =} \OtherTok{TRUE}\NormalTok{)}
+
+\CommentTok{# creating graph}
+\NormalTok{g <-}\StringTok{ }\KeywordTok{graph_from_data_frame}\NormalTok{(ncbi_edgelist[,}\DecValTok{2}\OperatorTok{:}\DecValTok{1}\NormalTok{], }\DataTypeTok{directed =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{vertices =}\NormalTok{ ncbi_taxon_names)}
+
+\CommentTok{# easing memory}
+\KeywordTok{rm}\NormalTok{(ncbi_edgelist, ncbi_merged_ids)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{traversing-the-graph}{%
+\paragraph{\texorpdfstring{\textbf{Traversing the
+graph}}{Traversing the graph}}\label{traversing-the-graph}}
+
+\texttt{}\\
+The second step is to traverse the graph from the Eukaryota root node to
+STRING species nodes. This automatically drops all non-eukaryotes and
+results in a species tree representing only STRING eukaryotes (476).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{eukaryote_root <-}\StringTok{ }\KeywordTok{V}\NormalTok{(g)[eukaryota_taxon_id]}
+\NormalTok{eukaryote_leaves <-}\StringTok{ }\KeywordTok{V}\NormalTok{(g)[string_species[[}\StringTok{"new_taxid"}\NormalTok{]]]}
+
+\CommentTok{# not_found <- subset(string_species, !new_taxid %in% ncbi_taxon_names$name)}
+
+\NormalTok{eukaryote_paths <-}\StringTok{ }\KeywordTok{shortest_paths}\NormalTok{(g, }\DataTypeTok{from =}\NormalTok{ eukaryote_root, }\DataTypeTok{to =}\NormalTok{ eukaryote_leaves, }\DataTypeTok{mode =} \StringTok{"out"}\NormalTok{)}\OperatorTok{$}\NormalTok{vpath}
+
+\NormalTok{eukaryote_vertices <-}\StringTok{ }\NormalTok{eukaryote_paths }\OperatorTok{%>%}\StringTok{ }\NormalTok{unlist }\OperatorTok{%>%}\StringTok{ }\NormalTok{unique}
+
+\NormalTok{eukaryote_tree <-}\StringTok{ }\KeywordTok{induced_subgraph}\NormalTok{(g, eukaryote_vertices, }\DataTypeTok{impl =} \StringTok{"create_from_scratch"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{saving}{%
+\paragraph{\texorpdfstring{\textbf{Saving}}{Saving}}\label{saving}}
+
+\texttt{}\\
+Saving \texttt{ncbi\_tree} and \texttt{string\_eukaryotes} for package
+use. These data files are documented by the package. We also create a
+plain text file \texttt{476\_ncbi\_eukaryotes.txt} containing the
+updated names of all 476 STRING eukaryotes. This file will be queried
+against the TimeTree website.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ncbi_tree <-}\StringTok{ }\NormalTok{treeio}\OperatorTok{::}\KeywordTok{as.phylo}\NormalTok{(eukaryote_tree)}
+
+\CommentTok{# plot(ncbi_tree %>% ape::ladderize(), type="cladogram")}
+
+\NormalTok{string_eukaryotes <-}\StringTok{ }\NormalTok{string_species }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(new_taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{ncbi_tree}\OperatorTok{$}\NormalTok{tip.label) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(ncbi_taxon_names, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"new_taxid"}\NormalTok{ =}\StringTok{ "name"}\NormalTok{))}
+
+\KeywordTok{write}\NormalTok{(string_eukaryotes[[}\StringTok{"ncbi_name"}\NormalTok{]],}\StringTok{"476_ncbi_eukaryotes.txt"}\NormalTok{)}
+
+\CommentTok{# usethis::use_data(ncbi_tree, overwrite = TRUE)}
+\KeywordTok{write.tree}\NormalTok{(ncbi_tree, }\StringTok{"tree_ncbi.nwk"}\NormalTok{)}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(string_eukaryotes, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## <U+2714> Setting active project to 'C:/R/neuro'
+## <U+2714> Saving 'string_eukaryotes' to 'data/string_eukaryotes.rda'
+\end{verbatim}
