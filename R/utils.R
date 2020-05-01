@@ -79,18 +79,21 @@ custom_knit <- function(input, encoding, fig.path = "figs/") {
     # )
   )
 
+  pandoc_to <- "latex"
+  pandoc_ext <- ".tex"
+
   custom_format <- rmarkdown::output_format(
     knitr    = custom_options,
     # pandoc   = rmarkdown::pandoc_options(to = "gfm", ext = ".md"),
     # pandoc   = rmarkdown::pandoc_options(to = "html", ext = ".html"),
-    pandoc   = rmarkdown::pandoc_options(to = "latex", ext = ".tex"),
+    pandoc   = rmarkdown::pandoc_options(to = pandoc_to, ext = pandoc_ext),
     df_print = "kable"
   )
 
   rmarkdown::render(
     input,
     encoding       = encoding,
-    output_file    = paste0(current_directory, ".", current_file, collapse = ""),
+    output_file    = paste0(current_directory, ".", current_file, pandoc_ext, collapse = ""),
     output_dir     = here::here("manuscripts"),
     output_format  = custom_format,
     output_options = list(always_allow_html = "yes")
