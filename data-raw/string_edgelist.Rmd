@@ -24,10 +24,12 @@ Querying the API endpoint for the STRING IDs we collected.
 identifiers <- gene_ids %>% pull(string_id) %>% na.omit %>% paste0(collapse="%0d")
 
 if (!file.exists("download/string_ids.tsv")) {
-    postForm("http://string-db.org/api/tsv/get_string_ids",
-             identifiers = identifiers,
-             echo_query = "1",
-             species = "9606") %>%
+    postForm(
+      "http://string-db.org/api/tsv/get_string_ids"
+      ,identifiers = identifiers
+      ,echo_query  = "1"
+      ,species     = "9606"
+    ) %>%
     write("download/string_ids.tsv")
 }
 ```
@@ -72,9 +74,11 @@ Once IDs are correct, we can query the network API endpoint to obtain the protei
 identifiers <- api_ids %>% pull(stringId) %>% na.omit %>% { paste0("9606.", ., collapse="%0d") }
 
 if (!file.exists("download/string_edgelist.tsv")) {
-    postForm("http://string-db.org/api/tsv/network",
-             identifiers = identifiers,
-             species = "9606") %>%
+    postForm(
+      "http://string-db.org/api/tsv/network"
+      ,identifiers = identifiers
+      ,species     = "9606"
+    ) %>%
     write("download/string_edgelist.tsv")
 }
 ```
