@@ -41,7 +41,7 @@ data(
 
 # Fresh analysis data
 cog_roots                   <- read_tsv("geneplast_roots.tsv",             col_types = "ci")
-roots_extant_clades         <- read_tsv("geneplast_clade_names.tsv",       col_types = "ic")
+clade_names                 <- read_tsv("geneplast_clade_names.tsv",       col_types = "ic")
 pathway_neuroexclusivity    <- read_tsv("neuroexclusivity_pathway.tsv",    col_types = "cn")
 expression_neuroexclusivity <- read_tsv("neuroexclusivity_expression.tsv", col_types = "cn")
 
@@ -63,7 +63,7 @@ gene_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root)) %>%
-  inner_join(roots_extant_clades)
+  inner_join(clade_names)
 
 # Gathering all gene info available
 vertices <- gene_ids %>%
@@ -143,6 +143,9 @@ element_colors <- c(
   ,"g-protein"             = "#0033ff"
   ,"synthesis"             = "#AA00FF"
   ,"vesicle"               = "#FF00AA"
+  #------- is_neuroexclusive --------
+  ,"TRUE"                  = "#00BFC4"
+  ,"FALSE"                 = "#F8766D"
 )
 # Color and size scales for neurotransmission functions
 plot_scales <- list(
@@ -429,6 +432,54 @@ fig3a + fig3b
 ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
 
+Additionally, we cumulatively count nodes by their categories (function and neuroexclusivity) and inferred root:
+```{r}
+cumulative_emergence <- vertices %>%
+  select(root, annotation, is_neuroexclusive = ne) %>%
+  # Adding clade info
+  right_join(clade_names) %>%
+  # Pivoting from wide to long
+  pivot_longer(annotation:is_neuroexclusive, values_ptypes = list(value = "character")) %>%
+  # Counting nodes by category (name) for each root
+  count(root, clade_name, name, value) %>%
+  # Making absent counts explicit
+  group_by(name) %>%
+  complete(nesting(root, clade_name), name, value, fill = list(n = 0)) %>%
+  # No reason to include NA observations in cumulative sum
+  na.omit %>%
+  # Cumulative sum node count at each root
+  group_by(name, value) %>%
+  mutate(cumulative_count = order_by(-root, cumsum(n)))
+```
+
+Plotting such cumulative counts:
+```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Cumulative node counts by categories at each root."}
+cumulative_emergence %<>% ungroup %>%
+  # Creating ordered factors for plotting
+  mutate(
+     clade_name = fct_reorder(clade_name, -root)
+    ,value      = fct_reorder(value, name)
+  )
+
+ggplot(cumulative_emergence) +
+  #----- Barplot ------
+  geom_bar(
+     mapping     = aes(clade_name, cumulative_count, group = value)
+    ,stat        = "sum"
+    ,fill        = "#999999"
+    ,show.legend = F
+  ) +
+  #----- Lines ------
+  geom_line(
+     mapping = aes(clade_name, cumulative_count, group = value, color = value)
+    ,size    = 1
+  ) +
+  #----- Styling ------
+  scale_color_manual(values = element_colors) +
+  facet_grid(name ~ .) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+```
+
 ### Figure 4  
 Visualizing nodes with roots <= 30 (Human-Porifera LCA) and >= 26 (Human-Cnidaria LCA) at every distinct root.
 ```{r fig.align="center", fig.height=2, fig.width=10, fig.cap="The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
@@ -509,8 +560,8 @@ ggsave(
 ### Set diagrams  
 Given the dificulties of joining ggplot and base plots, the set diagrams have to be plotted by themselves:
 ```{r results='hide', fig.cap='Set diagrams', fig.subcap=c('Set diagram for Figure 1A', 'Set diagram for Figure 3A', 'Set diagram for Figure 3B'), fig.width=20, fig.height=5, fig.ncol = 1}
-# we have to manually find the correct order of colors
-# because UpSetR does not understand named vectors
+# We have to manually find the correct order of colors
+# Because UpSetR does not understand named vectors
 get_colors <- function(df) {
   ordered_systems <- df %>%
     select(systems) %>%

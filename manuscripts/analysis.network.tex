@@ -32,7 +32,7 @@ Loading resources.
 
 \CommentTok{# Fresh analysis data}
 \NormalTok{cog_roots                   <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_roots.tsv"}\NormalTok{,             }\DataTypeTok{col_types =} \StringTok{"ci"}\NormalTok{)}
-\NormalTok{roots_extant_clades         <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{,       }\DataTypeTok{col_types =} \StringTok{"ic"}\NormalTok{)}
+\NormalTok{clade_names                 <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{,       }\DataTypeTok{col_types =} \StringTok{"ic"}\NormalTok{)}
 \NormalTok{pathway_neuroexclusivity    <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"neuroexclusivity_pathway.tsv"}\NormalTok{,    }\DataTypeTok{col_types =} \StringTok{"cn"}\NormalTok{)}
 \NormalTok{expression_neuroexclusivity <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"neuroexclusivity_expression.tsv"}\NormalTok{, }\DataTypeTok{col_types =} \StringTok{"cn"}\NormalTok{)}
 
@@ -57,7 +57,7 @@ Joining all gene data and creating the network graph object.
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_roots) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{max}\NormalTok{(root)) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{inner_join}\NormalTok{(roots_extant_clades)}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(clade_names)}
 
 \CommentTok{# Gathering all gene info available}
 \NormalTok{vertices <-}\StringTok{ }\NormalTok{gene_ids }\OperatorTok{%>%}
@@ -138,6 +138,9 @@ Setting up reusable aesthetic parameters for the plots.
 \NormalTok{  ,}\StringTok{"g-protein"}\NormalTok{             =}\StringTok{ "#0033ff"}
 \NormalTok{  ,}\StringTok{"synthesis"}\NormalTok{             =}\StringTok{ "#AA00FF"}
 \NormalTok{  ,}\StringTok{"vesicle"}\NormalTok{               =}\StringTok{ "#FF00AA"}
+  \CommentTok{#------- is_neuroexclusive --------}
+\NormalTok{  ,}\StringTok{"TRUE"}\NormalTok{                  =}\StringTok{ "#00BFC4"}
+\NormalTok{  ,}\StringTok{"FALSE"}\NormalTok{                 =}\StringTok{ "#F8766D"}
 \NormalTok{)}
 \CommentTok{# Color and size scales for neurotransmission functions}
 \NormalTok{plot_scales <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}
@@ -479,6 +482,70 @@ For Figure 3B, we want to see what nodes have numeric roots \textless{}
 \end{Highlighting}
 \end{Shaded}
 
+Additionally, we cumulatively count nodes by their categories (function
+and neuroexclusivity) and inferred root:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cumulative_emergence <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(root, annotation, }\DataTypeTok{is_neuroexclusive =}\NormalTok{ ne) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Adding clade info}
+\StringTok{  }\KeywordTok{right_join}\NormalTok{(clade_names) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Pivoting from wide to long}
+\StringTok{  }\KeywordTok{pivot_longer}\NormalTok{(annotation}\OperatorTok{:}\NormalTok{is_neuroexclusive, }\DataTypeTok{values_ptypes =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{value =} \StringTok{"character"}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Counting nodes by category (name) for each root}
+\StringTok{  }\KeywordTok{count}\NormalTok{(root, clade_name, name, value) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Making absent counts explicit}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{complete}\NormalTok{(}\KeywordTok{nesting}\NormalTok{(root, clade_name), name, value, }\DataTypeTok{fill =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{n =} \DecValTok{0}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# No reason to include NA observations in cumulative sum}
+\StringTok{  }\NormalTok{na.omit }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Cumulative sum node count at each root}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(name, value) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{cumulative_count =} \KeywordTok{order_by}\NormalTok{(}\OperatorTok{-}\NormalTok{root, }\KeywordTok{cumsum}\NormalTok{(n)))}
+\end{Highlighting}
+\end{Shaded}
+
+Plotting such cumulative counts:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cumulative_emergence }\OperatorTok{%<>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Creating ordered factors for plotting}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+     \DataTypeTok{clade_name =} \KeywordTok{fct_reorder}\NormalTok{(clade_name, }\OperatorTok{-}\NormalTok{root)}
+\NormalTok{    ,}\DataTypeTok{value      =} \KeywordTok{fct_reorder}\NormalTok{(value, name)}
+\NormalTok{  )}
+
+\KeywordTok{ggplot}\NormalTok{(cumulative_emergence) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#----- Barplot ------}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
+     \DataTypeTok{mapping     =} \KeywordTok{aes}\NormalTok{(clade_name, cumulative_count, }\DataTypeTok{group =}\NormalTok{ value)}
+\NormalTok{    ,}\DataTypeTok{stat        =} \StringTok{"sum"}
+\NormalTok{    ,}\DataTypeTok{fill        =} \StringTok{"#999999"}
+\NormalTok{    ,}\DataTypeTok{show.legend =}\NormalTok{ F}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#----- Lines ------}
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}
+     \DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(clade_name, cumulative_count, }\DataTypeTok{group =}\NormalTok{ value, }\DataTypeTok{color =}\NormalTok{ value)}
+\NormalTok{    ,}\DataTypeTok{size    =} \DecValTok{1}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{#----- Styling ------}
+\StringTok{  }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ element_colors) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(name }\OperatorTok{~}\StringTok{ }\NormalTok{.) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{1}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.network.unnamed-chunk-13-1} 
+
+}
+
+\caption{Cumulative node counts by categories at each root.}\label{fig:unnamed-chunk-13}
+\end{figure}
+
 \hypertarget{figure-4}{%
 \subsubsection{Figure 4}\label{figure-4}}
 
@@ -555,11 +622,11 @@ Visualizing nodes with roots \textless= 30 (Human-Porifera LCA) and
 
 \begin{figure}
 
-{\centering \includegraphics{figs/analysis.network.unnamed-chunk-12-1} 
+{\centering \includegraphics{figs/analysis.network.unnamed-chunk-14-1} 
 
 }
 
-\caption{The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA).}\label{fig:unnamed-chunk-12}
+\caption{The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA).}\label{fig:unnamed-chunk-14}
 \end{figure}
 
 \begin{Shaded}
@@ -583,8 +650,8 @@ have to be plotted by themselves:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# we have to manually find the correct order of colors}
-\CommentTok{# because UpSetR does not understand named vectors}
+\CommentTok{# We have to manually find the correct order of colors}
+\CommentTok{# Because UpSetR does not understand named vectors}
 \NormalTok{get_colors <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(df) \{}
 \NormalTok{  ordered_systems <-}\StringTok{ }\NormalTok{df }\OperatorTok{%>%}
 \StringTok{    }\KeywordTok{select}\NormalTok{(systems) }\OperatorTok{%>%}
@@ -642,7 +709,7 @@ have to be plotted by themselves:
 \end{Shaded}
 
 \begin{figure}
-\subfloat[Set diagram for Figure 1A\label{fig:unnamed-chunk-131}]{\includegraphics{figs/analysis.network.unnamed-chunk-13-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:unnamed-chunk-132}]{\includegraphics{figs/analysis.network.unnamed-chunk-13-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:unnamed-chunk-133}]{\includegraphics{figs/analysis.network.unnamed-chunk-13-3} }\caption{Set diagrams}\label{fig:unnamed-chunk-13}
+\subfloat[Set diagram for Figure 1A\label{fig:unnamed-chunk-151}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:unnamed-chunk-152}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:unnamed-chunk-153}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-3} }\caption{Set diagrams}\label{fig:unnamed-chunk-15}
 \end{figure}
 
 \hypertarget{supplementary-figures-2-and-3}{%
