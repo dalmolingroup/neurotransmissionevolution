@@ -1,0 +1,171 @@
+---
+title: "Abundances"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r message=FALSE}
+library(tidyverse)
+library(magrittr)
+
+library(neurotransmissionevolution)
+```
+
+# Dados
+```{r rows.print=5}
+data(
+  ogr,
+  ogp,
+  gene_ids,
+  gene_pathways,
+  cogs_of_interest,
+  string_eukaryotes,
+  package = "neurotransmissionevolution"
+)
+
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
+  mutate(annotation = case_when(
+    grepl("clearance",annotation) ~ "depletion",
+    grepl("degradation",annotation) ~ "depletion",
+    grepl("transport",annotation) ~ "synthesis",
+    TRUE ~ annotation
+  ))
+
+cog_roots <- read_tsv("geneplast_roots.tsv", col_types = "ci")
+
+roots_extant_clades <- read_tsv("geneplast_clade_names.tsv", col_types = "ic")
+
+spbranches <- ogr@spbranches %>% select(taxid = ssp_id, root = `9606`)
+```
+
+# joining data
+```{r}
+cogs_of_interest %<>%
+  inner_join(cog_roots) %>%
+  group_by(string_id) %>%
+  filter(root == max(root))
+
+info <- gene_ids %>%
+  na.omit %>%
+  inner_join(gene_pathways) %>%
+  inner_join(gene_annotation) %>%
+  inner_join(cogs_of_interest)
+```
+
+# wrangle
+```{r}
+cog_annotation <- info %>% select(cog_id, annotation) %>% unique
+
+orthodist <- ogp@orthodist %>%
+  as.data.frame %>%
+  rownames_to_column("taxid") %>%
+  pivot_longer(cols = -taxid, names_to = "cog_id", values_to = "count")
+
+orthodist_annotation <- inner_join(orthodist, cog_annotation)
+```
+
+# plot
+```{r message=FALSE}
+ssp_abundance <- orthodist %>%
+  group_by(taxid) %>%
+  summarise(abundance = { sum(count)/sum(count > 0) }) %>%
+  inner_join(spbranches) %>%
+  arrange(-root) %>%
+  mutate(taxid = factor(taxid, levels = taxid[order(-root)]))
+  
+ggplot(ssp_abundance) +
+  geom_bar(aes(x = taxid, y = abundance), stat="identity")
+```
+
+
+```{r message=FALSE}
+annotation_abundance <- orthodist_annotation %>%
+  filter(count > 0) %>%
+  group_by(taxid, annotation) %>%
+  summarise(abundance = { sum(count)/sum(count > 0) }) %>%
+  ungroup(taxid, annotation) %>%
+  inner_join(spbranches) %>%
+  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
+
+porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Mnemiopsis leidyi")
+
+plot_config <- list(
+  facet_grid(annotation ~ ., scales = "free_y"),
+  geom_vline(xintercept = porifera_xintercept, color = "#FF0000", linetype = "11", size = 0.25),
+  theme(axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = 0)),
+  theme(plot.title = element_text(size = 20, face = "bold"))
+)
+
+ggplot(annotation_abundance) +
+  geom_bar(aes(x = ncbi_name, y = abundance), stat="identity") +
+  ggtitle("numero de proteinas por funcao dividido pelo numero de cogs da funcao") +
+  plot_config
+ggsave("plots/abundance_by_function.pdf", width = 20, height = 10)
+```
+
+
+```{r message=FALSE}
+annotation_count <- orthodist_annotation %>%
+  group_by(taxid, annotation) %>%
+  summarise(count = sum(count)) %>%
+  ungroup(taxid, annotation) %>%
+  inner_join(spbranches) %>%
+  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
+
+ggplot(annotation_count) +
+  geom_bar(aes(x = ncbi_name, y = count), stat="identity") +
+  ggtitle("numero de proteinas por funcao") +
+  plot_config
+ggsave("plots/abundance_count.pdf", width = 20, height = 10)
+```
+
+
+```{r}
+cog_count_by_taxid <- orthodist %>%
+  group_by(taxid) %>%
+  summarise(count_cog = sum(count > 0))
+
+annotation_count_by_all_cogs <- orthodist_annotation %>%
+  group_by(taxid, annotation) %>%
+  summarise(count_annotation = sum(count)) %>%
+  ungroup(taxid, annotation) %>%
+  inner_join(cog_count_by_taxid) %>%
+  inner_join(spbranches) %>%
+  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+  mutate(abundance = count_annotation / count_cog) %>%
+  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
+
+ggplot(annotation_count_by_all_cogs) +
+  geom_bar(aes(x = ncbi_name, y = abundance), stat="identity") +
+  ggtitle("numero de proteinas por funcao dividido pelo numero de cogs na especie") +
+  plot_config
+ggsave("plots/abundance_by_all_cogs.pdf", width = 20, height = 10)
+```
+
+
+```{r message=FALSE}
+cog_annotation_collapse <- cog_annotation %>%
+  group_by(cog_id) %>%
+  summarise(annotation = paste(annotation, collapse = " "))
+
+protein_count_by_cog <- orthodist %>%
+  group_by(taxid, cog_id) %>%
+  summarise(count = sum(count)) %>%
+  ungroup(taxid, annotation) %>%
+  inner_join(cog_annotation_collapse) %>%
+  inner_join(spbranches) %>%
+  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+  mutate(
+    ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique),
+    cog_id    = factor(cog_id,  levels = cog_id[order(annotation)] %>% unique)
+  )
+
+t <- ggplot(protein_count_by_cog) +
+  geom_bar(aes(x = ncbi_name, y = count, fill = annotation), stat="identity") +
+  facet_grid(cog_id ~ ., scales = "free_y") +
+  ggtitle("numero de proteinas por cog, para cada especie") +
+  plot_config[-1] +
+  theme(strip.text.y = element_text(size = 6)) #+
+  # theme(legend.text = element_text(margin = margin(t = 1.5, b = 1.5, unit = "in")))
+ggsave("plots/abundance_protein_count_by_cog.pdf", t, width = 20, height = 50, limitsize = FALSE)
+```
