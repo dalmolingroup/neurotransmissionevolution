@@ -149,6 +149,11 @@ species' clades
 \NormalTok{lca_names <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\StringTok{"lca"}\NormalTok{ =}\StringTok{ }\NormalTok{root)}
 
 \NormalTok{lca_spp <-}\StringTok{ }\NormalTok{ogr}\OperatorTok{@}\NormalTok{spbranches }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\StringTok{"taxid"}\NormalTok{ =}\StringTok{ }\NormalTok{ssp_id, }\StringTok{"species"}\NormalTok{ =}\StringTok{ }\NormalTok{ssp_name, }\StringTok{"lca"}\NormalTok{ =}\StringTok{ `}\DataTypeTok{9606}\StringTok{`}\NormalTok{)}
+\CommentTok{# Saving for use in abundance computation}
+\NormalTok{lca_spp }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(lca, taxid) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{taxid_order =} \KeywordTok{row_number}\NormalTok{()) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"geneplast_clade_taxids.tsv"}\NormalTok{)}
 
 \NormalTok{cog_pam <-}\StringTok{ }\NormalTok{ogr}\OperatorTok{@}\NormalTok{orthoct[,}\OperatorTok{-}\DecValTok{1}\NormalTok{]}
 
