@@ -124,6 +124,11 @@ Visualizing the presence/absence matrix according to inferred roots and species'
 lca_names <- read_tsv("geneplast_clade_names.tsv") %>% rename("lca" = root)
 
 lca_spp <- ogr@spbranches %>% rename("taxid" = ssp_id, "species" = ssp_name, "lca" = `9606`)
+# Saving for use in abundance computation
+lca_spp %>%
+  select(lca, taxid) %>%
+  mutate(taxid_order = row_number()) %>%
+  write_tsv("geneplast_clade_taxids.tsv")
 
 cog_pam <- ogr@orthoct[,-1]
 
