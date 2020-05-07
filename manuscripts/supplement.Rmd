@@ -143,6 +143,8 @@ In this section we search the STRING API for our proteins of interest and recomp
 <!--- Abundance -->
 Abundance
 -----------
+A
+\input{analysis.abundance.tex}
 
 
 ```{r end}
