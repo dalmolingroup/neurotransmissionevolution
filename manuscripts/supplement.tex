@@ -264,17 +264,23 @@ relied on tissue RNA-Seq data, as well as KEGG's pathways themselves.
 \subsection{Network}\label{network-1}}
 
 In this section we search the STRING API for our proteins of interest
-and recompute the combined interaction score.
+and recompute their combined interaction score.
 \input{analysis.network.tex}
 
 \hypertarget{abundance}{%
 \subsection{Abundance}\label{abundance}}
 
-A \input{analysis.abundance.tex}
+Abundance is the average number of proteins in neurotransmission
+orthogroups present in a species. This abundance is decomposed by
+orthogroup function. The orthogroup function is considered to be the
+function of its humans proteins in neurotransmission, as described in
+previous sections. In other words: ``what would be the average number
+of''X``-related proteins in neurotransmission COGs in a species?''
+\input{analysis.abundance.tex}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{#leave this chunk}
+\CommentTok{#}
 \end{Highlighting}
 \end{Shaded}
 

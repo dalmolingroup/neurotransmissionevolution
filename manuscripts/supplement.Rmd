@@ -57,8 +57,8 @@ output:
     keep_tex: true
 ---
 ```{r setup, include=FALSE}
-knitr::knit_meta(clean=T)
 gc()
+knitr::knit_meta(clean = TRUE)
 knitr::opts_chunk$set(fig.pos = 'H')
 ```
 
@@ -137,16 +137,16 @@ We characterize genes' relevance to the nervous system by inspecting what propor
 <!--- Network -->
 Network
 -----------
-In this section we search the STRING API for our proteins of interest and recompute the combined interaction score.
+In this section we search the STRING API for our proteins of interest and recompute their combined interaction score.
 \input{analysis.network.tex}
 
 <!--- Abundance -->
 Abundance
 -----------
-A
+Abundance is the average number of proteins in neurotransmission orthogroups present in a species. This abundance is decomposed by orthogroup function. The orthogroup function is considered to be the function of its humans proteins in neurotransmission, as described in previous sections. In other words: "what would be the average number of "X"-related proteins in neurotransmission COGs in a species?"
 \input{analysis.abundance.tex}
 
 
 ```{r end}
-#leave this chunk
+#
 ```

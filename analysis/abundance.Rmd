@@ -4,10 +4,11 @@ knit: neurotransmissionevolution::custom_knit
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 2
+  ,autodep     = T
+  # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
 ```
 
@@ -44,7 +45,7 @@ gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   ))
 ```
 
-A
+We start by setting up reusable data frames with useful metrics.
 ```{r}
 # If a gene has more than 1 COG, select the oldest one.
 # This is unusual, but can happen in cases of gene fusion, for instance.
@@ -83,6 +84,7 @@ ordered_species <- string_eukaryotes %>%
     ,clade_name = fct_reorder(clade_name, -taxid_order)
   )
 
+# Plotting colors
 annotation_colors <- c(
    "depletion"             = "#F40000"
   ,"excitability"          = "#FFAB00"
@@ -96,6 +98,7 @@ annotation_colors <- c(
 )
 ```
 
+Abundance is finally computed as the number of proteins pertaining to a function divided by the number of neurotransmission COGs in a species.
 ```{r}
 abundance_by_function <- cog_size_by_taxid %>%
   inner_join(cog_annotation) %>%
@@ -107,11 +110,12 @@ abundance_by_function <- cog_size_by_taxid %>%
     ,abundance_prop = annotation_count / protein_n
   )
 ```
-
-A
-```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="A"}
+Plotting:
+```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure S1."}
+# Adding species and clade info to the abundance data frame
 abundance_by_function %<>% left_join(ordered_species)
 
+# This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)
 metazoa_line <- geom_vline(
    xintercept = "Mnemiopsis leidyi"
   ,color      = "#FF0000"
@@ -120,8 +124,7 @@ metazoa_line <- geom_vline(
   ,size       = 0.25
 )
 
-# This tick function is used in scale_y_continuous
-# to only draw 3 middle ticks
+# This tick function is used in scale_y_continuous to display only innermost ticks
 tick_function <- function(skip_head = 1, skip_tail = 1) {
   function(x){
     breaks <- seq(x[2], 0, length.out = 5) %>% head(-skip_head) %>% tail(-skip_tail)
@@ -130,11 +133,12 @@ tick_function <- function(skip_head = 1, skip_tail = 1) {
 }
 
 ggplot(abundance_by_function) +
+  ggtitle("Number of proteins in a function divided by number of all neural COGs in species") +
   metazoa_line +
   geom_bar(aes(x = ncbi_name, y = abundance, fill = annotation, color = annotation), stat = "identity") +
-  facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
   scale_y_continuous("Average protein count in neural COGs", breaks = tick_function(), minor_breaks = NULL) +
   xlab("Taxa") +
+  facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
   scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
   scale_color_manual(values = annotation_colors %>% darken(0.2)) +
   theme(
@@ -154,31 +158,32 @@ ggsave("plots/fig5_raw.pdf", width = 16, height = 8)
 
 # Proportion --------------------
 ggplot(abundance_by_function) +
-    metazoa_line +
-    geom_bar(aes(x = ncbi_name, y = abundance_prop, fill = annotation, color = annotation), stat = "identity") +
-    facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
-    scale_y_continuous( minor_breaks = NULL) +
-    scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
-    scale_color_manual(values = annotation_colors %>% darken(0.2)) +
-    theme(
-         panel.spacing      = unit(2.5, "pt")
-        ,strip.background.x = element_blank()
-        ,strip.background.y = element_rect(fill="#E0E0E0")
-        ,panel.grid.major.x = element_blank()
-        ,panel.grid.major.y = element_line(colour = "#F5F5F5", size = 0.25)
-        ,panel.background   = element_rect(fill = '#EEEEEE', colour = '#E0E0E0')
-        ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5)
-        ,strip.text.y       = element_text(size = 8, vjust = 0.5)
-        ,axis.text.x        = element_text(size = 2, angle = -45, vjust = 0, hjust = 0)
-        ,axis.text.y        = element_text(size = 6)
-        ,axis.ticks.x       = element_line(size = 0.1)
-        ,legend.position    = "none"
-    )
+  ggtitle("Number of proteins in a function divided by number of all neural proteins in species") +
+  metazoa_line +
+  geom_bar(aes(x = ncbi_name, y = abundance_prop, fill = annotation, color = annotation), stat = "identity") +
+  facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
+  scale_y_continuous( minor_breaks = NULL) +
+  scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
+  scale_color_manual(values = annotation_colors %>% darken(0.2)) +
+  theme(
+     panel.spacing      = unit(2.5, "pt")
+    ,strip.background.x = element_blank()
+    ,strip.background.y = element_rect(fill="#E0E0E0")
+    ,panel.grid.major.x = element_blank()
+    ,panel.grid.major.y = element_line(colour = "#F5F5F5", size = 0.25)
+    ,panel.background   = element_rect(fill = '#EEEEEE', colour = '#E0E0E0')
+    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5)
+    ,strip.text.y       = element_text(size = 8, vjust = 0.5)
+    ,axis.text.x        = element_text(size = 2, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 6)
+    ,axis.ticks.x       = element_line(size = 0.1)
+    ,legend.position    = "none"
+  )
 ggsave("plots/fig5_prop_raw.pdf", width = 16, height = 8)
 ```
 
-A
-```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="A"}
+Abundances averaged by clades.
+```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="Abundances averaged by clades."}
 ggplot(abundance_by_function) +
   geom_bar(aes(x = clade_name, y = abundance, fill = annotation), stat="summary", fun = "mean") +
   scale_fill_manual(values = annotation_colors, guide = "none") +
@@ -191,8 +196,8 @@ ggplot(abundance_by_function) +
   )
 ```
 
-A
-```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="A"}
+Breaking the data even further into the number of proteins in each neurotransmission COG.
+```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="Number of proteins in each neurotransmission COG, for every species."}
 # Merging mixed COG functions
 cog_annotation_collapsed <- cog_annotation %>%
   group_by(cog_id) %>%
@@ -205,6 +210,7 @@ annotation_colors %<>% c(
   ,"signaling/excitability" = "#808080"
 )
 
+# Simply joining cog annotation and sizes
 protein_count_by_cog <- cog_size_by_taxid %>%
   inner_join(cog_annotation_collapsed) %>%
   left_join(ordered_species) %>%
