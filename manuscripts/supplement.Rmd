@@ -48,6 +48,14 @@ header-includes:
   # line numbers
   - \usepackage{lineno}
   - \linenumbers
+  # Fira code
+  # - \setmonofont{FiraCode-Light.ttf}
+  - \setmonofont[Path=style/,Contextuals={Alternate}]{FiraCode-Light.ttf}
+  - \makeatletter
+  - \def\verbatim@nolig@list{}
+  - \makeatother
+  
+# monofont: "Fira Code Light"
 
 geometry: margin=1in
 
@@ -55,13 +63,14 @@ graphics: yes
 
 output:
   pdf_document:
+    latex_engine: xelatex
     template: style/default.tex
     toc: yes
     toc_depth: 3
     fig_caption: true
-    highlight: zenburn
+    pandoc_args: --highlight-style=style/chaos_modified.theme
+    # highlight: zenburn
     # pandoc_args: "--highlight=breezedark"
-    # template: components/elsarticle.latex
     keep_tex: true
 ---
 ```{r setup, include=FALSE}
