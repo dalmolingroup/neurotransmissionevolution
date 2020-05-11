@@ -45,9 +45,17 @@ header-includes:
   - \captionsetup{margin={2pt,0pt}}
   # hold figure position
   - \floatplacement{figure}{H}
+  # line numbers
+  - \usepackage{lineno}
+  - \linenumbers
+
+geometry: margin=1in
+
+graphics: yes
 
 output:
   pdf_document:
+    template: style/default.tex
     toc: yes
     toc_depth: 3
     fig_caption: true
@@ -60,6 +68,7 @@ output:
 gc()
 knitr::knit_meta(clean = TRUE)
 knitr::opts_chunk$set(fig.pos = 'H')
+knitr::opts_chunk$set(class.source = "numberLines")
 ```
 
 <!--- Project structure -->
