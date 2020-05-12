@@ -31,10 +31,6 @@ header-includes:
   - \usepackage{makecell}
   - \usepackage{xcolor}
   - \usepackage{subfig}
-  # small font size for code chunks
-  - \let\oldShaded\Shaded
-  - \let\endoldShaded\endShaded
-  - \renewenvironment{Shaded}{\scriptsize\oldShaded}{\endoldShaded}
   # small font size for output chunks
   - \let\oldverbatim\verbatim
   - \let\endoldverbatim\endverbatim
@@ -49,19 +45,20 @@ header-includes:
   - \usepackage{lineno}
   - \linenumbers
   # Fira code
-  # - \setmonofont{FiraCode-Light.ttf}
   - \setmonofont[Path=style/,Contextuals={Alternate},AutoFakeSlant]{FiraCode-Light.ttf}
   - \makeatletter
   - \def\verbatim@nolig@list{}
   - \makeatother
-  # round
+  # small font size for code chunks
+  - \let\oldShaded\Shaded
+  - \let\endoldShaded\endShaded
+  # - \renewenvironment{Shaded}{\scriptsize\oldShaded}{\endoldShaded}
+  # Rounded code blocks
   - \usepackage{tcolorbox}
   - \tcbuselibrary{breakable, skins}
   - \definecolor{chaos-bg}{HTML}{161616}
-  - \newtcolorbox{blackbox}{colback=chaos-bg,colframe=gray,boxsep=2pt,arc=4pt,enhanced jigsaw,breakable}
+  - \newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
   - \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
-  
-# monofont: "Fira Code Light"
 
 geometry: margin=1in
 
@@ -69,14 +66,12 @@ graphics: yes
 
 output:
   pdf_document:
-    latex_engine: xelatex
-    template: style/default.tex
     toc: yes
     toc_depth: 3
     fig_caption: true
+    latex_engine: xelatex
+    template: style/default.tex
     pandoc_args: --highlight-style=style/chaos_modified.theme
-    # highlight: zenburn
-    # pandoc_args: "--highlight=breezedark"
     keep_tex: true
 ---
 ```{r setup, include=FALSE}
