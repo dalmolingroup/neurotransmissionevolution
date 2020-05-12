@@ -50,10 +50,16 @@ header-includes:
   - \linenumbers
   # Fira code
   # - \setmonofont{FiraCode-Light.ttf}
-  - \setmonofont[Path=style/,Contextuals={Alternate}]{FiraCode-Light.ttf}
+  - \setmonofont[Path=style/,Contextuals={Alternate},AutoFakeSlant]{FiraCode-Light.ttf}
   - \makeatletter
   - \def\verbatim@nolig@list{}
   - \makeatother
+  # round
+  - \usepackage{tcolorbox}
+  - \tcbuselibrary{breakable, skins}
+  - \definecolor{chaos-bg}{HTML}{161616}
+  - \newtcolorbox{blackbox}{colback=chaos-bg,colframe=gray,boxsep=2pt,arc=4pt,enhanced jigsaw,breakable}
+  - \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
   
 # monofont: "Fira Code Light"
 
