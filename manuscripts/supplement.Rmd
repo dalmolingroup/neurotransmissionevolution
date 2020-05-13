@@ -60,8 +60,6 @@ header-includes:
   - \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
   # emoji
   - \newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
-  # - \newfontfamily{\emojifont}[Path=style/]{EmojiOneColor.otf}
-  # - \newfontfamily{\emojifont}[Path=style/]{DejaVuSans.ttf}
   - \DeclareTextFontCommand{\e}{\emojifont}
   
 
@@ -93,73 +91,33 @@ This project is structured in the form of an R research compendium. A research c
 The analysis itself is contained inside `analysis/` and only uses data from `data/`. This data is provided by scripts inside `data-raw/`. All analysis and preprocessing steps are documented as RMarkdown notebooks.  
 Project structure:  
 
-—\e{📦} neurotransmissionevolution/  
-    |—\e{📂} analysis/  
-    |    |—\e{📁} plots/  
-    |    |—\e{📓} geneplast.Rmd  
-    |    |—\e{📄} geneplast_roots.tsv  
-    |    '— ...  
-    |—\e{📂} data/  
-    |  |—\e{💾} cogs.rda  
-    |  |—\e{📄} gene_annotation.tsv  
-    |   '— ...  
-    |—\e{📂} data-raw/  
-    |  |—\e{📓} tree_ncbi.Rmd  
-    |  |—\e{📄} tree_ncbi.nwk  
-    |  '— ...  
-    |—\e{📁} inst/  
-    |—\e{📁} man/  
-    |—\e{📂} manuscripts/  
-    |  |—\e{📓} supplement.Rmd  
-    |  |—\e{📰} supplement.pdf  
-    |   '— ...  
-    |—\e{📁} R/  
-    |  |—\e{📄} utils.R  
-    |  '— ...  
-    |—\e{📄} DESCRIPTION  
-    |—\e{📄} NAMESPACE  
-    |—\e{📄} neurotransmissionevolution.Rproj  
-     '—\e{📄} README.md  
-
-
-:::{.emojifont data-latex=""}
-|—📂 ContentStore  
-|   |—📂 de-DE  
-|   |   '-- windowsclient.mshc  
-|    '--📂 en-US  
-|       '-- windowsclient.mshc  
-'--📂 IndexStore
-:::
-
-```bash
-└──📦 neurotransmissionevolution/
-    ├──📂 analysis/
-    │  ├──📁 plots/
-    │  ├──📓 geneplast.Rmd
-    │  ├──📄 geneplast_roots.tsv
-    │  └── ...
-    ├──📂 data/
-    │  ├──💾 cogs.rda
-    │  ├──📄 gene_annotation.tsv
-    │  └── ...
-    ├──📂 data-raw/
-    │  ├──📓 tree_ncbi.Rmd
-    │  ├──📄 tree_ncbi.nwk
-    │  └── ...
-    ├──📁 inst/
-    ├──📁 man/
-    ├──📂 manuscripts/
-    │  ├──📓 supplement.Rmd
-    │  ├──📰 supplement.pdf
-    │  └── ...
-    ├──📁 R/
-    │  ├──📄 utils.R
-    │  └── ...
-    ├──📄 DESCRIPTION
-    ├──📄 NAMESPACE
-    ├──📄 neurotransmissionevolution.Rproj
-    └──📄 README.md
-```
+`└──`\e{📦} `neurotransmissionevolution/`  
+      `├──`\e{📂} `analysis/`  
+      `│`    `├──`\e{📁} `plots/`  
+      `│`    `├──`\e{📓} `geneplast.Rmd`  
+      `│`    `├──`\e{📄} `geneplast_roots.tsv`  
+      `│`    `└──` `...`  
+      `├──`\e{📂} `data/`  
+      `│`    `├──`\e{💾} `cogs.rda`  
+      `│`    `├──`\e{📄} `gene_annotation.tsv`  
+      `│`    `└──` `...`  
+      `├──`\e{📂} data-`raw/`  
+      `│`    `├──`\e{📓} `tree_ncbi.Rmd`  
+      `│`    `├──`\e{📄} `tree_ncbi.nwk`  
+      `│`    `└──` `...`  
+      `├──`\e{📁} `inst/`  
+      `├──`\e{📁} `man/`  
+      `├──`\e{📂} `manuscripts/`  
+      `│`    `├──`\e{📓} `supplement.Rmd`  
+      `│`    `├──`\e{📰} `supplement.pdf`  
+      `│`    `└──` `...`  
+      `├──`\e{📁} `R/`  
+      `│`    `├──`\e{📄} `utils.R`  
+      `│`    `└──` `...`  
+      `├──`\e{📄} `DESCRIPTION`  
+      `├──`\e{📄} `NAMESPACE`  
+      `├──`\e{®} `neurotransmissionevolution.Rproj`  
+      `└──`\e{📄} `README.md`
 
 <!-- Preprocessing -->
 Preprocessing

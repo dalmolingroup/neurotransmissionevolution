@@ -194,77 +194,59 @@ data from \texttt{data/}. This data is provided by scripts inside
 as RMarkdown notebooks.\\
 Project structure:
 
----\e{📦} neurotransmissionevolution/\\
-\hspace*{0.333em} ~ \textbar---\e{📂} analysis/\\
-\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📁} plots/\\
-\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📓} geneplast.Rmd\\
-\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📄}
-geneplast\_roots.tsv\\
-\hspace*{0.333em} ~ \textbar{} ~~ `--- \ldots{}\\
-\hspace*{0.333em} ~ \textbar---\e{📂} data/\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{💾} cogs.rda\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} gene\_annotation.tsv\\
-\hspace*{0.333em} ~ \textbar~~'--- \ldots{}\\
-\hspace*{0.333em} ~ \textbar---\e{📂} data-raw/\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📓} tree\_ncbi.Rmd\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} tree\_ncbi.nwk\\
-\hspace*{0.333em} ~ \textbar~ `--- \ldots{}\\
-\hspace*{0.333em} ~ \textbar---\e{📁} inst/\\
-\hspace*{0.333em} ~ \textbar---\e{📁} man/\\
-\hspace*{0.333em} ~ \textbar---\e{📂} manuscripts/\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📓} supplement.Rmd\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📰} supplement.pdf\\
-\hspace*{0.333em} ~ \textbar~~'--- \ldots{}\\
-\hspace*{0.333em} ~ \textbar---\e{📁} R/\\
-\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} utils.R\\
-\hspace*{0.333em} ~ \textbar~ `--- \ldots{}\\
-\hspace*{0.333em} ~ \textbar---\e{📄} DESCRIPTION\\
-\hspace*{0.333em} ~ \textbar---\e{📄} NAMESPACE\\
-\hspace*{0.333em} ~ \textbar---\e{📄} neurotransmissionevolution.Rproj\\
-\hspace*{0.333em} ~~'---\e{📄} README.md
-
-\begin{emojifont}
-
-\textbar---📂 ContentStore\\
-\textbar{} ~ \textbar---📂 de-DE\\
-\textbar{} ~ \textbar{} ~ `-- windowsclient.mshc\\
-\textbar{} ~~'--📂 en-US\\
-\textbar{} ~~~~ `-- windowsclient.mshc\\
-'--📂 IndexStore
-
-\end{emojifont}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{└──📦 }\ExtensionTok{neurotransmissionevolution/}
-\NormalTok{    ├──📂 }\ExtensionTok{analysis/}
-\NormalTok{    │  ├──📁 }\ExtensionTok{plots/}
-\NormalTok{    │  ├──📓 }\ExtensionTok{geneplast.Rmd}
-\NormalTok{    │  ├──📄 }\ExtensionTok{geneplast_roots.tsv}
-\NormalTok{    │  └── }\ExtensionTok{...}
-\NormalTok{    ├──📂 }\ExtensionTok{data/}
-\NormalTok{    │  ├──💾 }\ExtensionTok{cogs.rda}
-\NormalTok{    │  ├──📄 }\ExtensionTok{gene_annotation.tsv}
-\NormalTok{    │  └── }\ExtensionTok{...}
-\NormalTok{    ├──📂 }\ExtensionTok{data-raw/}
-\NormalTok{    │  ├──📓 }\ExtensionTok{tree_ncbi.Rmd}
-\NormalTok{    │  ├──📄 }\ExtensionTok{tree_ncbi.nwk}
-\NormalTok{    │  └── }\ExtensionTok{...}
-\NormalTok{    ├──📁 }\ExtensionTok{inst/}
-\NormalTok{    ├──📁 }\ExtensionTok{man/}
-\NormalTok{    ├──📂 }\ExtensionTok{manuscripts/}
-\NormalTok{    │  ├──📓 }\ExtensionTok{supplement.Rmd}
-\NormalTok{    │  ├──📰 }\ExtensionTok{supplement.pdf}
-\NormalTok{    │  └── }\ExtensionTok{...}
-\NormalTok{    ├──📁 }\ExtensionTok{R/}
-\NormalTok{    │  ├──📄 }\ExtensionTok{utils.R}
-\NormalTok{    │  └── }\ExtensionTok{...}
-\NormalTok{    ├──📄 }\ExtensionTok{DESCRIPTION}
-\NormalTok{    ├──📄 }\ExtensionTok{NAMESPACE}
-\NormalTok{    ├──📄 }\ExtensionTok{neurotransmissionevolution.Rproj}
-\NormalTok{    └──📄 }\ExtensionTok{README.md}
-\end{Highlighting}
-\end{Shaded}
+\texttt{└──}\e{📦} \texttt{neurotransmissionevolution/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{analysis/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📁}
+\texttt{plots/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{geneplast.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{geneplast\_roots.tsv}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{data/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{💾}
+\texttt{cogs.rda}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{gene\_annotation.tsv}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+data-\texttt{raw/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{tree\_ncbi.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{tree\_ncbi.nwk}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{inst/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{man/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{manuscripts/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{supplement.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📰}
+\texttt{supplement.pdf}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{R/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{utils.R}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📄}
+\texttt{DESCRIPTION}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📄}
+\texttt{NAMESPACE}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{®}
+\texttt{neurotransmissionevolution.Rproj}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{└──}\e{📄}
+\texttt{README.md}
 
 \hypertarget{preprocessing}{%
 \section{Preprocessing}\label{preprocessing}}
