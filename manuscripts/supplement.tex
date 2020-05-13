@@ -115,9 +115,6 @@
 \usepackage{makecell}
 \usepackage{xcolor}
 \usepackage{subfig}
-\let\oldverbatim\verbatim
-\let\endoldverbatim\endverbatim
-\renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
 \usepackage{caption}
 \captionsetup{justification=raggedright,singlelinecheck=false}
 \captionsetup{margin={2pt,0pt}}
@@ -128,6 +125,9 @@
 \makeatletter
 \def\verbatim@nolig@list{}
 \makeatother
+\let\oldverbatim\verbatim
+\let\endoldverbatim\endverbatim
+\renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
 \let\oldShaded\Shaded
 \let\endoldShaded\endShaded
 \usepackage{tcolorbox}
@@ -135,6 +135,8 @@
 \definecolor{chaos-bg}{HTML}{161616}
 \newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
 \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
+\newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
+\DeclareTextFontCommand{\e}{\emojifont}
 
 \title{Ionotropic receptors as the driving force behind human synapse
 establishment}
@@ -178,7 +180,91 @@ plants could be striking for the evolution of the nervous system.
 \hypertarget{project-structure}{%
 \section{Project structure}\label{project-structure}}
 
-This is the title page
+This project is structured in the form of an R research compendium. A
+research compendium aims to provide a \emph{``standard and easily
+recognizable way for organizing the digital materials of a research
+project to enable other researchers to inspect, reproduce, and extend
+the research''}
+\href{https://doi.org/10.1080/00031305.2017.1375986}{(Marwick, Boettiger
+\& Mullen, 2018)}. This project is organized as an R package, and
+therefore adheres to its development practices.\\
+The analysis itself is contained inside \texttt{analysis/} and only uses
+data from \texttt{data/}. This data is provided by scripts inside
+\texttt{data-raw/}. All analysis and preprocessing steps are documented
+as RMarkdown notebooks.\\
+Project structure:
+
+---\e{📦} neurotransmissionevolution/\\
+\hspace*{0.333em} ~ \textbar---\e{📂} analysis/\\
+\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📁} plots/\\
+\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📓} geneplast.Rmd\\
+\hspace*{0.333em} ~ \textbar{} ~~ \textbar---\e{📄}
+geneplast\_roots.tsv\\
+\hspace*{0.333em} ~ \textbar{} ~~ `--- \ldots{}\\
+\hspace*{0.333em} ~ \textbar---\e{📂} data/\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{💾} cogs.rda\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} gene\_annotation.tsv\\
+\hspace*{0.333em} ~ \textbar~~'--- \ldots{}\\
+\hspace*{0.333em} ~ \textbar---\e{📂} data-raw/\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📓} tree\_ncbi.Rmd\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} tree\_ncbi.nwk\\
+\hspace*{0.333em} ~ \textbar~ `--- \ldots{}\\
+\hspace*{0.333em} ~ \textbar---\e{📁} inst/\\
+\hspace*{0.333em} ~ \textbar---\e{📁} man/\\
+\hspace*{0.333em} ~ \textbar---\e{📂} manuscripts/\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📓} supplement.Rmd\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📰} supplement.pdf\\
+\hspace*{0.333em} ~ \textbar~~'--- \ldots{}\\
+\hspace*{0.333em} ~ \textbar---\e{📁} R/\\
+\hspace*{0.333em} ~ \textbar~ \textbar---\e{📄} utils.R\\
+\hspace*{0.333em} ~ \textbar~ `--- \ldots{}\\
+\hspace*{0.333em} ~ \textbar---\e{📄} DESCRIPTION\\
+\hspace*{0.333em} ~ \textbar---\e{📄} NAMESPACE\\
+\hspace*{0.333em} ~ \textbar---\e{📄} neurotransmissionevolution.Rproj\\
+\hspace*{0.333em} ~~'---\e{📄} README.md
+
+\begin{emojifont}
+
+\textbar---📂 ContentStore\\
+\textbar{} ~ \textbar---📂 de-DE\\
+\textbar{} ~ \textbar{} ~ `-- windowsclient.mshc\\
+\textbar{} ~~'--📂 en-US\\
+\textbar{} ~~~~ `-- windowsclient.mshc\\
+'--📂 IndexStore
+
+\end{emojifont}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{└──📦 }\ExtensionTok{neurotransmissionevolution/}
+\NormalTok{    ├──📂 }\ExtensionTok{analysis/}
+\NormalTok{    │  ├──📁 }\ExtensionTok{plots/}
+\NormalTok{    │  ├──📓 }\ExtensionTok{geneplast.Rmd}
+\NormalTok{    │  ├──📄 }\ExtensionTok{geneplast_roots.tsv}
+\NormalTok{    │  └── }\ExtensionTok{...}
+\NormalTok{    ├──📂 }\ExtensionTok{data/}
+\NormalTok{    │  ├──💾 }\ExtensionTok{cogs.rda}
+\NormalTok{    │  ├──📄 }\ExtensionTok{gene_annotation.tsv}
+\NormalTok{    │  └── }\ExtensionTok{...}
+\NormalTok{    ├──📂 }\ExtensionTok{data-raw/}
+\NormalTok{    │  ├──📓 }\ExtensionTok{tree_ncbi.Rmd}
+\NormalTok{    │  ├──📄 }\ExtensionTok{tree_ncbi.nwk}
+\NormalTok{    │  └── }\ExtensionTok{...}
+\NormalTok{    ├──📁 }\ExtensionTok{inst/}
+\NormalTok{    ├──📁 }\ExtensionTok{man/}
+\NormalTok{    ├──📂 }\ExtensionTok{manuscripts/}
+\NormalTok{    │  ├──📓 }\ExtensionTok{supplement.Rmd}
+\NormalTok{    │  ├──📰 }\ExtensionTok{supplement.pdf}
+\NormalTok{    │  └── }\ExtensionTok{...}
+\NormalTok{    ├──📁 }\ExtensionTok{R/}
+\NormalTok{    │  ├──📄 }\ExtensionTok{utils.R}
+\NormalTok{    │  └── }\ExtensionTok{...}
+\NormalTok{    ├──📄 }\ExtensionTok{DESCRIPTION}
+\NormalTok{    ├──📄 }\ExtensionTok{NAMESPACE}
+\NormalTok{    ├──📄 }\ExtensionTok{neurotransmissionevolution.Rproj}
+\NormalTok{    └──📄 }\ExtensionTok{README.md}
+\end{Highlighting}
+\end{Shaded}
 
 \hypertarget{preprocessing}{%
 \section{Preprocessing}\label{preprocessing}}

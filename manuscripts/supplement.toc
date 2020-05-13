@@ -1,0 +1,48 @@
+\contentsline {section}{Project structure}{2}{section*.2}%
+\contentsline {section}{Preprocessing}{3}{section*.3}%
+\contentsline {subsection}{Eukaryota species tree}{3}{section*.4}%
+\contentsline {subsubsection}{NCBI Taxonomy tree}{4}{section*.5}%
+\contentsline {paragraph}{\textbf {Resources}}{4}{section*.6}%
+\contentsline {paragraph}{\textbf {Updating STRING taxon IDs}}{5}{section*.11}%
+\contentsline {paragraph}{\textbf {Creating tree graph}}{5}{section*.12}%
+\contentsline {paragraph}{\textbf {Traversing the graph}}{5}{section*.13}%
+\contentsline {paragraph}{\textbf {Saving}}{6}{section*.14}%
+\contentsline {subsubsection}{Duplicated Genera}{6}{section*.15}%
+\contentsline {subsubsection}{Hybrid tree}{6}{section*.16}%
+\contentsline {paragraph}{Resources}{6}{section*.17}%
+\contentsline {paragraph}{\textbf {Unfound species with matching genera}}{7}{section*.18}%
+\contentsline {paragraph}{\textbf {Species of unfound genera}}{9}{section*.19}%
+\contentsline {paragraph}{\textbf {Ctenophora as sister to all animals}}{10}{section*.20}%
+\contentsline {subsection}{Gene selection and annotation}{11}{section*.22}%
+\contentsline {subsubsection}{Neurotransmitter systems annotation}{11}{section*.23}%
+\contentsline {subsubsection}{Base ID lookup table}{12}{section*.26}%
+\contentsline {subsection}{Neuroexclusivity}{14}{section*.31}%
+\contentsline {subsubsection}{Expression neuroexclusivity}{14}{section*.32}%
+\contentsline {paragraph}{\textbf {Resources}}{14}{section*.33}%
+\contentsline {paragraph}{\textbf {Reshaping data}}{14}{section*.34}%
+\contentsline {paragraph}{\textbf {Cleaning}}{14}{section*.35}%
+\contentsline {paragraph}{\textbf {Tissue classification}}{15}{section*.36}%
+\contentsline {subsubsection}{Pathway neuroexclusivity}{15}{section*.37}%
+\contentsline {paragraph}{\textbf {Resources}}{15}{section*.38}%
+\contentsline {paragraph}{\textbf {Pathway classification}}{16}{section*.40}%
+\contentsline {subsection}{Orthology data}{16}{section*.41}%
+\contentsline {subsection}{Network}{17}{section*.43}%
+\contentsline {subsubsection}{Retrieving network data}{17}{section*.44}%
+\contentsline {subsubsection}{Recomputing scores}{18}{section*.47}%
+\contentsline {section}{Analysis}{19}{section*.48}%
+\contentsline {subsection}{Root inference}{19}{section*.49}%
+\contentsline {subsubsection}{Geneplast}{20}{section*.50}%
+\contentsline {subsubsection}{Clade names}{20}{section*.51}%
+\contentsline {subsubsection}{Phyletic patterns}{21}{section*.52}%
+\contentsline {subsection}{Neuroexclusivity}{24}{section*.54}%
+\contentsline {subsubsection}{Expression neuroexclusivity}{24}{section*.55}%
+\contentsline {subsubsection}{Pathway neuroexclusivity}{24}{section*.56}%
+\contentsline {subsection}{Network}{25}{section*.57}%
+\contentsline {subsubsection}{Graph data}{25}{section*.58}%
+\contentsline {subsubsection}{Figure 1}{28}{section*.59}%
+\contentsline {subsubsection}{Figure 2}{29}{section*.61}%
+\contentsline {subsubsection}{Figure 3}{30}{section*.62}%
+\contentsline {subsubsection}{Figure 4}{33}{section*.65}%
+\contentsline {subsubsection}{Set diagrams}{34}{section*.67}%
+\contentsline {subsubsection}{Supplementary Figures 2 and 3}{36}{section*.69}%
+\contentsline {subsection}{Abundance}{38}{section*.70}%

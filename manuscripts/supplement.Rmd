@@ -1,6 +1,4 @@
 ---
-# layout: 12pt,review
-linenumbers: true
 title: "Ionotropic receptors as the driving force behind human synapse establishment"
 subtitle: "Supplementary Material"
 author: 
@@ -16,6 +14,7 @@ keywords:
   - Nervous system
    
 header-includes:
+  # kableExtra
   - \usepackage{booktabs}
   - \usepackage{longtable}
   - \usepackage{array}
@@ -31,17 +30,13 @@ header-includes:
   - \usepackage{makecell}
   - \usepackage{xcolor}
   - \usepackage{subfig}
-  # small font size for output chunks
-  - \let\oldverbatim\verbatim
-  - \let\endoldverbatim\endverbatim
-  - \renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
-  # table caption left alignment
+  # Table caption left alignment
   - \usepackage{caption}
   - \captionsetup{justification=raggedright,singlelinecheck=false}
   - \captionsetup{margin={2pt,0pt}}
-  # hold figure position
+  # Hold figure position
   - \floatplacement{figure}{H}
-  # line numbers
+  # Line numbers
   - \usepackage{lineno}
   - \linenumbers
   # Fira code
@@ -49,7 +44,11 @@ header-includes:
   - \makeatletter
   - \def\verbatim@nolig@list{}
   - \makeatother
-  # small font size for code chunks
+  # Small font size for output chunks
+  - \let\oldverbatim\verbatim
+  - \let\endoldverbatim\endverbatim
+  - \renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
+  # Small font size for code chunks
   - \let\oldShaded\Shaded
   - \let\endoldShaded\endShaded
   # - \renewenvironment{Shaded}{\scriptsize\oldShaded}{\endoldShaded}
@@ -59,6 +58,12 @@ header-includes:
   - \definecolor{chaos-bg}{HTML}{161616}
   - \newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
   - \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
+  # emoji
+  - \newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
+  # - \newfontfamily{\emojifont}[Path=style/]{EmojiOneColor.otf}
+  # - \newfontfamily{\emojifont}[Path=style/]{DejaVuSans.ttf}
+  - \DeclareTextFontCommand{\e}{\emojifont}
+  
 
 geometry: margin=1in
 
@@ -84,7 +89,77 @@ knitr::opts_chunk$set(class.source = "numberLines")
 <!--- Project structure -->
 Project structure
 =====================
-This is the title page
+This project is structured in the form of an R research compendium. A research compendium aims to provide a *"standard and easily recognizable way for organizing the digital materials of a research project to enable other researchers to inspect, reproduce, and extend the research"* [(Marwick, Boettiger &  Mullen, 2018)](https://doi.org/10.1080/00031305.2017.1375986). This project is organized as an R package, and therefore adheres to its development practices.  
+The analysis itself is contained inside `analysis/` and only uses data from `data/`. This data is provided by scripts inside `data-raw/`. All analysis and preprocessing steps are documented as RMarkdown notebooks.  
+Project structure:  
+
+—\e{📦} neurotransmissionevolution/  
+    |—\e{📂} analysis/  
+    |    |—\e{📁} plots/  
+    |    |—\e{📓} geneplast.Rmd  
+    |    |—\e{📄} geneplast_roots.tsv  
+    |    '— ...  
+    |—\e{📂} data/  
+    |  |—\e{💾} cogs.rda  
+    |  |—\e{📄} gene_annotation.tsv  
+    |   '— ...  
+    |—\e{📂} data-raw/  
+    |  |—\e{📓} tree_ncbi.Rmd  
+    |  |—\e{📄} tree_ncbi.nwk  
+    |  '— ...  
+    |—\e{📁} inst/  
+    |—\e{📁} man/  
+    |—\e{📂} manuscripts/  
+    |  |—\e{📓} supplement.Rmd  
+    |  |—\e{📰} supplement.pdf  
+    |   '— ...  
+    |—\e{📁} R/  
+    |  |—\e{📄} utils.R  
+    |  '— ...  
+    |—\e{📄} DESCRIPTION  
+    |—\e{📄} NAMESPACE  
+    |—\e{📄} neurotransmissionevolution.Rproj  
+     '—\e{📄} README.md  
+
+
+:::{.emojifont data-latex=""}
+|—📂 ContentStore  
+|   |—📂 de-DE  
+|   |   '-- windowsclient.mshc  
+|    '--📂 en-US  
+|       '-- windowsclient.mshc  
+'--📂 IndexStore
+:::
+
+```bash
+└──📦 neurotransmissionevolution/
+    ├──📂 analysis/
+    │  ├──📁 plots/
+    │  ├──📓 geneplast.Rmd
+    │  ├──📄 geneplast_roots.tsv
+    │  └── ...
+    ├──📂 data/
+    │  ├──💾 cogs.rda
+    │  ├──📄 gene_annotation.tsv
+    │  └── ...
+    ├──📂 data-raw/
+    │  ├──📓 tree_ncbi.Rmd
+    │  ├──📄 tree_ncbi.nwk
+    │  └── ...
+    ├──📁 inst/
+    ├──📁 man/
+    ├──📂 manuscripts/
+    │  ├──📓 supplement.Rmd
+    │  ├──📰 supplement.pdf
+    │  └── ...
+    ├──📁 R/
+    │  ├──📄 utils.R
+    │  └── ...
+    ├──📄 DESCRIPTION
+    ├──📄 NAMESPACE
+    ├──📄 neurotransmissionevolution.Rproj
+    └──📄 README.md
+```
 
 <!-- Preprocessing -->
 Preprocessing
