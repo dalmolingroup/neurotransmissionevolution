@@ -1,13 +1,11 @@
 ---
-title: "Ionotropic receptors as the driving force behind human synapse establishment"
-subtitle: "Supplementary Material"
+title: "Supplementary Material"
+subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
 author: 
   - Lucas H. Viscardi
   - Danilo O. Imparato
   - Maria Cátira Bortolini
   - Rodrigo J. S. Dalmolin
-abstract: |
-  The origin of nervous systems is a main theme in biology and its mechanisms are largely underlied by synaptic neurotransmission. The search for pan-neuronal genes has failed to explain synapses emergence since synaptic elements are present in multiple aneural organisms. We questioned how the interactions among these elements evolved and to what extent does it relate to our understanding of the nervous systems complexity. We infer the human neurotransmission gene network based on genes present in GABAergic, glutamatergic, serotonergic, dopaminergic, and cholinergic systems, and reconstruct the evolutionary scenario of synapse emergence. Our results outline the distribution of neurotransmitter systems and synaptic functions as taxa diverge. We find that the ionotropic receptors emergence in the cnidarian last common ancestor was the driving force behind the advent of the anatomical synapse and the development of nervous systems. We suggest that after Placozoa origin there was a positive selection under a more restricted and specific activation of ionotropic receptors. This different selective pressure counterparting the broader amino acid activation in plants could be striking for the evolution of the nervous system.
   
 keywords:
   - Evolution
@@ -87,9 +85,7 @@ knitr::opts_chunk$set(class.source = "numberLines")
 <!--- Project structure -->
 Project structure
 =====================
-This project is structured in the form of an R research compendium. A research compendium aims to provide a *"standard and easily recognizable way for organizing the digital materials of a research project to enable other researchers to inspect, reproduce, and extend the research"* [(Marwick, Boettiger &  Mullen, 2018)](https://doi.org/10.1080/00031305.2017.1375986). This project is organized as an R package, and therefore adheres to its development practices.  
-The analysis itself is contained inside `analysis/` and only uses data from `data/`. This data is provided by scripts inside `data-raw/`. All analysis and preprocessing steps are documented as RMarkdown notebooks.  
-Project structure:  
+This project is organized as an R package research compendium. Research compendia aim to provide a *"standard and easily recognizable way for organizing the digital materials of a research project to enable other researchers to inspect, reproduce, and extend the research"* [(Marwick, Boettiger &  Mullen, 2018)](https://doi.org/10.1080/00031305.2017.1375986). Project structure overview:  
 
 `└──`\e{📦} `neurotransmissionevolution/`  
       `├──`\e{📂} `analysis/`  
@@ -119,7 +115,10 @@ Project structure:
       `├──`\e{®} `neurotransmissionevolution.Rproj`  
       `└──`\e{📄} `README.md`
 
-<!-- Preprocessing -->
+<!-- Preprocessing --The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown.  
+
+
+>
 Preprocessing
 =================
 This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
