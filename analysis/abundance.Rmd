@@ -63,15 +63,8 @@ cog_annotation <- gene_ids %>%
 # Number of proteins in a COG in every species
 cog_size_by_taxid <- cogs %>%
   filter(cog_id %in% gene_cogs[["cog_id"]]) %>%
-  count(taxid, cog_id, name = "cog_size")
-
-# Number of COGs in every species
-cog_n_by_taxid <- cog_size_by_taxid %>%
-  count(taxid, name = "cog_n")
-
-# Number of proteins in every species
-protein_n_by_taxid <- cog_size_by_taxid %>%
-  count(taxid, wt = cog_size, name = "protein_n")
+  count(taxid, cog_id,  name = "cog_size") %>%
+  left_join(cog_annotation)
 
 # Mapping species to clade info
 ordered_species <- string_eukaryotes %>%
@@ -79,8 +72,7 @@ ordered_species <- string_eukaryotes %>%
   left_join(clade_taxids) %>%
   left_join(clade_names, by = c("lca" = "root")) %>%
   mutate(
-     lca        = as_factor(lca) %>% fct_rev
-    ,ncbi_name  = fct_reorder(ncbi_name, -taxid_order)
+     ncbi_name  = fct_reorder(ncbi_name, -taxid_order)
     ,clade_name = fct_reorder(clade_name, -taxid_order)
   )
 
@@ -101,20 +93,14 @@ annotation_colors <- c(
 Abundance is finally computed as the number of proteins pertaining to a function divided by the number of neurotransmission COGs in a species.
 ```{r}
 abundance_by_function <- cog_size_by_taxid %>%
-  inner_join(cog_annotation) %>%
-  count(taxid, annotation, wt = cog_size, name = "annotation_count") %>%
-  left_join(cog_n_by_taxid) %>%
-  left_join(protein_n_by_taxid) %>%
-  mutate(
-     abundance      = annotation_count / cog_n
-    ,abundance_prop = annotation_count / protein_n
-  )
+  group_by(taxid, annotation) %>%
+  summarise(abundance = mean(cog_size)) %>%
+  # Adding species and clade info
+  left_join(ordered_species)
 ```
+
 Plotting:
 ```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure S1."}
-# Adding species and clade info to the abundance data frame
-abundance_by_function %<>% left_join(ordered_species)
-
 # This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)
 metazoa_line <- geom_vline(
    xintercept = "Mnemiopsis leidyi"
@@ -127,44 +113,38 @@ metazoa_line <- geom_vline(
 # This tick function is used in scale_y_continuous to display only innermost ticks
 tick_function <- function(skip_head = 1, skip_tail = 1) {
   function(x){
-    breaks <- seq(x[2], 0, length.out = 5) %>% head(-skip_head) %>% tail(-skip_tail)
-    ceiling(breaks/0.25)*0.25
+    breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)
+    ceiling(breaks/5)*5
   }
 }
 
-ggplot(abundance_by_function) +
-  ggtitle("Number of proteins in a function divided by number of all neural COGs in species") +
-  metazoa_line +
-  geom_bar(aes(x = ncbi_name, y = abundance, fill = annotation, color = annotation), stat = "identity") +
-  scale_y_continuous("Average protein count in neural COGs", breaks = tick_function(), minor_breaks = NULL) +
-  xlab("Taxa") +
-  facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
-  scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
-  scale_color_manual(values = annotation_colors %>% darken(0.2)) +
-  theme(
-     panel.spacing      = unit(2.5, "pt")
-    ,strip.background.x = element_blank()
-    ,strip.background.y = element_rect(fill="#E0E0E0")
-    ,panel.grid.major.x = element_blank()
-    ,panel.grid.major.y = element_line(colour = "#F5F5F5", size = 0.25)
-    ,panel.background   = element_rect(fill = '#EEEEEE', colour = '#E0E0E0')
-    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5)
-    ,strip.text.y       = element_text(size = 8, vjust = 0.5)
-    ,axis.text.x        = element_text(size = 2, angle = -45, vjust = 0, hjust = 0)
-    ,axis.text.y        = element_text(size = 6)
-    ,legend.position    = "none"
+# Capping abundance values based on metazoan mean
+capped_abundance_by_function <- abundance_by_function %>%
+  # mutate(capped_abundance = ifelse(abundance >= 100, 100, abundance)) %>%
+  group_by(annotation) %>%
+  mutate(
+     # max_abundance = max(abundance[lca <= 29])
+     max_abundance = mean_se(abundance[lca <= 29], 30)$ymax
+    ,abundance     = ifelse(abundance >= max_abundance, pmin(max_abundance, 100), pmin(abundance, 100))
   )
-ggsave("plots/fig5_raw.pdf", width = 16, height = 8)
 
-# Proportion --------------------
-ggplot(abundance_by_function) +
-  ggtitle("Number of proteins in a function divided by number of all neural proteins in species") +
+# Plotting
+abundance_plot <- ggplot(capped_abundance_by_function) +
+  # Geoms  ----------------
   metazoa_line +
-  geom_bar(aes(x = ncbi_name, y = abundance_prop, fill = annotation, color = annotation), stat = "identity") +
-  facet_grid(annotation ~ clade_name, scales = "free", space = "free_x") +
-  scale_y_continuous( minor_breaks = NULL) +
+  geom_bar(
+     aes(x = ncbi_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+    ,stat = "identity"
+  ) +
+  # Labels  ---------------
+  xlab("Taxa") +
+  ylab("Average protein count in neural COGs") +
+  # Scales ----------------
+  scale_y_continuous(breaks = tick_function(), minor_breaks = NULL) +
   scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
-  scale_color_manual(values = annotation_colors %>% darken(0.2)) +
+  # coord_cartesian(ylim = c(0, 100)) +
+  # Styling ---------------
+  facet_grid(annotation ~ clade_name, scales = "free", space = "free") +
   theme(
      panel.spacing      = unit(2.5, "pt")
     ,strip.background.x = element_blank()
@@ -176,16 +156,22 @@ ggplot(abundance_by_function) +
     ,strip.text.y       = element_text(size = 8, vjust = 0.5)
     ,axis.text.x        = element_text(size = 2, angle = -45, vjust = 0, hjust = 0)
     ,axis.text.y        = element_text(size = 6)
-    ,axis.ticks.x       = element_line(size = 0.1)
     ,legend.position    = "none"
   )
-ggsave("plots/fig5_prop_raw.pdf", width = 16, height = 8)
+ggsave("plots/fig5_raw.pdf", abundance_plot, width = 16, height = 6)
+
+# Uncapped abundances for supplementary text
+abundance_plot %+% abundance_by_function
 ```
 
-Abundances averaged by clades.
+Abundances averaged by clades:
 ```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="Abundances averaged by clades."}
 ggplot(abundance_by_function) +
-  geom_bar(aes(x = clade_name, y = abundance, fill = annotation), stat="summary", fun = "mean") +
+  geom_bar(
+    aes(x = clade_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+    ,stat = "summary"
+    ,fun  = "mean"
+  ) +
   scale_fill_manual(values = annotation_colors, guide = "none") +
   facet_grid(annotation ~ ., scales = "free") +
   theme(
@@ -221,14 +207,14 @@ ggplot(protein_count_by_cog) +
   metazoa_line + 
   geom_bar(aes(x = ncbi_name, y = cog_size, fill = annotation), stat = "identity") +
   scale_fill_manual(values = annotation_colors %>% darken(0.2), guide = "none") +
-  scale_y_continuous(breaks = tick_function(3, 1), minor_breaks = NULL) +
+  scale_y_continuous(breaks = tick_function(2, 1), minor_breaks = NULL) +
   facet_grid(cog_id ~ ., scales = "free_y") +
   theme(
      panel.spacing      = unit(0.5, "pt")
     ,panel.grid.major.x = element_blank()
     ,panel.grid.major.y = element_line(size = 0.1, linetype = "dashed")
     ,strip.text.y       = element_text(size = 4, angle = 0, hjust = 0)
-    ,axis.text.x        = element_text(size = 1.5, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.x        = element_text(size = 1.25, angle = -45, vjust = 0, hjust = 0)
     ,axis.text.y        = element_text(size = 4)
     ,axis.ticks         = element_line(size = 0.1)
   )
