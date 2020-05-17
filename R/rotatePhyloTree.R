@@ -1,12 +1,4 @@
 #' @export
-tipOrder<-function(phyloTree){
-  tporder<-phyloTree$edge[,2]
-  tporder<-tporder[tporder<=Ntip(phyloTree)]
-  tporder<-as.character(phyloTree$tip.label[tporder])
-  return(tporder)
-}
-
-#' @export
 rotatePhyloTree<-function(phyloTree,spid){
   tip<-which(phyloTree$tip.label==spid)
   lcas <- mrca(phyloTree)[,spid]
