@@ -113,12 +113,14 @@ This project is organized as an R package research compendium. Research compendi
       `├──`\e{📄} `DESCRIPTION`  
       `├──`\e{📄} `NAMESPACE`  
       `├──`\e{®} `neurotransmissionevolution.Rproj`  
-      `└──`\e{📄} `README.md`
+      `└──`\e{📄} `README.md`  
 
-<!-- Preprocessing --The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown.  
+The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown.  
 
 
->
+
+
+<!-- Preprocessing -->
 Preprocessing
 =================
 This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
