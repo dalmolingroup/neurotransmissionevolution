@@ -122,7 +122,7 @@ Plotting:
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(annotation) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
      \CommentTok{# max_abundance = max(abundance[lca <= 29])}
-     \DataTypeTok{max_abundance =} \KeywordTok{mean_se}\NormalTok{(abundance[lca }\OperatorTok{<=}\StringTok{ }\DecValTok{29}\NormalTok{], }\DecValTok{30}\NormalTok{)}\OperatorTok{$}\NormalTok{ymax}
+     \DataTypeTok{max_abundance =}\NormalTok{ abundance[lca }\OperatorTok{<=}\StringTok{ }\DecValTok{29}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{mean}\NormalTok{(.) }\OperatorTok{+}\StringTok{ }\DecValTok{2}\OperatorTok{*}\KeywordTok{sd}\NormalTok{(.) \}}
 \NormalTok{    ,}\DataTypeTok{abundance     =} \KeywordTok{ifelse}\NormalTok{(abundance }\OperatorTok{>=}\StringTok{ }\NormalTok{max_abundance, }\KeywordTok{pmin}\NormalTok{(max_abundance, }\DecValTok{100}\NormalTok{), }\KeywordTok{pmin}\NormalTok{(abundance, }\DecValTok{100}\NormalTok{))}
 \NormalTok{  )}
 

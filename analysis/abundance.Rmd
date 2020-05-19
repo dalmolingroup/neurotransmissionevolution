@@ -124,7 +124,7 @@ capped_abundance_by_function <- abundance_by_function %>%
   group_by(annotation) %>%
   mutate(
      # max_abundance = max(abundance[lca <= 29])
-     max_abundance = mean_se(abundance[lca <= 29], 30)$ymax
+     max_abundance = abundance[lca <= 29] %>% { mean(.) + 2*sd(.) }
     ,abundance     = ifelse(abundance >= max_abundance, pmin(max_abundance, 100), pmin(abundance, 100))
   )
 
