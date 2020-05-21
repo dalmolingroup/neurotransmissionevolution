@@ -32,6 +32,7 @@ rotatePhyloTree<-function(phyloTree,spid){
   tp<-phyloTree$edge[,2]
   lcas[spid]<-phyloTree$edge[which(tp==tip),1]
   phyloTree$tip.lcas<-lcas
+  phyloTree$edge.length<-NULL
   #---
   return(phyloTree)
 }
