@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 ```
 
 ### Graph data
-Loading resources.
+Loading resources:
 ```{r}
 # Data manipulation
 library(tidyverse)
@@ -55,7 +55,7 @@ gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   ))
 ```
 
-Joining all gene data and creating the network graph object.
+We start by joining all gene data and creating the graph object.
 ```{r}
 # If a gene has more than 1 COG, select the oldest one.
 # This is unusual, but can happen in cases of gene fusion, for instance.
@@ -87,7 +87,7 @@ g <- graph_from_data_frame(string_edgelist, directed = F, vertices = vertices)
 V(g)$size <- V(g)$system_count %>% sqrt %>% multiply_by(5)
 ```
 
-Generating the network layout (i.e. node coordinates).
+The following block calls an utility function that handles the force directed layout with the aid of a shiny web server and the VivaGraphJS javascript library. A computed layout is already available in this folder.
 ```{r}
 if(file.exists("network_layout.tsv")) {
   layout <- read_tsv("network_layout.tsv", col_types = "dd") %>% as.matrix
@@ -109,9 +109,9 @@ V(g)$y <- -layout[, 2]
 # write_tsv(layout %>% as.data.frame, "layout.tsv")
 ```
 
-Generating tidy edge coordinates for plotting.
+We use base ggplot2 to draw the network. Edges are represented by a common `geom_path` layer. The following block retrieves tidy edge coordinates for the `geom_path` calls.
 ```{r}
-# Recreating the vertices data.frame, now with layout coordinates (lazy)
+# Recreating the vertices data.frame, now with layout coordinates (lazy way)
 vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
 
 # The edges data.frame will be used to draw lines with geom_line
@@ -122,7 +122,7 @@ edges <- string_edgelist %>%
     cbind(group = 1:nrow(string_edgelist))
 ```
 
-Setting up reusable aesthetic parameters for the plots.
+Setting up reusable aesthetic parameters to avoid code duplication.
 ```{r}
 pie_colors <- c(
    "cholinergic"   = "#D84315"
@@ -272,7 +272,9 @@ fig1b <- ggplot() +
 fig1a + fig1b
 ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
+
 ### Figure 2
+This figure is produced externally by a program called ViaComplex. ViaComplex superimposes a heatmap over the network layout based on a node property. This property, in our case, is a node's neuroexclusivity. The following block handles data formatting related to ViaComplex.
 ```{r}
 # Retrieving the largest connected component
 subgraphs <- decompose.graph(g)
@@ -326,7 +328,7 @@ write_tsv(
 ```
 
 ### Figure 3  
-The process for generating Figures 3 and 4 (as well as Supplementary Figures 2 and 3) is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the furthest human common ancestor in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root #1 is represented by _Homo sapiens_ itself.  
+The process for generating Figures 3 and 4 is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the oldest common ancestor to humans in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root number 1 is represented by _Homo sapiens_ itself.  
 The nodes we need to draw are either `current_nodes` (roots in a specified numeric range), or `past_nodes` (roots > such specified range). The edges we need to draw are all edges between both sets of nodes.  
 **Figure 3A**
 ```{r}

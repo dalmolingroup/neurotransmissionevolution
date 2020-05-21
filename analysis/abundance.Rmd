@@ -111,11 +111,14 @@ metazoa_line <- geom_vline(
 )
 
 # This tick function is used in scale_y_continuous to display only innermost ticks
-tick_function <- function(skip_head = 1, skip_tail = 1) {
-  function(x){
-    breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)
-    ceiling(breaks/5)*5
-  }
+# tick_function <- function(skip_head = 1, skip_tail = 1) {
+#   function(x){
+#     breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)
+#     ceiling(breaks/5)*5
+#   }
+# }
+tick_function <- function(x) {
+  seq(x[2], 0, length.out = 3) %>% head(-1) %>% tail(-1) %>% { ceiling(./5)*5 }
 }
 
 # Capping abundance values based on metazoan mean
@@ -124,7 +127,7 @@ capped_abundance_by_function <- abundance_by_function %>%
   group_by(annotation) %>%
   mutate(
      # max_abundance = max(abundance[lca <= 29])
-     max_abundance = abundance[lca <= 29] %>% { mean(.) + 2*sd(.) }
+     max_abundance = abundance[lca <= 29] %>% { mean(.) + 3*sd(.) }
     ,abundance     = ifelse(abundance >= max_abundance, pmin(max_abundance, 100), pmin(abundance, 100))
   )
 
@@ -138,9 +141,9 @@ abundance_plot <- ggplot(capped_abundance_by_function) +
   ) +
   # Labels  ---------------
   xlab("Taxa") +
-  ylab("Average protein count in neural COGs") +
+  ylab("Protein abundance in COGs") +
   # Scales ----------------
-  scale_y_continuous(breaks = tick_function(), minor_breaks = NULL) +
+  scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
   # coord_cartesian(ylim = c(0, 100)) +
   # Styling ---------------
@@ -207,7 +210,7 @@ ggplot(protein_count_by_cog) +
   metazoa_line + 
   geom_bar(aes(x = ncbi_name, y = cog_size, fill = annotation), stat = "identity") +
   scale_fill_manual(values = annotation_colors %>% darken(0.2), guide = "none") +
-  scale_y_continuous(breaks = tick_function(2, 1), minor_breaks = NULL) +
+  scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   facet_grid(cog_id ~ ., scales = "free_y") +
   theme(
      panel.spacing      = unit(0.5, "pt")
