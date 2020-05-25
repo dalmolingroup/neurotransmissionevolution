@@ -40,7 +40,7 @@ print_dataframe_specification <- function(df, location = "", source = "", captio
 
     knitr::opts_knit$set(kable.force.latex = TRUE)
 
-    kdf <- knitr::kable(df, caption = caption, label = label, booktabs = TRUE, longtable = FALSE)
+    kdf <- knitr::kable(df, caption = caption, label = label, booktabs = TRUE, linesep = "", longtable = FALSE)
     kdf <- kableExtra::kable_styling(kdf, position = "left", latex_options = c("striped", "HOLD_position", extra_styling))
 
     if(desc_size > 35){
