@@ -21,35 +21,19 @@
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# spliting first column into taxid and string_id}
+\CommentTok{# Spliting first column into taxid and string_id}
 \NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{separate}\NormalTok{(taxid.string_id, }\DataTypeTok{into =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"string_id"}\NormalTok{), }\DataTypeTok{sep =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DataTypeTok{extra =} \StringTok{"merge"}\NormalTok{)}
 
-\CommentTok{# subsetting cogs of interest}
+\CommentTok{# Subsetting cogs of interest}
 \NormalTok{gene_cogs <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
 
 \NormalTok{cogs }\OperatorTok{%<>%}
 \StringTok{  }\CommentTok{# leave only eukaryotes}
-\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]]) }\CommentTok{#%>%}
-  \CommentTok{# leave only proteins which are part of cogs of interest}
-  \CommentTok{# (affects abundance metrics so we won't filter)}
-  \CommentTok{# filter(cog_id %in% cogs_of_interest[["cog_id"]])}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]])}
 
-\CommentTok{# exporting for package use}
+\CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## <U+2714> Setting active project to 'C:/R/neuro'
-## <U+2714> Saving 'cogs' to 'data/cogs.rda'
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## <U+2714> Saving 'gene_cogs' to 'data/gene_cogs.rda'
-\end{verbatim}

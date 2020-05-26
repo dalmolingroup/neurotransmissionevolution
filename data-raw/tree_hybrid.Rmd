@@ -2,15 +2,16 @@
 title: "Hybrid tree assembly"
 knit: neurotransmissionevolution::custom_knit
 ---
-```{r setup, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE,
-  cache.extra = list(
-    file.mtime("ncbi_tree.nwk"),
-    file.mtime("download/Eukaryota_species.nwk"),
-    file.mtime("download/timetree_335_eukaryotes.nwk")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+  ,cache.extra = list(
+     file.mtime("ncbi_tree.nwk")
+    ,file.mtime("download/Eukaryota_species.nwk")
+    ,file.mtime("download/timetree_335_eukaryotes.nwk")
   )
 )
 
@@ -22,8 +23,8 @@ library(igraph)
 library(neurotransmissionevolution)
 ```
 
-#### Resources
 ` `  
+**Resources**  
 Besides downloading all TimeTree species data (`Eukaryota_species.nwk`) we also need to manually query the website for the 476 STRING eukaryotes (`476_ncbi_eukaryotes.txt`). The file is called `476_ncbi_eukaryotes.txt` because it contains updated NCBI Taxonomy names rather than STRING outdated names. This ensures better results.
 ```{r}
 download_if_missing(
@@ -50,8 +51,7 @@ duplicated_genera <- scan("duplicated_genera.txt", what = "character")
 tree_85k <- read.tree("download/Eukaryota_species.nwk")
 ```
 
-#### **Unfound species with matching genera**
-` `  
+**Unfound species with matching genera**  
 Some of the 476 STRING eukaryotes are not present in the TimeTree database. However, sometimes TimeTree does contain tree data for closely related species (e.g. _Monosiga brevicollis_ is not present, but _Monosiga ovata_ is). Therefore, we can use these closely related species as proxies for the actual species. This is done by searching for genera names in the complete database (`Eukaryota_species.nwk`). In the given _Monosiga brevicollis_ example, we search for _Monosiga_ in the complete database. We see that there is information for at least one other species of the _Monosiga_ genus (in this case, _Monosiga ovata_), so we add _Monosiga brevicollis_ as a sister branch to the found species.  
   
 When you search for a term in TimeTree, it uses a synonym list obtained from NCBI to try to resolve it. Sometimes TimeTree will resolve a searched term to a scientific name different from the one you searched for. The problem with this is that TimeTree does not make it obvious that it is returning a different term. The first step is to find out which species resolved to different names in the `timetree_335_eukaryotes.nwk` file:
@@ -161,8 +161,7 @@ tree_genus %<>% list_modify(
 )
 ```
 
-#### **Species of unfound genera**
-` `  
+**Species of unfound genera**  
 In this part, we try to fill in the remaining missing species (those which genera were not found in TimeTree) by searching for their closest relatives (according to NCBI Taxonomy) that are present in the current tree. Once we find its two closest relatives, we can add the missing species as a branch from their LCA. This is a conservative approach.
 ```{r}
 # converting ncbi phylo to igraph
@@ -245,14 +244,9 @@ phylo_graph_genus[["edge.length"]] <- NULL
 ```
 
 
-#### **Ctenophora as sister to all animals**
-` `  
+**Ctenophora as sister to all animals**  
 According to TimeTree, Ctenophora remains as a sister group to Cnidaria. We believe the most recent consensus in literature is to consider them a sister group to all animals. The following code block moves _Mnemiopsis leidyi_, the only ctenophore in our analysis, to the base of the metazoan lineage.
 ```{r}
-# moving ctenophora before porifera
-mnemiopsis_taxid <- species_dictionary %>% filter(ncbi_name == "Mnemiopsis leidyi") %>% pull(taxid)
-amphimedon_taxid <- species_dictionary %>% filter(ncbi_name == "Amphimedon queenslandica") %>% pull(taxid)
-
 # reordering tip.labels
 from_to <- c(
   "400682" = "27923",  # amphimedon to mnemiopsis
@@ -267,8 +261,7 @@ modified_phylo[["tip.label"]] %<>% recode(!!!from_to)
 write.tree(modified_phylo, "../data/hybrid_tree_modified.nwk")
 ```
 
-
-```{r fig.align="center", fig.height=3, fig.width=7, echo=FALSE, fig.cap="Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy."}
+```{r include=FALSE}
 species_dictionary %<>% mutate(method = case_when(
   ncbi_name == timetree_name               ~ "normal", # direct match in timetree
   ncbi_name != timetree_name               ~ "name_fix", # direct match, name correction
@@ -278,8 +271,8 @@ species_dictionary %<>% mutate(method = case_when(
 
 tip_color_ref <- c(
   normal           = "#263238",
-  name_fix         = "#1B5E20",
-  genus_proxy      = "#64DD17",
+  name_fix         = "#00C853",
+  genus_proxy      = "#2962FF",
   closest_relative = "#DD2C00"
 )
 
@@ -292,14 +285,18 @@ temp_modified_phylo %<>% list_modify(
   tip.label = .$tip.alias
 )
 
-plot(
-  temp_modified_phylo,
-  type = "cladogram",
-  tip.color = temp_modified_phylo$tip.color,
-  edge.color = "#263238",
-  cex = 0.125,
-  edge.width = 0.1,
-  no.margin = T,
-  direction = "upwards"
-)
+pdf("tree_hybrid_raw.pdf", width = 5, height = 9)
+  plot(
+    temp_modified_phylo,
+    type = "cladogram",
+    tip.color = temp_modified_phylo$tip.color,
+    edge.color = "#263238",
+    cex = 0.125,
+    edge.width = 0.1,
+    no.margin = T,
+    direction = "rightwards"
+  )
+dev.off()
 ```
+![Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy. Clade naming is described further in this document.](../data-raw/tree_hybrid.pdf){height=95%}
+

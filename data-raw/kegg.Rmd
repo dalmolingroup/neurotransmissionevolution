@@ -2,12 +2,12 @@
 title: 'Gene identifiers and pathway annotation'
 knit: neurotransmissionevolution::custom_knit
 ---
-```{r message=FALSE, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
 )
 library(neurotransmissionevolution)
 library(tidyverse)
@@ -15,7 +15,7 @@ library(tidylog)
 library(magrittr)
 ```
 
-```{r download, include=FALSE}
+```{r include=FALSE}
 download_if_missing("https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz")
 download_if_missing("https://string-db.org/mapping_files/STRING_display_names/human.name_2_string.tsv.gz")
 download_if_missing("https://string-db.org/mapping_files/entrez/human.entrez_2_string.2018.tsv.gz")
@@ -24,7 +24,7 @@ download_if_missing("http://rest.kegg.jp/link/pathway/hsa", "link_pathway_entrez
 ```
 
 ### Neurotransmitter systems annotation
-We start by querying the KEGG api for the pathways of interest. Resulting data is then pivoted to a wider format.
+We start by querying the KEGG api for the pathways of interest. Results are pivoted to a wider format.
 ```{r results="asis", echo=FALSE}
 link_pathway_entrez <- read_tsv(
   "download/link_pathway_entrez.tsv"
@@ -43,7 +43,7 @@ link_pathway_entrez_spec <- tribble(
   "link_pathway_entrez"
 )
 ```
-```{r}
+```{r results="hide"}
 pathways <- tribble(
   ~pathway_id,      ~pathway_name, 
   "path:hsa04724",  "glutamatergic",
@@ -53,10 +53,10 @@ pathways <- tribble(
   "path:hsa04728",  "dopaminergic"
 )
 
-# removing hsa prefix
+# Removing hsa prefix
 link_pathway_entrez[["entrez_id"]] %<>% str_split_n(":", 2)
 
-# filtering for pathways of interest and pivoting
+# Filtering for pathways of interest and pivoting
 gene_pathways <- inner_join(link_pathway_entrez, pathways) %>%
   mutate(n = 1) %>%
   pivot_wider(
@@ -68,7 +68,7 @@ gene_pathways <- inner_join(link_pathway_entrez, pathways) %>%
   ) %>%
   mutate(system_count = rowSums(select(., -entrez_id)))
 
-# exporting for package use
+# Exporting for package use
 usethis::use_data(gene_pathways, overwrite = TRUE)
 ```
 ```{r echo=FALSE}
@@ -160,10 +160,10 @@ link_ensembl_entrez_spec <- tribble(
 )
 ```
 ```{r}
-# removing all kegg prefixes (e.g. "hsa:")
+# Removing all kegg prefixes (e.g. "hsa:")
 link_ensembl_entrez %<>% mutate_all(str_split_n, ":", 2)
 
-# joining all data
+# Joining all data
 gene_ids <- gene_pathways %>%
   select(entrez_id) %>%
   left_join(link_ensembl_entrez) %>%
@@ -172,7 +172,7 @@ gene_ids <- gene_pathways %>%
   left_join(entrez_names)
 ```
 
-Some STRING proteins couldn't be automatically resolved, so we perform it manually
+Some STRING proteins couldn't be automatically resolved, so we resolve them manually
 ```{r eval=FALSE}
 gene_ids[!complete.cases(gene_ids),]
 ```
@@ -182,7 +182,7 @@ gene_ids[!complete.cases(gene_ids),] %>%
   kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
 ```
 
-```{r}
+```{r results="hide"}
 complete_info <- tribble(
 ##########################################################################################
  ~entrez_id,       ~ensembl_id,             ~string_id,    ~string_name,    ~entrez_name,#
@@ -196,17 +196,15 @@ complete_info <- tribble(
       "801", "ENSG00000198668", "9606.ENSP00000349467",         "CALM1",         "CALM1",#
       "805", "ENSG00000143933", "9606.ENSP00000272298",         "CALM2",         "CALM2",#
       "808", "ENSG00000160014", "9606.ENSP00000291295",         "CALM3",         "CALM3" #
-##########################################################################################
-)
+)#########################################################################################
 
-
-# removing incomplete cases and adding updated ones
+# Removing incomplete cases and adding updated ones
 gene_ids %<>% na.omit %>% bind_rows(complete_info)
 
-# removing taxid prefix from STRING IDs
+# Removing taxid prefix from STRING IDs
 gene_ids[["string_id"]] %<>% str_split_n("\\.", 2)
 
-# exporting for package use
+# Exporting for package use
 usethis::use_data(gene_ids, overwrite = TRUE)
 ```
 

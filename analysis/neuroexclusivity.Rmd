@@ -6,12 +6,12 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
    warning     = FALSE
   ,message     = FALSE
-  ,cache       = TRUE
-  # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+  ,cache       = 1
+  ,autodep     = T
 )
 ```
 
-Loading resources.
+Loading resources:
 ```{r}
 library(tidyverse)
 library(magrittr)

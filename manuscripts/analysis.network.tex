@@ -1,7 +1,7 @@
 \hypertarget{graph-data}{%
 \subsubsection{Graph data}\label{graph-data}}
 
-Loading resources.
+Loading resources:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -47,7 +47,7 @@ Loading resources.
 \end{Highlighting}
 \end{Shaded}
 
-Joining all gene data and creating the network graph object.
+We start by joining all gene data and creating the graph object.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -82,7 +82,10 @@ Joining all gene data and creating the network graph object.
 \end{Highlighting}
 \end{Shaded}
 
-Generating the network layout (i.e.~node coordinates).
+The following block calls an utility function that handles the force
+directed layout with the aid of a shiny web server and the VivaGraphJS
+javascript library. A computed layout is already available in this
+folder.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -99,14 +102,16 @@ Generating the network layout (i.e.~node coordinates).
 \end{Highlighting}
 \end{Shaded}
 
-Generating tidy edge coordinates for plotting.
+We use base ggplot2 to draw the network. Edges are represented by a
+common \texttt{geom\_path} layer. The following block retrieves tidy
+edge coordinates for the \texttt{geom\_path} calls.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# Recreating the vertices data.frame, now with layout coordinates (lazy)}
+\CommentTok{# Recreating the vertices data.frame, now with layout coordinates (lazy way)}
 \NormalTok{vertices <-}\StringTok{ }\NormalTok{igraph}\OperatorTok{::}\KeywordTok{as_data_frame}\NormalTok{(g, }\DataTypeTok{what =} \StringTok{"vertices"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{string_id =}\NormalTok{ name)}
 
-\CommentTok{# The edges data.frame will be used to draw lines with geom_line}
+\CommentTok{# The edges data.frame will be used to draw lines with geom_path}
 \NormalTok{edges <-}\StringTok{ }\NormalTok{string_edgelist }\OperatorTok{%>%}
 \StringTok{    }\KeywordTok{map}\NormalTok{(match, vertices[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}
 \StringTok{    }\KeywordTok{map_dfr}\NormalTok{(}\OperatorTok{~}\StringTok{ }\NormalTok{vertices[.x,]) }\OperatorTok{%>%}
@@ -115,7 +120,7 @@ Generating tidy edge coordinates for plotting.
 \end{Highlighting}
 \end{Shaded}
 
-Setting up reusable aesthetic parameters for the plots.
+Setting up reusable aesthetic parameters to avoid code duplication.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -209,8 +214,8 @@ Setting up reusable aesthetic parameters for the plots.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{figure-1}{%
-\subsubsection{Figure 1}\label{figure-1}}
+\hypertarget{manuscript-figure-1}{%
+\subsubsection{Manuscript figure 1}\label{manuscript-figure-1}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -278,7 +283,7 @@ Setting up reusable aesthetic parameters for the plots.
 
 }
 
-\caption{The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right).}\label{fig:unnamed-chunk-8}
+\caption{Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right).}\label{fig:unnamed-chunk-8}
 \end{figure}
 
 \begin{Shaded}
@@ -287,8 +292,13 @@ Setting up reusable aesthetic parameters for the plots.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{figure-2}{%
-\subsubsection{Figure 2}\label{figure-2}}
+\hypertarget{manuscript-figure-2}{%
+\subsubsection{Manuscript figure 2}\label{manuscript-figure-2}}
+
+This figure is produced externally by a program called ViaComplex.
+ViaComplex superimposes a heatmap over the network layout based on a
+node property. This property, in our case, is a node's neuroexclusivity.
+The following block handles data formatting related to ViaComplex.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -344,20 +354,20 @@ Setting up reusable aesthetic parameters for the plots.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{figure-3}{%
-\subsubsection{Figure 3}\label{figure-3}}
+\hypertarget{manuscript-figure-3}{%
+\subsubsection{Manuscript figure 3}\label{manuscript-figure-3}}
 
-The process for generating Figures 3 and 4 (as well as Supplementary
-Figures 2 and 3) is roughly the same. It consists of finding what nodes
-have numeric roots in a given range. In our analysis, the largest root
-is numbered 37 and represents the furthest human common ancestor in the
-cladogram (the Human-Metamonada LCA, as seen in previous sections). Root
-\#1 is represented by \emph{Homo sapiens} itself.\\
+The process for generating Figures 3 and 4 is roughly the same. It
+consists of finding what nodes have numeric roots in a given range. In
+our analysis, the largest root is numbered 37 and represents the oldest
+common ancestor to humans in the cladogram (the Human-Metamonada LCA, as
+seen in previous sections). Root number 1 is represented by \emph{Homo
+sapiens} itself.\\
 The nodes we need to draw are either \texttt{current\_nodes} (roots in a
 specified numeric range), or \texttt{past\_nodes} (roots \textgreater{}
 such specified range). The edges we need to draw are all edges between
 both sets of nodes.\\
-\textbf{Figure 3A}
+\textbf{Manuscript Figure 3A}
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -404,7 +414,7 @@ both sets of nodes.\\
 \end{Highlighting}
 \end{Shaded}
 
-\textbf{Figure 3B}\\
+\textbf{Manuscript Figure 3B}\\
 For Figure 3B, we want to see what nodes have numeric roots \textless{}
 37 (Human-Metamonada LCA) and \textgreater= 26 (Human-Cnidaria LCA).
 
@@ -473,7 +483,7 @@ For Figure 3B, we want to see what nodes have numeric roots \textless{}
 
 }
 
-\caption{The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions.}\label{fig:unnamed-chunk-11}
+\caption{Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions.}\label{fig:unnamed-chunk-11}
 \end{figure}
 
 \begin{Shaded}
@@ -546,15 +556,15 @@ Plotting such cumulative counts:
 \caption{Cumulative node counts by categories at each root.}\label{fig:unnamed-chunk-13}
 \end{figure}
 
-\hypertarget{figure-4}{%
-\subsubsection{Figure 4}\label{figure-4}}
+\hypertarget{manuscript-figure-4}{%
+\subsubsection{Manuscript figure 4}\label{manuscript-figure-4}}
 
 Visualizing nodes with roots \textless= 30 (Human-Porifera LCA) and
 \textgreater= 26 (Human-Cnidaria LCA) at every distinct root.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{plot_size <-}\StringTok{ }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\FloatTok{1.3}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
+\NormalTok{plot_size <-}\StringTok{ }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\FloatTok{1.5}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
 
 \NormalTok{fig4 <-}\StringTok{ }\NormalTok{roots[roots }\OperatorTok{>=}\StringTok{ }\DecValTok{26} \OperatorTok{&}\StringTok{ }\NormalTok{roots }\OperatorTok{<=}\StringTok{ }\DecValTok{30}\NormalTok{] }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{imap}\NormalTok{(}\OperatorTok{~}\StringTok{ }\NormalTok{\{}
@@ -626,7 +636,7 @@ Visualizing nodes with roots \textless= 30 (Human-Porifera LCA) and
 
 }
 
-\caption{The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA).}\label{fig:unnamed-chunk-14}
+\caption{Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA).}\label{fig:unnamed-chunk-14}
 \end{figure}
 
 \begin{Shaded}
@@ -634,16 +644,119 @@ Visualizing nodes with roots \textless= 30 (Human-Porifera LCA) and
 \KeywordTok{ggsave}\NormalTok{(}
   \StringTok{"plots/fig4_raw.pdf"}
 \NormalTok{  ,}\DataTypeTok{plot        =}\NormalTok{ fig4}
-\NormalTok{  ,}\DataTypeTok{width       =} \DecValTok{9}\OperatorTok{*}\FloatTok{0.8}
-\NormalTok{  ,}\DataTypeTok{height      =} \DecValTok{5}\OperatorTok{*}\FloatTok{0.8}
+\NormalTok{  ,}\DataTypeTok{width       =} \DecValTok{9}\OperatorTok{*}\FloatTok{0.9}
+\NormalTok{  ,}\DataTypeTok{height      =} \DecValTok{5}\OperatorTok{*}\FloatTok{0.9}
 \NormalTok{  ,}\DataTypeTok{onefile     =}\NormalTok{ F}
 \NormalTok{  ,}\DataTypeTok{useDingbats =}\NormalTok{ F}
 \NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{set-diagrams}{%
-\subsubsection{Set diagrams}\label{set-diagrams}}
+\hypertarget{supplementary-network-figures}{%
+\subsubsection{Supplementary network
+figures}\label{supplementary-network-figures}}
+
+The following supplementary figures help us see what nodes have been
+rooted at each LCA. Nodes rooted at previous LCAs are colored white.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{system_plots   <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+\NormalTok{function_plots <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
+
+\KeywordTok{iwalk}\NormalTok{(roots, }\OperatorTok{~}\StringTok{ }\NormalTok{\{}
+  \CommentTok{# Finding which genes should be drawn}
+\NormalTok{  current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\NormalTok{.x)}
+\NormalTok{  past_genes    <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root  }\OperatorTok{>}\StringTok{ }\NormalTok{.x)}
+  
+  \CommentTok{# Finding which edges should be drawn}
+\NormalTok{  partial_ids   <-}\StringTok{ }\KeywordTok{c}\NormalTok{(current_genes[[}\StringTok{"string_id"}\NormalTok{]], past_genes[[}\StringTok{"string_id"}\NormalTok{]])}
+\NormalTok{  which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
+\NormalTok{  partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges,]}
+  
+  \CommentTok{# Common elements -----------}
+\NormalTok{  plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ partial_edges}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
+\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
+\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
+\NormalTok{  )}
+  
+\NormalTok{  plot_past <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ past_genes}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{size =}\NormalTok{ size)}
+\NormalTok{    ,}\DataTypeTok{fill    =}\NormalTok{ past_fill}
+\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ past_color}
+\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ past_genes}\OperatorTok{$}\NormalTok{shape}
+\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
+\NormalTok{  )}
+  
+\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, text_aes, }\DataTypeTok{size =} \DecValTok{1}\NormalTok{, }\DataTypeTok{nudge_y =} \DecValTok{2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.5}\NormalTok{)}
+  
+\NormalTok{  base <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(}\StringTok{"Human-"}\NormalTok{, .y, }\StringTok{" LCA (#"}\NormalTok{, .x, }\StringTok{")"}\NormalTok{)) }\OperatorTok{+}
+\StringTok{    }\NormalTok{diff_theme }\OperatorTok{+}
+\StringTok{    }\NormalTok{xy_lim }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_edges }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_past }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_size}
+  
+  \CommentTok{# Nodes colored by system -----------}
+\NormalTok{  plot_current_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, pie_aes, }\DataTypeTok{cols =}\NormalTok{ systems, }\DataTypeTok{color =} \OtherTok{NA}\NormalTok{)}
+  
+\NormalTok{  system_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_current_pies }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_pie_fill }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_text}
+  
+  \CommentTok{# Nodes colored by function --------}
+\NormalTok{  plot_current_nodes <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ current_genes}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{size =}\NormalTok{ size)}
+\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{color_node}
+\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{shape}
+\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
+\NormalTok{  )}
+  
+\NormalTok{  function_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_current_nodes }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_scales }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_size }\OperatorTok{+}
+\StringTok{    }\NormalTok{plot_text }\OperatorTok{+}
+\StringTok{    }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \KeywordTok{guide_legend}\NormalTok{(}\DataTypeTok{override.aes =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape =} \DecValTok{21}\NormalTok{))) }\CommentTok{# legend hack}
+\NormalTok{\})}
+
+\CommentTok{# Printing and saving}
+\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =}\NormalTok{ system_plots, }\DataTypeTok{ncol =} \DecValTok{3}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{grid}\OperatorTok{::}\KeywordTok{grid.draw}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.network.unnamed-chunk-15-1} 
+
+}
+
+\caption{The human neurotransmission network with nodes rooted at each human LCA.}\label{fig:unnamed-chunk-15}
+\end{figure}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =}\NormalTok{ function_plots, }\DataTypeTok{ncol =} \DecValTok{3}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{grid}\OperatorTok{::}\KeywordTok{grid.draw}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.network.unnamed-chunk-16-1} 
+
+}
+
+\caption{The human neurotransmission network with nodes rooted at each human LCA.}\label{fig:unnamed-chunk-16}
+\end{figure}
+
+\hypertarget{manuscript-set-diagrams}{%
+\subsubsection{Manuscript set diagrams}\label{manuscript-set-diagrams}}
 
 Given the dificulties of joining ggplot and base plots, the set diagrams
 have to be plotted by themselves:
@@ -709,122 +822,5 @@ have to be plotted by themselves:
 \end{Shaded}
 
 \begin{figure}
-\subfloat[Set diagram for Figure 1A\label{fig:unnamed-chunk-151}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:unnamed-chunk-152}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:unnamed-chunk-153}]{\includegraphics{figs/analysis.network.unnamed-chunk-15-3} }\caption{Set diagrams}\label{fig:unnamed-chunk-15}
+\subfloat[Set diagram for Figure 1A\label{fig:unnamed-chunk-171}]{\includegraphics{figs/analysis.network.unnamed-chunk-17-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:unnamed-chunk-172}]{\includegraphics{figs/analysis.network.unnamed-chunk-17-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:unnamed-chunk-173}]{\includegraphics{figs/analysis.network.unnamed-chunk-17-3} }\caption{Set diagrams}\label{fig:unnamed-chunk-17}
 \end{figure}
-
-\hypertarget{supplementary-figures-2-and-3}{%
-\subsubsection{Supplementary Figures 2 and
-3}\label{supplementary-figures-2-and-3}}
-
-Supplementary figures 2 and 3 help us see what nodes have been rooted at
-each LCA. Nodes rooted at previous LCAs are painted white.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{system_plots   <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
-\NormalTok{function_plots <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
-
-\KeywordTok{iwalk}\NormalTok{(roots, }\OperatorTok{~}\StringTok{ }\NormalTok{\{}
-  \CommentTok{#finding which genes should be drawn}
-\NormalTok{  current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\NormalTok{.x)}
-\NormalTok{  past_genes    <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root  }\OperatorTok{>}\StringTok{ }\NormalTok{.x)}
-  
-  \CommentTok{#finding which edges should be drawn}
-\NormalTok{  partial_ids   <-}\StringTok{ }\KeywordTok{c}\NormalTok{(current_genes[[}\StringTok{"string_id"}\NormalTok{]], past_genes[[}\StringTok{"string_id"}\NormalTok{]])}
-\NormalTok{  which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
-\NormalTok{  partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges,]}
-  
-  \CommentTok{####################}
-  \CommentTok{## Common elements}
-  \CommentTok{####################}
-\NormalTok{  plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ partial_edges}
-\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
-\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
-\NormalTok{  )}
-  
-\NormalTok{  plot_past <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ past_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{fill    =}\NormalTok{ past_fill}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ past_color}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ past_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ text_aes}
-\NormalTok{    ,}\DataTypeTok{size    =} \DecValTok{1}
-\NormalTok{    ,}\DataTypeTok{vjust   =} \DecValTok{0}
-\NormalTok{    ,}\DataTypeTok{nudge_y =} \FloatTok{1.75}
-\NormalTok{    ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
-\NormalTok{  )}
-  
-\NormalTok{  base <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(.y, }\StringTok{" LCA (#"}\NormalTok{, .x, }\StringTok{")"}\NormalTok{)) }\OperatorTok{+}
-\StringTok{    }\NormalTok{diff_theme }\OperatorTok{+}
-\StringTok{    }\NormalTok{xy_lim }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_edges }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_past }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_size}
-  
-  \CommentTok{###########################}
-  \CommentTok{## Supplementary Figure 2}
-  \CommentTok{###########################}
-\NormalTok{  plot_current_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
-\NormalTok{    ,}\DataTypeTok{cols    =}\NormalTok{ systems}
-\NormalTok{    ,}\DataTypeTok{color   =} \OtherTok{NA}
-\NormalTok{  )}
-  
-\NormalTok{  system_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_current_pies }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_pie_fill }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_text}
-  
-  \CommentTok{###########################}
-  \CommentTok{## Supplementary Figure 3}
-  \CommentTok{###########################}
-\NormalTok{  plot_current_nodes <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{color_node}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  legend_hack <-}\StringTok{ }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \KeywordTok{guide_legend}\NormalTok{(}\DataTypeTok{override.aes =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape =} \DecValTok{21}\NormalTok{)))}
-  
-\NormalTok{  function_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_current_nodes }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_size }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{    }\NormalTok{legend_hack}
-\NormalTok{\})}
-
-\CommentTok{# Saving pdfs}
-\KeywordTok{ggsave}\NormalTok{(}
-  \StringTok{"plots/sup_systems_emergence.pdf"}
-\NormalTok{  ,}\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =} \KeywordTok{rev}\NormalTok{(system_plots), }\DataTypeTok{ncol =} \DecValTok{3}\NormalTok{)}
-\NormalTok{  ,}\DataTypeTok{width       =} \DecValTok{210}
-\NormalTok{  ,}\DataTypeTok{height      =} \DecValTok{297}
-\NormalTok{  ,}\DataTypeTok{units       =} \StringTok{"mm"}
-\NormalTok{  ,}\DataTypeTok{onefile     =}\NormalTok{ F}
-\NormalTok{  ,}\DataTypeTok{useDingbats =}\NormalTok{ F}
-\NormalTok{)}
-\KeywordTok{ggsave}\NormalTok{(}
-  \StringTok{"plots/sup_functions_emergence.pdf"}
-\NormalTok{  ,}\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =} \KeywordTok{rev}\NormalTok{(function_plots), }\DataTypeTok{ncol =} \DecValTok{3}\NormalTok{)}
-\NormalTok{  ,}\DataTypeTok{width       =} \DecValTok{210}
-\NormalTok{  ,}\DataTypeTok{height      =} \DecValTok{297}
-\NormalTok{  ,}\DataTypeTok{units       =} \StringTok{"mm"}
-\NormalTok{  ,}\DataTypeTok{onefile     =}\NormalTok{ F}
-\NormalTok{  ,}\DataTypeTok{useDingbats =}\NormalTok{ F}
-\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-

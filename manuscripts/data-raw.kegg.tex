@@ -2,8 +2,8 @@
 \subsubsection{Neurotransmitter systems
 annotation}\label{neurotransmitter-systems-annotation}}
 
-We start by querying the KEGG api for the pathways of interest.
-Resulting data is then pivoted to a wider format.
+We start by querying the KEGG api for the pathways of interest. Results
+are pivoted to a wider format.
 
 \begin{table}[H]
 
@@ -33,10 +33,10 @@ Resulting data is then pivoted to a wider format.
   \StringTok{"path:hsa04728"}\NormalTok{,  }\StringTok{"dopaminergic"}
 \NormalTok{)}
 
-\CommentTok{# removing hsa prefix}
+\CommentTok{# Removing hsa prefix}
 \NormalTok{link_pathway_entrez[[}\StringTok{"entrez_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{":"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
-\CommentTok{# filtering for pathways of interest and pivoting}
+\CommentTok{# Filtering for pathways of interest and pivoting}
 \NormalTok{gene_pathways <-}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(link_pathway_entrez, pathways) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{n =} \DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{pivot_wider}\NormalTok{(}
@@ -48,15 +48,10 @@ Resulting data is then pivoted to a wider format.
 \NormalTok{  ) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{system_count =} \KeywordTok{rowSums}\NormalTok{(}\KeywordTok{select}\NormalTok{(., }\OperatorTok{-}\NormalTok{entrez_id)))}
 
-\CommentTok{# exporting for package use}
+\CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_pathways, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## <U+2714> Setting active project to 'C:/R/neuro'
-## <U+2714> Saving 'gene_pathways' to 'data/gene_pathways.rda'
-\end{verbatim}
 
 \begin{table}[H]
 \centering
@@ -157,10 +152,10 @@ progressively joined to it.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# removing all kegg prefixes (e.g. "hsa:")}
+\CommentTok{# Removing all kegg prefixes (e.g. "hsa:")}
 \NormalTok{link_ensembl_entrez }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate_all}\NormalTok{(str_split_n, }\StringTok{":"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
-\CommentTok{# joining all data}
+\CommentTok{# Joining all data}
 \NormalTok{gene_ids <-}\StringTok{ }\NormalTok{gene_pathways }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{select}\NormalTok{(entrez_id) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(link_ensembl_entrez) }\OperatorTok{%>%}
@@ -170,8 +165,8 @@ progressively joined to it.
 \end{Highlighting}
 \end{Shaded}
 
-Some STRING proteins couldn't be automatically resolved, so we perform
-it manually
+Some STRING proteins couldn't be automatically resolved, so we resolve
+them manually
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -212,21 +207,16 @@ entrez\_id & ensembl\_id & string\_id & string\_name & entrez\_name\\
       \StringTok{"801"}\NormalTok{, }\StringTok{"ENSG00000198668"}\NormalTok{, }\StringTok{"9606.ENSP00000349467"}\NormalTok{,         }\StringTok{"CALM1"}\NormalTok{,         }\StringTok{"CALM1"}\NormalTok{,}\CommentTok{#}
       \StringTok{"805"}\NormalTok{, }\StringTok{"ENSG00000143933"}\NormalTok{, }\StringTok{"9606.ENSP00000272298"}\NormalTok{,         }\StringTok{"CALM2"}\NormalTok{,         }\StringTok{"CALM2"}\NormalTok{,}\CommentTok{#}
       \StringTok{"808"}\NormalTok{, }\StringTok{"ENSG00000160014"}\NormalTok{, }\StringTok{"9606.ENSP00000291295"}\NormalTok{,         }\StringTok{"CALM3"}\NormalTok{,         }\StringTok{"CALM3"} \CommentTok{#}
-\CommentTok{##########################################################################################}
-\NormalTok{)}
+\NormalTok{)}\CommentTok{#########################################################################################}
 
-
-\CommentTok{# removing incomplete cases and adding updated ones}
+\CommentTok{# Removing incomplete cases and adding updated ones}
 \NormalTok{gene_ids }\OperatorTok{%<>%}\StringTok{ }\NormalTok{na.omit }\OperatorTok{%>%}\StringTok{ }\KeywordTok{bind_rows}\NormalTok{(complete_info)}
 
-\CommentTok{# removing taxid prefix from STRING IDs}
+\CommentTok{# Removing taxid prefix from STRING IDs}
 \NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
-\CommentTok{# exporting for package use}
+\CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_ids, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## <U+2714> Saving 'gene_ids' to 'data/gene_ids.rda'
-\end{verbatim}

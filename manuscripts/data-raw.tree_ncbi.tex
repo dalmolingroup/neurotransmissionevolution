@@ -1,9 +1,4 @@
-\texttt{}
-
-\hypertarget{resources}{%
-\paragraph{\texorpdfstring{\textbf{Resources}}{Resources}}\label{resources}}
-
-\texttt{}\\
+\textbf{Resources}\\
 
 \begin{table}[H]
 
@@ -76,13 +71,31 @@
 \end{tabular}
 \end{table}
 
-\texttt{}
+\textbf{Duplicated genera}\\
+Some species from different kingdoms may have the same genus name.
+Duplicated genera must be noted down because we will use them to fill in
+missing species at a later time.
 
-\hypertarget{updating-string-taxon-ids}{%
-\paragraph{\texorpdfstring{\textbf{Updating STRING taxon
-IDs}}{Updating STRING taxon IDs}}\label{updating-string-taxon-ids}}
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# keeping genera nodes}
+\NormalTok{genera_taxids <-}\StringTok{ }\NormalTok{ncbi_edgelist }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(rank }\OperatorTok{==}\StringTok{ "genus"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\DataTypeTok{taxid =}\NormalTok{ n1, rank)}
 
-\texttt{}\\
+\NormalTok{duplicated_genera <-}\StringTok{ }\NormalTok{ncbi_taxon_names }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# keeping scientific names}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(type }\OperatorTok{==}\StringTok{ "scientific name"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\DataTypeTok{taxid =}\NormalTok{ name, ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(genera_taxids) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# extracting and saving duplicated values}
+\StringTok{  }\KeywordTok{pull}\NormalTok{(ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{extract}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(.)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write}\NormalTok{(}\StringTok{"duplicated_genera.txt"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\textbf{Updating STRING taxon IDs}\\
 Some organisms taxon IDs are outdated in STRING. We must update them to
 work with the most recent NCBI Taxonomy data.
 
@@ -94,11 +107,7 @@ work with the most recent NCBI Taxonomy data.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{creating-tree-graph}{%
-\paragraph{\texorpdfstring{\textbf{Creating tree
-graph}}{Creating tree graph}}\label{creating-tree-graph}}
-
-\texttt{}\\
+\textbf{Creating tree graph}\\
 The first step is to create a directed graph representing the NCBI
 Taxonomy tree.
 
@@ -120,11 +129,7 @@ Taxonomy tree.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{traversing-the-graph}{%
-\paragraph{\texorpdfstring{\textbf{Traversing the
-graph}}{Traversing the graph}}\label{traversing-the-graph}}
-
-\texttt{}\\
+\textbf{Traversing the graph}\\
 The second step is to traverse the graph from the Eukaryota root node to
 STRING species nodes. This automatically drops all non-eukaryotes and
 results in a species tree representing only STRING eukaryotes (476).
@@ -144,10 +149,7 @@ results in a species tree representing only STRING eukaryotes (476).
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{saving}{%
-\paragraph{\texorpdfstring{\textbf{Saving}}{Saving}}\label{saving}}
-
-\texttt{}\\
+\textbf{Saving}\\
 Saving \texttt{ncbi\_tree} and \texttt{string\_eukaryotes} for package
 use. These data files are documented by the package. We also create a
 plain text file \texttt{476\_ncbi\_eukaryotes.txt} containing the
@@ -158,21 +160,14 @@ against the TimeTree website.
 \begin{Highlighting}[]
 \NormalTok{ncbi_tree <-}\StringTok{ }\NormalTok{treeio}\OperatorTok{::}\KeywordTok{as.phylo}\NormalTok{(eukaryote_tree)}
 
-\CommentTok{# plot(ncbi_tree %>% ape::ladderize(), type="cladogram")}
-
 \NormalTok{string_eukaryotes <-}\StringTok{ }\NormalTok{string_species }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(new_taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{ncbi_tree}\OperatorTok{$}\NormalTok{tip.label) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(ncbi_taxon_names, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"new_taxid"}\NormalTok{ =}\StringTok{ "name"}\NormalTok{))}
 
 \KeywordTok{write}\NormalTok{(string_eukaryotes[[}\StringTok{"ncbi_name"}\NormalTok{]],}\StringTok{"476_ncbi_eukaryotes.txt"}\NormalTok{)}
 
-\CommentTok{# usethis::use_data(ncbi_tree, overwrite = TRUE)}
 \KeywordTok{write.tree}\NormalTok{(ncbi_tree, }\StringTok{"tree_ncbi.nwk"}\NormalTok{)}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(string_eukaryotes, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## <U+2714> Setting active project to 'C:/R/neuro'
-## <U+2714> Saving 'string_eukaryotes' to 'data/string_eukaryotes.rda'
-\end{verbatim}

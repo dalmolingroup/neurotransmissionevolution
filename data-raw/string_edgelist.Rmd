@@ -2,13 +2,13 @@
 title: 'Network'
 knit: neurotransmissionevolution::custom_knit
 ---
-```{r message=FALSE, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("../data/gene_ids.rda")
-)
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+) 
 library(RCurl)
 library(tidyverse)
 library(tidylog)
@@ -19,8 +19,8 @@ load("../data/gene_ids.rda")
 ```
 
 ### Retrieving network data
-Querying the API endpoint for the STRING IDs we collected.
-```{r download}
+Querying the API endpoint for the STRING IDs we previously resolved:
+```{r}
 identifiers <- gene_ids %>% pull(string_id) %>% na.omit %>% paste0(collapse="%0d")
 
 if (!file.exists("download/string_ids.tsv")) {
@@ -51,26 +51,26 @@ api_ids_spec <- tibble::tribble(
 )
 ```
 
-Now we need to make sure that the API succesfully resolves the protein IDs we searched for.
+Making sure that the API succesfully resolves queried protein IDs.
 ```{r}
 api_ids <- read_tsv("download/string_ids.tsv", comment = "", quote = "")
 
-# removing taxid prefix
+# Removing taxid prefix
 api_ids %<>% mutate(stringId = str_split_n(stringId, "\\.", 2))
 
-# removing inexact matches (queried id is different from resolved id)
+# Removing inexact matches (queried id is different from resolved id)
 api_ids %<>% group_by(queryItem) %>% filter(queryItem == stringId)
 
-# setequal must return true if ids matched exatcly
+# Setequal must return true if ids matched exatcly
 setequal(
   gene_ids %>% pull(string_id) %>% na.omit,
   api_ids  %>% pull(stringId)
-)
+) %>% stopifnot
 ```
 
-Once IDs are correct, we can query the network API endpoint to obtain the protein interaction edgelist.
+Once IDs are correctly resolved, we can query the network API endpoint to obtain the protein-protein interaction edgelist.
 ```{r}
-# it is important to query this endpoint with the species prefix ("9606.")
+# It is important to query this endpoint with the species prefix ("9606.")
 identifiers <- api_ids %>% pull(stringId) %>% na.omit %>% { paste0("9606.", ., collapse="%0d") }
 
 if (!file.exists("download/string_edgelist.tsv")) {
@@ -122,12 +122,12 @@ string_edgelist %<>%
   filter(cs >= 0.7) %>%
   select(stringId_A, stringId_B)
 
-# how many edgelist proteins are absent in gene_ids (should return 0)
+# How many edgelist proteins are absent in gene_ids? (should return 0)
 setdiff(
   string_edgelist %$% c(stringId_A, stringId_B),
   gene_ids %>% pull(string_id)
-)
+) %>% { stopifnot(. == 0) }
 
-# exporting for package use
+# Exporting for package use
 usethis::use_data(string_edgelist, overwrite = TRUE)
 ```

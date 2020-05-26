@@ -2,13 +2,13 @@
 title: "COGs"
 knit: neurotransmissionevolution::custom_knit
 ---
-```{r message=FALSE, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("../data/gene_ids.rda")
-)
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+) 
 library(tidyverse)
 library(magrittr)
 library(data.table)
@@ -49,21 +49,18 @@ cogs_spec <- tribble(
 )
 ```
 
-```{r}
-# spliting first column into taxid and string_id
+```{r results="hide"}
+# Spliting first column into taxid and string_id
 cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
 
-# subsetting cogs of interest
+# Subsetting cogs of interest
 gene_cogs <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
 
 cogs %<>%
   # leave only eukaryotes
-  filter(taxid %in% string_eukaryotes[["taxid"]]) #%>%
-  # leave only proteins which are part of cogs of interest
-  # (affects abundance metrics so we won't filter)
-  # filter(cog_id %in% cogs_of_interest[["cog_id"]])
+  filter(taxid %in% string_eukaryotes[["taxid"]])
 
-# exporting for package use
+# Exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)
 usethis::use_data(gene_cogs, overwrite = TRUE)
 ```

@@ -6,7 +6,8 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
    warning     = FALSE
   ,message     = FALSE
-  ,cache       = TRUE
+  ,cache       = 1
+  ,autodep     = T
   # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
 ```
@@ -114,7 +115,7 @@ We use base ggplot2 to draw the network. Edges are represented by a common `geom
 # Recreating the vertices data.frame, now with layout coordinates (lazy way)
 vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
 
-# The edges data.frame will be used to draw lines with geom_line
+# The edges data.frame will be used to draw lines with geom_path
 edges <- string_edgelist %>%
     map(match, vertices[["string_id"]]) %>%
     map_dfr(~ vertices[.x,]) %>%
@@ -213,8 +214,8 @@ upset_texts <- c(
 )
 ```
 
-### Figure 1
-```{r fig.align="center", fig.height=6, fig.width=14, fig.cap="The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right)."}
+### Manuscript figure 1
+```{r fig.align="center", fig.height=6, fig.width=14, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right)."}
 ####################
 ## Common elements
 ####################
@@ -273,7 +274,7 @@ fig1a + fig1b
 ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
 
-### Figure 2
+### Manuscript figure 2
 This figure is produced externally by a program called ViaComplex. ViaComplex superimposes a heatmap over the network layout based on a node property. This property, in our case, is a node's neuroexclusivity. The following block handles data formatting related to ViaComplex.
 ```{r}
 # Retrieving the largest connected component
@@ -327,10 +328,10 @@ write_tsv(
 )
 ```
 
-### Figure 3  
+### Manuscript figure 3  
 The process for generating Figures 3 and 4 is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the oldest common ancestor to humans in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root number 1 is represented by _Homo sapiens_ itself.  
 The nodes we need to draw are either `current_nodes` (roots in a specified numeric range), or `past_nodes` (roots > such specified range). The edges we need to draw are all edges between both sets of nodes.  
-**Figure 3A**
+**Manuscript Figure 3A**
 ```{r}
 # Finding which genes should be drawn
 current_genes <- vertices %>% filter(root == 37)
@@ -374,9 +375,9 @@ fig3a <- ggplot() +
   plot_theme
 ```
 
-**Figure 3B**  
+**Manuscript Figure 3B**  
 For Figure 3B, we want to see what nodes have numeric roots < 37 (Human-Metamonada LCA) and >= 26 (Human-Cnidaria LCA).
-```{r fig.align="center", fig.height=5.5, fig.width=14, fig.cap="The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
+```{r fig.align="center", fig.height=5.5, fig.width=14, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
 # Finding which genes should be drawn
 current_genes <- vertices %>% filter(root < 37 & root >= 26)
 past_genes    <- vertices %>% filter(root == 37)
@@ -482,10 +483,10 @@ ggplot(cumulative_emergence) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 ```
 
-### Figure 4  
+### Manuscript figure 4  
 Visualizing nodes with roots <= 30 (Human-Porifera LCA) and >= 26 (Human-Cnidaria LCA) at every distinct root.
-```{r fig.align="center", fig.height=2, fig.width=10, fig.cap="The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
-plot_size <- scale_radius(range = c(0.5, 1.3), guide = FALSE)
+```{r fig.align="center", fig.height=2, fig.width=10, fig.cap="Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
+plot_size <- scale_radius(range = c(0.5, 1.5), guide = FALSE)
 
 fig4 <- roots[roots >= 26 & roots <= 30] %>%
   imap(~ {
@@ -552,14 +553,89 @@ fig4 <- invoke(grid.arrange, fig4, ncol = 5)
 ggsave(
   "plots/fig4_raw.pdf"
   ,plot        = fig4
-  ,width       = 9*0.8
-  ,height      = 5*0.8
+  ,width       = 9*0.9
+  ,height      = 5*0.9
   ,onefile     = F
   ,useDingbats = F
 )
 ```
 
-### Set diagrams  
+### Supplementary network figures  
+The following supplementary figures help us see what nodes have been rooted at each LCA. Nodes rooted at previous LCAs are colored white.
+```{r fig.align="center", fig.height=10, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+system_plots   <- list()
+function_plots <- list()
+
+iwalk(roots, ~ {
+  # Finding which genes should be drawn
+  current_genes <- vertices %>% filter(root == .x)
+  past_genes    <- vertices %>% filter(root  > .x)
+  
+  # Finding which edges should be drawn
+  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
+  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
+  partial_edges <- edges[which_edges,]
+  
+  # Common elements -----------
+  plot_edges <- geom_path(
+     data    = partial_edges
+    ,mapping = edge_aes
+    ,color   = edge_color
+    ,size    = 0.1
+  )
+  
+  plot_past <- geom_point(
+     data    = past_genes
+    ,mapping = aes(x, y, size = size)
+    ,fill    = past_fill
+    ,color   = past_color
+    ,shape   = past_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  plot_text <- geom_text(data = current_genes, text_aes, size = 1, nudge_y = 2, alpha = 0.5)
+  
+  base <- ggplot() +
+    ggtitle(paste0("Human-", .y, " LCA (#", .x, ")")) +
+    diff_theme +
+    xy_lim +
+    plot_edges +
+    plot_past +
+    plot_size
+  
+  # Nodes colored by system -----------
+  plot_current_pies <- geom_scatterpie(data = current_genes, pie_aes, cols = systems, color = NA)
+  
+  system_plots[[as.character(.x)]] <<- base +
+    plot_current_pies +
+    plot_pie_fill +
+    plot_text
+  
+  # Nodes colored by function --------
+  plot_current_nodes <- geom_point(
+     data    = current_genes
+    ,mapping = aes(x, y, fill = annotation, size = size)
+    ,color   = current_genes$color_node
+    ,shape   = current_genes$shape
+    ,stroke  = 0.25
+  )
+  
+  function_plots[[as.character(.x)]] <<- base +
+    plot_current_nodes +
+    plot_scales +
+    plot_size +
+    plot_text +
+    guides(fill = guide_legend(override.aes = list(shape = 21))) # legend hack
+})
+
+# Printing and saving
+arrangeGrob(grobs = system_plots, ncol = 3) %>% grid::grid.draw()
+```
+```{r fig.align="center", fig.height=9.5, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+arrangeGrob(grobs = function_plots, ncol = 3) %>% grid::grid.draw()
+```
+
+### Manuscript set diagrams  
 Given the dificulties of joining ggplot and base plots, the set diagrams have to be plotted by themselves:
 ```{r results='hide', fig.cap='Set diagrams', fig.subcap=c('Set diagram for Figure 1A', 'Set diagram for Figure 3A', 'Set diagram for Figure 3B'), fig.width=20, fig.height=5, fig.ncol = 1}
 # We have to manually find the correct order of colors
@@ -617,113 +693,4 @@ upset(
   ,sets.bar.color  = get_colors(fig3b_set)
 )
 dev.print(pdf, "plots/fig3b_set_raw.pdf", width = 16, height = 8, onefile = F, useDingbats = F)
-```
-
-### Supplementary Figures 2 and 3  
-Supplementary figures 2 and 3 help us see what nodes have been rooted at each LCA. Nodes rooted at previous LCAs are painted white.
-```{r}
-system_plots   <- list()
-function_plots <- list()
-
-iwalk(roots, ~ {
-  #finding which genes should be drawn
-  current_genes <- vertices %>% filter(root == .x)
-  past_genes    <- vertices %>% filter(root  > .x)
-  
-  #finding which edges should be drawn
-  partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-  which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-  partial_edges <- edges[which_edges,]
-  
-  ####################
-  ## Common elements
-  ####################
-  plot_edges <- geom_path(
-     data    = partial_edges
-    ,mapping = edge_aes
-    ,color   = edge_color
-    ,size    = 0.1
-  )
-  
-  plot_past <- geom_point(
-     data    = past_genes
-    ,mapping = aes(x, y, size = size)
-    ,fill    = past_fill
-    ,color   = past_color
-    ,shape   = past_genes$shape
-    ,stroke  = 0.25
-  )
-  
-  plot_text <- geom_text(
-     data    = current_genes
-    ,mapping = text_aes
-    ,size    = 1
-    ,vjust   = 0
-    ,nudge_y = 1.75
-    ,alpha   = 0.5
-  )
-  
-  base <- ggplot() +
-    ggtitle(paste0(.y, " LCA (#", .x, ")")) +
-    diff_theme +
-    xy_lim +
-    plot_edges +
-    plot_past +
-    plot_size
-  
-  ###########################
-  ## Supplementary Figure 2
-  ###########################
-  plot_current_pies <- geom_scatterpie(
-     data    = current_genes
-    ,mapping = pie_aes
-    ,cols    = systems
-    ,color   = NA
-  )
-  
-  system_plots[[as.character(.x)]] <<- base +
-    plot_current_pies +
-    plot_pie_fill +
-    plot_text
-  
-  ###########################
-  ## Supplementary Figure 3
-  ###########################
-  plot_current_nodes <- geom_point(
-     data    = current_genes
-    ,mapping = aes(x, y, fill = annotation, size = size)
-    ,color   = current_genes$color_node
-    ,shape   = current_genes$shape
-    ,stroke  = 0.25
-  )
-  
-  legend_hack <- guides(fill = guide_legend(override.aes = list(shape = 21)))
-  
-  function_plots[[as.character(.x)]] <<- base +
-    plot_current_nodes +
-    plot_scales +
-    plot_size +
-    plot_text +
-    legend_hack
-})
-
-# Saving pdfs
-ggsave(
-  "plots/sup_systems_emergence.pdf"
-  ,arrangeGrob(grobs = rev(system_plots), ncol = 3)
-  ,width       = 210
-  ,height      = 297
-  ,units       = "mm"
-  ,onefile     = F
-  ,useDingbats = F
-)
-ggsave(
-  "plots/sup_functions_emergence.pdf"
-  ,arrangeGrob(grobs = rev(function_plots), ncol = 3)
-  ,width       = 210
-  ,height      = 297
-  ,units       = "mm"
-  ,onefile     = F
-  ,useDingbats = F
-)
 ```

@@ -4,10 +4,10 @@ knit: neurotransmissionevolution::custom_knit
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
 )
 ```
 
@@ -33,10 +33,10 @@ phyloTree <- read.tree("../data/hybrid_tree_modified.nwk") %>% rotatePhyloTree("
 
 We perform some minor data formatting before feeding it to geneplast
 ```{r}
-# formating cogdata column names for geneplast
+# Formating cogdata column names for geneplast
 cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
 
-# adding species names to taxid tree
+# Adding species names to taxid tree
 phyloTree %<>% list_modify(
   tip.alias = string_eukaryotes %$% string_name[match(phyloTree[["tip.label"]], taxid)]
 )
@@ -57,13 +57,8 @@ ogr <- groot.preprocess(
 roots <- groot(ogr, nPermutations = 1) %>%
   groot.get("results") %>%
   rownames_to_column("cog_id") %>%
-  select(cog_id, root = Root)
-
-write_tsv(roots, "geneplast_roots.tsv")
-
-# setwd("plots/roots/")
-# groot.plot(ogr, plot.lcas = TRUE, width=10, height=20, cex.lab = 0.2, cex.nodes = 0.4)
-# setwd("../../")
+  select(cog_id, root = Root) %>%
+  write_tsv("geneplast_roots.tsv")
 ```
 
 ### Clade names
@@ -81,54 +76,66 @@ string_eukaryotes %<>% mutate(
   root        = ogr@tree$tip.group[taxid],
   lineage_txt = xpathSApply(lineages, "//Lineage", XML::xmlValue)
 )
-  
-roots_names <- string_eukaryotes %>%
-  
-  # splitting lineage text
-  mutate(lineage_split = strsplit(lineage_txt, "; ")) %>%
-  group_by(root) %>%
-  
-  # for each root, get all lineage intersections
-  # but also keep complete lineages for future use
-  summarise(lineage = Reduce(intersect, lineage_split) %>% list,
-            lineage_list = lineage_split %>% list) %>%
-  
-  # windowed lineage differences (window size = 3 -> current, next, prev)
-  mutate(downstream_diff = mapply(setdiff,         lineage, lead(lineage))) %>%
-  mutate(upstream_diff   = mapply(setdiff, downstream_diff,  lag(lineage))) %>%
-  
-  # defaults to the furthest taxonomic rank (i.e. the 1st one)
-  mutate(clade_name = map_chr(upstream_diff, 1, .default = NA)) %>%
-  
-  # finding at what rank depth should mixed lineages be collapsed
-  mutate(collapse_depth = lineage %>% map_int(length) + 1) %>%
-  
-  group_by(root) %>%
-  # fallback_name is the collapsed lineage ranks
-  mutate(fallback_name = lineage_list %>%
-           flatten %>%
-           map2_chr(collapse_depth, `[`) %>%
-           table %>%
-           sort(TRUE) %>%
-           paste0(names(.), " (", .,")") %>%
-           paste0(collapse="; ")) %>%
-  mutate(clade_name = coalesce(clade_name, fallback_name)) %>%
-  select(root, clade_name)
 
-write_tsv(roots_names, "temp/temp_geneplast_clade_names.tsv")
+write(string_eukaryotes[["lineage_txt"]], "temp/species_lineages.txt")
+  
+# collapse_names(c("a","b","a")) == "a (2); b (1)"
+collapse_names <- function(clade_names) {
+  table(clade_names) %>% sort(TRUE) %>% paste0(names(.), " (", .,")", collapse = "; ")
+}
+
+root_names <- string_eukaryotes %>%
+  # Long format lineages
+  mutate(
+     lineage_split = strsplit(lineage_txt, "; ")
+  ) %>%
+  unnest_longer(
+     col             = lineage_split
+    ,values_to       = "clade_name"
+    ,indices_to      = "clade_depth"
+  ) %>%
+  # Collapsing lineages at clade ranks
+  group_by(root, clade_depth) %>%
+  summarise(
+     diverging_rank = n_distinct(clade_name) > 1
+    ,clade_name     = ifelse(diverging_rank, collapse_names(clade_name), clade_name)
+  ) %>%
+  # Removing subsequent divergences
+  filter(cumsum(diverging_rank) <= 1) %>%
+  # Removing irrelevant ranks
+  group_by(clade_depth) %>%
+  arrange(root) %>%
+  filter(!(duplicated(clade_name) | duplicated(clade_name, fromLast = TRUE)) | diverging_rank) %>%
+  # Choosing name
+  group_by(root) %>%
+  summarise(clade_name = first(clade_name, order_by = clade_depth)) %>%
+  write_tsv("temp/temp_geneplast_clade_names.tsv")
+```
+
+Some automatically named clades are resolved by hand. The following table shows clade names before and after manual checking:
+```{r}
+# Loading manually resolved names, based on temp/temp_geneplast_clade_names.tsv
+lca_names <- read_tsv("geneplast_clade_names.tsv")
+
+root_names %>%
+  rename("automatic_name" = clade_name) %>%
+  inner_join(lca_names) %>%
+  rename("corrected_name" = clade_name) %>%
+  knitr::kable(caption = "Clade names before and after manual checking.", booktabs = TRUE, linesep = "") %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
 ```
 
 ### Phyletic patterns
 Visualizing the presence/absence matrix according to inferred roots and species' clades
-```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="Presence of orthologous groups in species. The horizontal axis is grouped by COGs rooted at some specific LCA. The vertical axis is grouped by species' clades. A checkerboard pattern is superimposed to aid visual examination."}
-lca_names <- read_tsv("geneplast_clade_names.tsv") %>% rename("lca" = root)
+```{r fig.align="center", fig.height=10.5, fig.width=8, fig.cap="Presence of orthologous groups in species. The horizontal axis is grouped by COGs rooted at some specific LCA. The vertical axis is grouped by species' clades. A checkerboard pattern is superimposed to aid visual examination."}
+lca_names %<>% rename("lca" = root)
 
-lca_spp <- ogr@spbranches %>% rename("taxid" = ssp_id, "species" = ssp_name, "lca" = `9606`)
+lca_spp <- ogr@spbranches %>%
+  rename("taxid" = ssp_id, "species" = ssp_name, "lca" = `9606`) %>%
+  mutate(taxid_order = row_number())
+  
 # Saving for use in abundance computation
-lca_spp %>%
-  select(lca, taxid) %>%
-  mutate(taxid_order = row_number()) %>%
-  write_tsv("geneplast_clade_taxids.tsv")
+lca_spp %>% select(lca, taxid, taxid_order) %>% write_tsv("geneplast_clade_taxids.tsv")
 
 cog_pam <- ogr@orthoct[,-1]
 
@@ -140,17 +147,17 @@ long_pam <- cog_pam %>%
   left_join(roots) %>%
   mutate(
     cog_id       = fct_reorder(cog_id, root),
-    species      = fct_reorder(species, desc(lca)),
+    species      = fct_reorder(species, desc(taxid_order)),
     clade_name   = fct_reorder(clade_name, lca),
     root         = as_factor(root),
     clade_stripe = as.numeric(as_factor(lca)) %% 2 == 0
   ) %>%
-  # stripe every other species
+  # Stripe every other species
   group_by(cog_id) %>%
   mutate(spp_stripe = as.numeric(species) %% 2 == 0) %>%
-  # removing empty tiles
+  # Removing empty tiles
   filter(value == 1) %>%
-  # stripe every other cog
+  # Stripe every other cog
   group_by(taxid) %>%
   mutate(cog_stripe = as.numeric(cog_id) %% 2 == 0)
 
@@ -165,7 +172,7 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
     strip.background   = element_rect(colour = "#FFFFFF"),
     strip.text.x       = element_text(size = 6, angle = 90),
     strip.text.y       = element_text(size = 3, angle = 0, hjust = 0, lineheight = 3),
-    axis.text.x        = element_text(size = 6, angle = 90, vjust = 0.5),
+    axis.text.x        = element_text(size = 6, angle = -45, vjust = 0, hjust = 0),
     legend.position    = "none"
   )
 ```

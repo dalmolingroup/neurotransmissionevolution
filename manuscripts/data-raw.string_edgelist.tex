@@ -1,7 +1,7 @@
 \hypertarget{retrieving-network-data}{%
 \subsubsection{Retrieving network data}\label{retrieving-network-data}}
 
-Querying the API endpoint for the STRING IDs we collected.
+Querying the API endpoint for the STRING IDs we previously resolved:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -42,37 +42,32 @@ Querying the API endpoint for the STRING IDs we collected.
 \end{tabular}
 \end{table}
 
-Now we need to make sure that the API succesfully resolves the protein
-IDs we searched for.
+Making sure that the API succesfully resolves queried protein IDs.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{api_ids <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"download/string_ids.tsv"}\NormalTok{, }\DataTypeTok{comment =} \StringTok{""}\NormalTok{, }\DataTypeTok{quote =} \StringTok{""}\NormalTok{)}
 
-\CommentTok{# removing taxid prefix}
+\CommentTok{# Removing taxid prefix}
 \NormalTok{api_ids }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{stringId =} \KeywordTok{str_split_n}\NormalTok{(stringId, }\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DecValTok{2}\NormalTok{))}
 
-\CommentTok{# removing inexact matches (queried id is different from resolved id)}
+\CommentTok{# Removing inexact matches (queried id is different from resolved id)}
 \NormalTok{api_ids }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{group_by}\NormalTok{(queryItem) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(queryItem }\OperatorTok{==}\StringTok{ }\NormalTok{stringId)}
 
-\CommentTok{# setequal must return true if ids matched exatcly}
+\CommentTok{# Setequal must return true if ids matched exatcly}
 \KeywordTok{setequal}\NormalTok{(}
 \NormalTok{  gene_ids }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(string_id) }\OperatorTok{%>%}\StringTok{ }\NormalTok{na.omit,}
 \NormalTok{  api_ids  }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(stringId)}
-\NormalTok{)}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{stopifnot}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## [1] TRUE
-\end{verbatim}
-
-Once IDs are correct, we can query the network API endpoint to obtain
-the protein interaction edgelist.
+Once IDs are correctly resolved, we can query the network API endpoint
+to obtain the protein-protein interaction edgelist.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# it is important to query this endpoint with the species prefix ("9606.")}
+\CommentTok{# It is important to query this endpoint with the species prefix ("9606.")}
 \NormalTok{identifiers <-}\StringTok{ }\NormalTok{api_ids }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(stringId) }\OperatorTok{%>%}\StringTok{ }\NormalTok{na.omit }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{paste0}\NormalTok{(}\StringTok{"9606."}\NormalTok{, ., }\DataTypeTok{collapse=}\StringTok{"%0d"}\NormalTok{) \}}
 
 \ControlFlowTok{if}\NormalTok{ (}\OperatorTok{!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{"download/string_edgelist.tsv"}\NormalTok{)) \{}
@@ -147,13 +142,13 @@ by the following expression, as stated in
 \StringTok{  }\KeywordTok{filter}\NormalTok{(cs }\OperatorTok{>=}\StringTok{ }\FloatTok{0.7}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{select}\NormalTok{(stringId_A, stringId_B)}
 
-\CommentTok{# how many edgelist proteins are absent in gene_ids (should return 0)}
+\CommentTok{# How many edgelist proteins are absent in gene_ids? (should return 0)}
 \KeywordTok{setdiff}\NormalTok{(}
 \NormalTok{  string_edgelist }\OperatorTok{%$%}\StringTok{ }\KeywordTok{c}\NormalTok{(stringId_A, stringId_B),}
 \NormalTok{  gene_ids }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(string_id)}
-\NormalTok{)}
+\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{stopifnot}\NormalTok{(. }\OperatorTok{==}\StringTok{ }\DecValTok{0}\NormalTok{) \}}
 
-\CommentTok{# exporting for package use}
+\CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(string_edgelist, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}

@@ -100,7 +100,7 @@ abundance_by_function <- cog_size_by_taxid %>%
 ```
 
 Plotting:
-```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure S1."}
+```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure 1."}
 # This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)
 metazoa_line <- geom_vline(
    xintercept = "Mnemiopsis leidyi"

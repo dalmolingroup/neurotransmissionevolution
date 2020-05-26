@@ -4,13 +4,11 @@ knit: neurotransmissionevolution::custom_knit
 ---
 ```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE#,
-  # cache.extra = list(
-  #    list.files("download/gxa/")
-  # )
-)
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+) 
 library(tidyverse)
 library(magrittr)
 
@@ -18,12 +16,11 @@ load("../data/gene_ids.rda")
 ```
 
 ### Expression neuroexclusivity
-In this section we preprocess multiple wide .tsv files into a single long data.frame. We also create a template file for classifying tissues into nervous or non-nervous.
+Multiple wide .tsv files are preprocessed into a single long data frame. We also create a template file for manually classifying tissues into nervous or non-nervous categories.
 
-#### **Resources**
-` `  
+**Resources**  
 We start by searching Gene Expression Atlas for experiments that have human baseline expression data at the tissue level. For each experiment, TPM expression data is downloaded to the `data-raw/download/gxa/` directory.
-Found experiments:
+The following 8 experiments could be found (hyperlinked):
 
   * [E-MTAB-513](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-513)
   * [E-MTAB-2836](https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2836)
@@ -54,10 +51,10 @@ for(experiment in experiments) {
 }
 ```
 
-#### **Reshaping data**
-` `  
-We load and pivot all files to a long format.
+**Reshaping**  
+Loading and pivoting all data to a long format.
 ```{r}
+# Loading
 gene_expression <- sapply(
   list.files("download/gxa/", full.names = T),
   read_tsv,
@@ -66,17 +63,16 @@ gene_expression <- sapply(
   USE.NAMES = TRUE
 )
 
-# pivoting
+# Pivoting
 gene_expression %<>%
   map_dfr(pivot_longer, cols = -(1:2), names_to = "tissue", values_to = "tpm") %>%
   na.omit %>%
   select(ensembl_id = `Gene ID`, tissue, tpm)
 ```
 
-#### **Cleaning**
-` `  
-A lot of tissue information can be collapsed into a single level (e.g. "brain" and "brain fragment" can be considered the same tissue). The cleaning is performed and expression data is exported for analysis.
-```{r}
+**Cleaning**  
+A lot of tissue annotation can be collapsed into single levels (e.g. "brain" and "brain fragment" can be considered the same tissue). The cleaning is performed and expression data is exported for analysis.
+```{r results="hide"}
 # E-MTAB-4840 has comma separated developmental stage info (removing everything before ", ")
 gene_expression %<>% mutate(tissue = str_remove(tissue, "^.+, "))
 
@@ -97,23 +93,14 @@ tissue_names_fix <- c(
 
 gene_expression %<>% mutate(tissue = recode(tissue, !!!tissue_names_fix))
            
-# subseting for genes of interest
+# Subseting for genes of interest
 gene_expression %<>% filter(ensembl_id %in% gene_ids[["ensembl_id"]])
 
-# exporting for package use
+# Exporting for package use
 usethis::use_data(gene_expression, overwrite = TRUE)
 ```
-```{r results="asis", echo=FALSE}
-gene_expression %>%
-  head %>%
-  knitr::kable(booktabs = T) %>%
-  # knitr::kable(ifelse(knitr::is_latex_output(), "latex", "html"), booktabs = T) %>%
-  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position")) %>%
-  kableExtra::add_header_above(c(`head(gene_expression)` = 3), monospace = T)
-```
 
-#### **Tissue classification**
-` `  
+**Tissue classification**  
 For subsequent analyses, we need to distinguish if a tissue is part of the nervous system or not. This is done by hand. The first step is to write a temp file to `data-raw/temp/temp_tissue_classification.tsv` with all tissue names. This serves as a base for the completed `data/neuroexclusivity_classification_tissue` file.
 ```{r}
 gene_expression %>%
@@ -127,8 +114,7 @@ gene_expression %>%
 ### Pathway neuroexclusivity
 In this section we create a template file for classifying pathways into nervous or non-nervous.
 
-#### **Resources**
-` `  
+**Resources** 
 For `link_pathway_entrez` see \hyperref[tab:link_pathway_entrez]{Table 5}.
 ```{r include=FALSE}
 download_if_missing("http://rest.kegg.jp/list/pathway/hsa", "pathway_names.tsv")
@@ -159,11 +145,10 @@ pathway_names_spec <- tribble(
 )
 ```
 
-#### **Pathway classification**
-` `  
+**Pathway classification**  
 Just like tissues, we need to distinguish if a pathway is related to the nervous system or not. This is done by hand. The first step is to write a temp file to `data-raw/temp/temp_pathway_classification.tsv` with all pathway names. This serves as a base for the completed `data/neuroexclusivity_classification_pathway.tsv` file.
 ```{r}
-# removing species prefix "hsa:"
+# Removing species prefix ("hsa:")
 link_pathway_entrez[["entrez_id"]] %<>% str_split_n("\\:", 2)
 
 selected_genes_pathways <- link_pathway_entrez %>% filter(entrez_id %in% gene_ids[["entrez_id"]])

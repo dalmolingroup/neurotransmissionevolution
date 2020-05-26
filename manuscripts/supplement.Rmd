@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Material"
+title: "Supplementary Information"
 subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
 author: 
   - Lucas H. Viscardi
@@ -35,8 +35,8 @@ header-includes:
   # Hold figure position
   - \floatplacement{figure}{H}
   # Line numbers
-  - \usepackage{lineno}
-  - \linenumbers
+  # - \usepackage{lineno}
+  # - \linenumbers
   # Fira code
   - \setmonofont[Path=style/,Contextuals={Alternate},AutoFakeSlant]{FiraCode-Light.ttf}
   - \makeatletter
@@ -59,9 +59,11 @@ header-includes:
   # emoji
   - \newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
   - \DeclareTextFontCommand{\e}{\emojifont}
+  # Supplementary Figure label
+  - \renewcommand{\figurename}{Supplementary Figure}
   
 
-geometry: margin=1in
+geometry: margin=0.8in
 
 graphics: yes
 
@@ -79,7 +81,7 @@ output:
 gc()
 knitr::knit_meta(clean = TRUE)
 knitr::opts_chunk$set(fig.pos = 'H')
-knitr::opts_chunk$set(class.source = "numberLines")
+# knitr::opts_chunk$set(class.source = "numberLines")
 ```
 
 <!--- Project structure -->
@@ -115,88 +117,80 @@ This project is organized as an R package research compendium. Research compendi
       `├──`\e{®} `neurotransmissionevolution.Rproj`  
       `└──`\e{📄} `README.md`  
 
-The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown.  
-
-
-
+The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown. Some miscellaneous utility functions reside in `R/`. Additionally, both preprocessed data and utility functions are documented by roxygen2 and can be examined by usual help commands.
+To explore and tweak this project, users can download the repository's latest release on github ("daniloimparato/neurotransmissionevolution@v1.0.0") and run `devtools::install()`.  
 
 <!-- Preprocessing -->
 Preprocessing
 =================
-This topic refers mainly to data wrangling done before the actual analysis with the intent of making it simpler.
+This section mainly refers to data preprocessing steps done before the actual analysis with the intent of making it either simpler or faster.
 
 <!--- Eukaryota species tree -->
 Eukaryota species tree
 --------------------------
-We opted to use the TimeTree database in order to obtain an standardized Eukaryota species tree. However, some species were not present in it, so we devised a way to fill them in based on NCBI Taxonomy data. 
+We opted to use the TimeTree database to obtain an standardized Eukaryota species tree, although some target species were absent from it. Absent species were filled in based on NCBI Taxonomy data.
 
 <!-- NCBI Taxonomy tree -->
 ### NCBI Taxonomy tree
-First we preprocess NCBI Taxonomy data to leave only STRING eukaryotes, thus making the task easier.
+The following topics describe how we retrieved a target species tree from NCBI Taxonomy data.
 \input{data-raw.tree_ncbi.tex}
-<!-- \input{download_files.tex} -->
-
-<!-- Duplicated Genera -->
-### Duplicated Genera
-Some species from different kingdoms may share the same genus name. These genera must be noted down because one of the ways we fill in missing species is by looking at genera names.
-\input{data-raw.duplicated_genera.tex}
 
 <!-- Hybrid tree -->
 ### Hybrid tree
-Once we have both the NCBI eukaryotes tree and the list of duplicated genera, we can start assembling the complete hybrid tree.
+Once we have both the NCBI Eukaryota tree and the list of duplicated genera, we can start assembling the complete hybrid tree.
 \input{data-raw.tree_hybrid.tex}
 
 <!--- Kegg annotation -->
 Gene selection and annotation
 ---------------------------------
-The anchoring point for this study is basic annotation about genes and the pathways in which they participate. This section describes the process of structuring such data. In the end we will have a table to which all kinds of additional data will be left joined into.
+The anchoring point of our analysis is gene identifiers. This section describes the process of structuring an identifier dictionary as well as other useful annotation, like KEGG pathways. The goal is to have a table to which all kinds of additional data can be left joined.
 \input{data-raw.kegg.tex}
 
 <!--- Neuroexclusivity -->
 Neuroexclusivity
 --------------------
-Neuroexclusivity data consists of gene expression collected from Gexe Expression Atlas and the KEGG pathways themselves.
+Neuroexclusivity data consists of gene expression collected from Gene Expression Atlas and the KEGG pathways themselves. This data is cleaned and subsetted prior to analysis.
 \input{data-raw.neuroexclusivity.tex}
 
 <!--- COG data -->
 Orthology data
 --------------------
-This section refers to orthology data exported for geneplast use. Essentialy, we subset the global STRING mapping between proteins and orthologous groups into a smaller dataset containing only information about the orthogroups related to our selected genes.
+This section refers to orthology data exported for geneplast use. Essentially, we subset the global STRING mapping between proteins and orthologous groups into a smaller dataset containing only information about orthogroups related to eukaryotic species.
 \input{data-raw.cogs.tex}
 
 <!--- Network -->
 Network
 -----------
-In this section we search the STRING API for our proteins of interest and recompute the combined interaction score.
+We use our gene dictionary to retrieve the corresponding human protein-protein interaction network. This is done through the STRING API. In the end, we recompute combined interaction scores.
 \input{data-raw.string_edgelist.tex}
 
 
 <!-- Analysis -->
 Analysis
 ============
-Analysis
+This section focuses on analyses and results reported in the main manuscript.
 
 Root inference
 ---------------
-To estimate the evolutionary root of a given gene, i.e. the ancestor from which its genetic archetype (orthologous group) is vertically inherited, we use orthologous group annotation from the STRING database. The presence and absence of orthologous groups in the species of a cladogram are used to determine its most likely ancestor.
+To estimate the evolutionary root of a given gene (i.e. the ancestor from which its genetic archetype was vertically inherited), we use orthologous group annotation from the STRING database. The presence and absence of an orthologous group in a species tree is used to determine its most likely evolutionary root.
 \input{analysis.geneplast.tex}
 
 <!--- Neuroexclusivity -->
 Neuroexclusivity
 -----------------
-We characterize genes' relevance to the nervous system by inspecting what proportion of its activity is related to nervous processes. We relied on tissue RNA-Seq data, as well as KEGG's pathways themselves.
+We characterize the relevance of a gene to the nervous system by inspecting what proportion of its activity is related to nervous processes. To do this, we rely on tissue RNA-Seq data, as well as KEGG's pathways themselves.
 \input{analysis.neuroexclusivity.tex}
 
 <!--- Network -->
 Network
 -----------
-In this section we search the STRING API for our proteins of interest and recompute their combined interaction score.
+This section describes the steps for reproducing most of the manuscript figures. A lot of it is concerned with plotting particularities and visual styling.
 \input{analysis.network.tex}
 
 <!--- Abundance -->
 Abundance
 -----------
-Abundance is the average number of proteins in neurotransmission orthogroups present in a species. This abundance is decomposed by orthogroup function. The orthogroup function is considered to be the function of its humans proteins in neurotransmission, as described in previous sections. In other words: "what would be the average number of "X"-related proteins in neurotransmission COGs in a species?"
+Abundance is the average number of proteins in neurotransmission orthogroups present in a species. This abundance is decomposed by orthogroup function. The orthogroup function is considered to be the function of its humans proteins in neurotransmission. 
 \input{analysis.abundance.tex}
 
 

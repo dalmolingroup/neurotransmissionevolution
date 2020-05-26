@@ -2,18 +2,15 @@
 \subsubsection{Expression
 neuroexclusivity}\label{expression-neuroexclusivity}}
 
-In this section we preprocess multiple wide .tsv files into a single
-long data.frame. We also create a template file for classifying tissues
-into nervous or non-nervous.
+Multiple wide .tsv files are preprocessed into a single long data frame.
+We also create a template file for manually classifying tissues into
+nervous or non-nervous categories.
 
-\hypertarget{resources}{%
-\paragraph{\texorpdfstring{\textbf{Resources}}{Resources}}\label{resources}}
-
-\texttt{}\\
+\textbf{Resources}\\
 We start by searching Gene Expression Atlas for experiments that have
 human baseline expression data at the tissue level. For each experiment,
 TPM expression data is downloaded to the \texttt{data-raw/download/gxa/}
-directory. Found experiments:
+directory. The following 8 experiments could be found (hyperlinked):
 
 \begin{itemize}
 \tightlist
@@ -35,15 +32,12 @@ directory. Found experiments:
   \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-5214}{E-MTAB-5214}
 \end{itemize}
 
-\hypertarget{reshaping-data}{%
-\paragraph{\texorpdfstring{\textbf{Reshaping
-data}}{Reshaping data}}\label{reshaping-data}}
-
-\texttt{}\\
-We load and pivot all files to a long format.
+\textbf{Reshaping}\\
+Loading and pivoting all data to a long format.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# Loading}
 \NormalTok{gene_expression <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(}
   \KeywordTok{list.files}\NormalTok{(}\StringTok{"download/gxa/"}\NormalTok{, }\DataTypeTok{full.names =}\NormalTok{ T),}
 \NormalTok{  read_tsv,}
@@ -52,7 +46,7 @@ We load and pivot all files to a long format.
   \DataTypeTok{USE.NAMES =} \OtherTok{TRUE}
 \NormalTok{)}
 
-\CommentTok{# pivoting}
+\CommentTok{# Pivoting}
 \NormalTok{gene_expression }\OperatorTok{%<>%}
 \StringTok{  }\KeywordTok{map_dfr}\NormalTok{(pivot_longer, }\DataTypeTok{cols =} \OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{2}\NormalTok{), }\DataTypeTok{names_to =} \StringTok{"tissue"}\NormalTok{, }\DataTypeTok{values_to =} \StringTok{"tpm"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{na.omit }\OperatorTok{%>%}
@@ -60,11 +54,8 @@ We load and pivot all files to a long format.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{cleaning}{%
-\paragraph{\texorpdfstring{\textbf{Cleaning}}{Cleaning}}\label{cleaning}}
-
-\texttt{}\\
-A lot of tissue information can be collapsed into a single level
+\textbf{Cleaning}\\
+A lot of tissue annotation can be collapsed into single levels
 (e.g.~``brain'' and ``brain fragment'' can be considered the same
 tissue). The cleaning is performed and expression data is exported for
 analysis.
@@ -91,40 +82,15 @@ analysis.
 
 \NormalTok{gene_expression }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{tissue =} \KeywordTok{recode}\NormalTok{(tissue, }\OperatorTok{!!!}\NormalTok{tissue_names_fix))}
            
-\CommentTok{# subseting for genes of interest}
+\CommentTok{# Subseting for genes of interest}
 \NormalTok{gene_expression }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ensembl_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"ensembl_id"}\NormalTok{]])}
 
-\CommentTok{# exporting for package use}
+\CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_expression, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## <U+2714> Setting active project to 'C:/R/neuro'
-## <U+2714> Saving 'gene_expression' to 'data/gene_expression.rda'
-\end{verbatim}
-
-\begin{tabular}{llr}
-\toprule
-\multicolumn{3}{c}{\ttfamily{head(gene\_expression)}} \\
-\cmidrule(l{3pt}r{3pt}){1-3}
-ensembl\_id & tissue & tpm\\
-\midrule
-\rowcolor{gray!6}  ENSG00000010379 & adipose tissue & 0.1\\
-ENSG00000010379 & adrenal gland & 0.1\\
-\rowcolor{gray!6}  ENSG00000010379 & cerebral cortex & 5.0\\
-ENSG00000010379 & colon & 0.1\\
-\rowcolor{gray!6}  ENSG00000010379 & duodenum & 5.0\\
-\addlinespace
-ENSG00000010379 & fallopian tube & 10.0\\
-\bottomrule
-\end{tabular}
-
-\hypertarget{tissue-classification}{%
-\paragraph{\texorpdfstring{\textbf{Tissue
-classification}}{Tissue classification}}\label{tissue-classification}}
-
-\texttt{}\\
+\textbf{Tissue classification}\\
 For subsequent analyses, we need to distinguish if a tissue is part of
 the nervous system or not. This is done by hand. The first step is to
 write a temp file to
@@ -150,11 +116,7 @@ neuroexclusivity}\label{pathway-neuroexclusivity}}
 In this section we create a template file for classifying pathways into
 nervous or non-nervous.
 
-\hypertarget{resources-1}{%
-\paragraph{\texorpdfstring{\textbf{Resources}}{Resources}}\label{resources-1}}
-
-\texttt{}\\
-For \texttt{link\_pathway\_entrez} see
+\textbf{Resources} For \texttt{link\_pathway\_entrez} see
 \hyperref[tab:link_pathway_entrez]{Table 5}.
 
 \begin{table}[H]
@@ -175,11 +137,7 @@ For \texttt{link\_pathway\_entrez} see
 \end{tabular}}
 \end{table}
 
-\hypertarget{pathway-classification}{%
-\paragraph{\texorpdfstring{\textbf{Pathway
-classification}}{Pathway classification}}\label{pathway-classification}}
-
-\texttt{}\\
+\textbf{Pathway classification}\\
 Just like tissues, we need to distinguish if a pathway is related to the
 nervous system or not. This is done by hand. The first step is to write
 a temp file to \texttt{data-raw/temp/temp\_pathway\_classification.tsv}
@@ -188,7 +146,7 @@ with all pathway names. This serves as a base for the completed
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# removing species prefix "hsa:"}
+\CommentTok{# Removing species prefix ("hsa:")}
 \NormalTok{link_pathway_entrez[[}\StringTok{"entrez_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{:"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
 
 \NormalTok{selected_genes_pathways <-}\StringTok{ }\NormalTok{link_pathway_entrez }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(entrez_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"entrez_id"}\NormalTok{]])}

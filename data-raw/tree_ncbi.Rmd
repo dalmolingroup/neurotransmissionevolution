@@ -2,12 +2,13 @@
 title: "NCBI Taxonomy tree"
 knit: neurotransmissionevolution::custom_knit
 ---
-```{r setup, include=FALSE}
+```{r include=FALSE}
 knitr::opts_chunk$set(
-  warning     = FALSE,
-  message     = FALSE,
-  cache       = TRUE,
-  cache.extra = file.mtime("download/taxdump.tar.gz")
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 2
+  ,autodep     = T
+  ,cache.extra = file.mtime("download/taxdump.tar.gz")
 ) 
 
 library(tidyverse)
@@ -20,8 +21,6 @@ library(ape)
 library(neurotransmissionevolution)
 ```
 
-<!-- #### **Downloading data** -->
-` `  
 ```{r include=FALSE}
 download_if_missing("http://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz")
 download_if_missing("stringdb-static.org/download/species.v11.0.txt")
@@ -29,9 +28,8 @@ download_if_missing("stringdb-static.org/download/species.v11.0.txt")
 untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ```
 
-<!-- #### **Loading data** -->
-#### **Resources**
-` `  
+  
+**Resources**  
 ```{r results='asis', echo=FALSE, cache=FALSE}
 ###################
 ## string_species
@@ -93,7 +91,6 @@ ncbi_taxon_names_spec <- tribble(
 )
 ```
 
-` `  
 ```{r include=FALSE}
 string_species <- read_tsv(
   "download/species.v11.0.txt",
@@ -125,8 +122,8 @@ ncbi_edgelist <- read_delim(
   skip = 1,
   delim = "|",
   trim_ws = TRUE,
-  col_names = c("n1","n2"),
-  col_types = "cc"
+  col_names = c("n1","n2","rank"),
+  col_types = "ccc"
 )
 
 ncbi_taxon_names <- read_delim(
@@ -138,8 +135,26 @@ ncbi_taxon_names <- read_delim(
 )
 ```
 
-#### **Updating STRING taxon IDs**
-` `  
+**Duplicated genera**  
+Some species from different kingdoms may have the same genus name. Duplicated genera must be noted down because we will use them to fill in missing species at a later time.
+```{r}
+# keeping genera nodes
+genera_taxids <- ncbi_edgelist %>%
+  filter(rank == "genus") %>%
+  select(taxid = n1, rank)
+
+duplicated_genera <- ncbi_taxon_names %>%
+  # keeping scientific names
+  filter(type == "scientific name") %>%
+  select(taxid = name, ncbi_name) %>%
+  inner_join(genera_taxids) %>%
+  # extracting and saving duplicated values
+  pull(ncbi_name) %>%
+  extract(duplicated(.)) %>%
+  write("duplicated_genera.txt")
+```
+
+**Updating STRING taxon IDs**  
 Some organisms taxon IDs are outdated in STRING. We must update them to work with the most recent NCBI Taxonomy data.
 ```{r}
 string_species %<>%
@@ -147,8 +162,7 @@ string_species %<>%
   mutate(new_taxid = coalesce(new_taxid, taxid))
 ```
 
-#### **Creating tree graph**
-` `  
+**Creating tree graph**  
 The first step is to create a directed graph representing the NCBI Taxonomy tree.
 ```{r}
 # leaving only "scientific name" rows
@@ -166,8 +180,7 @@ g <- graph_from_data_frame(ncbi_edgelist[,2:1], directed = TRUE, vertices = ncbi
 rm(ncbi_edgelist, ncbi_merged_ids)
 ```
 
-#### **Traversing the graph**
-` `  
+**Traversing the graph**  
 The second step is to traverse the graph from the Eukaryota root node to STRING species nodes. This automatically drops all non-eukaryotes and results in a species tree representing only STRING eukaryotes (476).
 ```{r}
 eukaryote_root <- V(g)[eukaryota_taxon_id]
@@ -182,14 +195,11 @@ eukaryote_vertices <- eukaryote_paths %>% unlist %>% unique
 eukaryote_tree <- induced_subgraph(g, eukaryote_vertices, impl = "create_from_scratch")
 ```
 
-#### **Saving**
-` `  
+**Saving**  
 Saving `ncbi_tree` and `string_eukaryotes` for package use. These data files are documented by the package.
 We also create a plain text file `476_ncbi_eukaryotes.txt` containing the updated names of all 476 STRING eukaryotes. This file will be queried against the TimeTree website.
-```{r message=FALSE, warning=FALSE}
+```{r results="hide"}
 ncbi_tree <- treeio::as.phylo(eukaryote_tree)
-
-# plot(ncbi_tree %>% ape::ladderize(), type="cladogram")
 
 string_eukaryotes <- string_species %>%
   filter(new_taxid %in% ncbi_tree$tip.label) %>%
@@ -197,7 +207,6 @@ string_eukaryotes <- string_species %>%
 
 write(string_eukaryotes[["ncbi_name"]],"476_ncbi_eukaryotes.txt")
 
-# usethis::use_data(ncbi_tree, overwrite = TRUE)
 write.tree(ncbi_tree, "tree_ncbi.nwk")
 usethis::use_data(string_eukaryotes, overwrite = TRUE)
 ```

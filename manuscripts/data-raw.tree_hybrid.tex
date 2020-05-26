@@ -1,7 +1,5 @@
-\hypertarget{resources}{%
-\paragraph{Resources}\label{resources}}
-
-\texttt{}\\
+\texttt{}~\\
+\textbf{Resources}\\
 Besides downloading all TimeTree species data
 (\texttt{Eukaryota\_species.nwk}) we also need to manually query the
 website for the 476 STRING eukaryotes
@@ -43,11 +41,7 @@ downloaded.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{unfound-species-with-matching-genera}{%
-\paragraph{\texorpdfstring{\textbf{Unfound species with matching
-genera}}{Unfound species with matching genera}}\label{unfound-species-with-matching-genera}}
-
-\texttt{}\\
+\textbf{Unfound species with matching genera}\\
 Some of the 476 STRING eukaryotes are not present in the TimeTree
 database. However, sometimes TimeTree does contain tree data for closely
 related species (e.g.~\emph{Monosiga brevicollis} is not present, but
@@ -194,11 +188,7 @@ data, we can start filling them in as sister branches.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{species-of-unfound-genera}{%
-\paragraph{\texorpdfstring{\textbf{Species of unfound
-genera}}{Species of unfound genera}}\label{species-of-unfound-genera}}
-
-\texttt{}\\
+\textbf{Species of unfound genera}\\
 In this part, we try to fill in the remaining missing species (those
 which genera were not found in TimeTree) by searching for their closest
 relatives (according to NCBI Taxonomy) that are present in the current
@@ -287,11 +277,7 @@ species as a branch from their LCA. This is a conservative approach.
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{ctenophora-as-sister-to-all-animals}{%
-\paragraph{\texorpdfstring{\textbf{Ctenophora as sister to all
-animals}}{Ctenophora as sister to all animals}}\label{ctenophora-as-sister-to-all-animals}}
-
-\texttt{}\\
+\textbf{Ctenophora as sister to all animals}\\
 According to TimeTree, Ctenophora remains as a sister group to Cnidaria.
 We believe the most recent consensus in literature is to consider them a
 sister group to all animals. The following code block moves
@@ -300,10 +286,6 @@ base of the metazoan lineage.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# moving ctenophora before porifera}
-\NormalTok{mnemiopsis_taxid <-}\StringTok{ }\NormalTok{species_dictionary }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ncbi_name }\OperatorTok{==}\StringTok{ "Mnemiopsis leidyi"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(taxid)}
-\NormalTok{amphimedon_taxid <-}\StringTok{ }\NormalTok{species_dictionary }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ncbi_name }\OperatorTok{==}\StringTok{ "Amphimedon queenslandica"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(taxid)}
-
 \CommentTok{# reordering tip.labels}
 \NormalTok{from_to <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
   \StringTok{"400682"}\NormalTok{ =}\StringTok{ "27923"}\NormalTok{,  }\CommentTok{# amphimedon to mnemiopsis}
@@ -320,10 +302,9 @@ base of the metazoan lineage.
 \end{Shaded}
 
 \begin{figure}
-
-{\centering \includegraphics{figs/data-raw.tree_hybrid.unnamed-chunk-8-1} 
-
-}
-
-\caption{Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy.}\label{fig:unnamed-chunk-8}
+\centering
+\includegraphics[width=\textwidth,height=0.95\textheight]{../data-raw/tree_hybrid.pdf}
+\caption{Complete 476 eukaryotes tree. Green species have been filled in
+by a genus proxy in TimeTree. Red species have been filled in by looking
+at NCBI Taxonomy. Clade naming is described further in this document.}
 \end{figure}
