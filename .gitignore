@@ -1,4 +1,5 @@
 data-raw/download/*
+manuscripts/*.log
 
 # History files
 .Rhistory
@@ -32,6 +33,8 @@ vignettes/*.pdf
 # knitr and R markdown default cache directories
 *_cache/
 /cache/
+data-raw/cache/
+analysis/cache/
 
 # Temporary files created by R markdown
 *.utf8.md
