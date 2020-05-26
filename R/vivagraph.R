@@ -1,6 +1,4 @@
 #' @export
-#' @import igraph
-#' @import dplyr
 vivagraph <- function(graph,
                       layout = NULL,
                       precompute_niter = 1000,
@@ -11,14 +9,14 @@ vivagraph <- function(graph,
                       lcc_offset = 200,
                       pinned_offset = -100){
 
-  subgraphs <- decompose.graph(graph)
+  subgraphs <- igraph::decompose.graph(graph)
   lcc_index <- which.max(sapply(subgraphs, vcount))
 
   ##############
   # lcc
   ##############
-  g_v <- as_data_frame(graph, "vertices") %>%
-    select_if(is.numeric) %>%
+  g_v <- igraph::as_data_frame(graph, "vertices") %>%
+    dplyr::select_if(is.numeric) %>%
     apply(2, linMap, 0.001, 1) %>%
     dist %>%
     as.matrix
@@ -28,12 +26,12 @@ vivagraph <- function(graph,
   g_v[g_v == Inf] <- max(g_v[g_v!=max(g_v)] )
   # g_v[g_v <= 1] <- 0
 
-  row.names(g_v) <- V(graph)$name
-  colnames(g_v) <- V(graph)$name
+  row.names(g_v) <- igraph::V(graph)$name
+  colnames(g_v) <- igraph::V(graph)$name
 
-  dist_graph <- graph_from_adjacency_matrix(g_v, mode = "undirected", weighted = TRUE, diag = FALSE)
+  dist_graph <- igraph::graph_from_adjacency_matrix(g_v, mode = "undirected", weighted = TRUE, diag = FALSE)
 
-  dist_layout <- layout_with_fr(dist_graph, niter = precompute_niter) * precompute_multiplier
+  dist_layout <- igraph::layout_with_fr(dist_graph, niter = precompute_niter) * precompute_multiplier
 
   V(graph)$x <- dist_layout[,1] + lcc_offset
   V(graph)$y <- dist_layout[,2]
@@ -41,25 +39,25 @@ vivagraph <- function(graph,
   ##############
   # unconnected
   ##############
-  unconnected_nodes <- lapply(subgraphs[-lcc_index], as_data_frame, what = "vertices") %>% bind_rows
-  unconnected_edges <- lapply(subgraphs[-lcc_index], as_data_frame) %>% bind_rows
+  unconnected_nodes <- lapply(subgraphs[-lcc_index], igraph::as_data_frame, what = "vertices") %>% dplyr::bind_rows
+  unconnected_edges <- lapply(subgraphs[-lcc_index], igraph::as_data_frame) %>% dplyr::bind_rows
 
-  unconnected <- graph_from_data_frame(unconnected_edges, directed = F, vertices = unconnected_nodes)
-  unconnected_layout <- (layout_on_grid(unconnected, width = pinned_cols, height = pinned_rows) * 20) + pinned_offset
+  unconnected <- igraph::graph_from_data_frame(unconnected_edges, directed = F, vertices = unconnected_nodes)
+  unconnected_layout <- (igraph::layout_on_grid(unconnected, width = pinned_cols, height = pinned_rows) * 20) + pinned_offset
 
-  V(graph)[V(unconnected)$name]$x <- unconnected_layout[,1]
-  V(graph)[V(unconnected)$name]$y <- unconnected_layout[,2]
-  V(graph)[V(unconnected)$name]$pinned <- 1
+  igraph::V(graph)[igraph::V(unconnected)$name]$x <- unconnected_layout[,1]
+  igraph::V(graph)[igraph::V(unconnected)$name]$y <- unconnected_layout[,2]
+  igraph::V(graph)[igraph::V(unconnected)$name]$pinned <- 1
 
   if(is.matrix(layout)){
-    V(graph)$x <- layout[,1]
-    V(graph)$y <- layout[,2]
+    igraph::V(graph)$x <- layout[,1]
+    igraph::V(graph)$y <- layout[,2]
   }
 
   if(repin == TRUE) {
-    V(graph)[V(unconnected)$name]$x <- unconnected_layout[,1]
-    V(graph)[V(unconnected)$name]$y <- unconnected_layout[,2]
-    V(graph)[V(unconnected)$name]$pinned <- 1
+    igraph::V(graph)[igraph::V(unconnected)$name]$x <- unconnected_layout[,1]
+    igraph::V(graph)[igraph::V(unconnected)$name]$y <- unconnected_layout[,2]
+    igraph::V(graph)[igraph::V(unconnected)$name]$pinned <- 1
   }
 
   graph_json <- jsonlite::toJSON(list(
@@ -75,9 +73,9 @@ vivagraph <- function(graph,
     })
   }
 
-  shiny::addResourcePath("www", system.file("www/vivagraph", package="neurotransmission"))
+  shiny::addResourcePath("www", system.file("www/vivagraph", package="neurotransmissionevolution"))
 
-  layout <- shiny::runGadget(shiny::shinyApp(ui = shiny::htmlTemplate(system.file("www/vivagraph/index.html", package="neurotransmission")), server))
+  layout <- shiny::runGadget(shiny::shinyApp(ui = shiny::htmlTemplate(system.file("www/vivagraph/index.html", package="neurotransmissionevolution")), server))
 
   matrix(layout, ncol=2,byrow=T)
 }

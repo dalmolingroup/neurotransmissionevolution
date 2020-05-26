@@ -1,0 +1,89 @@
+Loading resources:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\KeywordTok{library}\NormalTok{(magrittr)}
+
+\KeywordTok{data}\NormalTok{(}
+\NormalTok{   gene_ids}
+\NormalTok{  ,gene_pathways}
+\NormalTok{  ,gene_expression}
+\NormalTok{  ,}\DataTypeTok{package =} \StringTok{"neurotransmissionevolution"}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{expression-neuroexclusivity}{%
+\subsubsection{Expression
+neuroexclusivity}\label{expression-neuroexclusivity}}
+
+We start by averaging all \texttt{gene\_expression} collected from the
+Expression Atlas by tissue (\texttt{tpm\_avg}). The averaged expression
+is filtered for values greather than 0.5 TPM. This ensures further
+computations only account for tissues in which genes are actually
+expressed. Then, we add the manual tissue classification indicating
+which tissues are nervous or not (described in Preprocessing). The
+neuroexclusivity index for a gene is the sum of its \texttt{tpm\_avg}
+values in nervous tissues divided by the sum its values in all tissues.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tissue_classification <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}
+  \DataTypeTok{file      =} \StringTok{"../data/neuroexclusivity_classification_tissue.tsv"}
+\NormalTok{ ,}\DataTypeTok{col_types =} \StringTok{"ci"}
+\NormalTok{)}
+
+\CommentTok{# Averaging TPM expression by tissue}
+\NormalTok{avg_by_tissue <-}\StringTok{ }\NormalTok{gene_expression }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(ensembl_id, tissue) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{tpm_avg =} \KeywordTok{mean}\NormalTok{(tpm)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(tpm_avg }\OperatorTok{>=}\StringTok{ }\FloatTok{0.5}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(tissue_classification)}
+
+\CommentTok{# Measuring expression neuroexclusivity}
+\NormalTok{expression_neuroexclusivity <-}\StringTok{ }\NormalTok{avg_by_tissue }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(ensembl_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{expression_neuroexclusivity =} \KeywordTok{sum}\NormalTok{(tpm_avg[is_nervous }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{])}\OperatorTok{/}\KeywordTok{sum}\NormalTok{(tpm_avg)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"neuroexclusivity_expression.tsv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{pathway-neuroexclusivity}{%
+\subsubsection{Pathway
+neuroexclusivity}\label{pathway-neuroexclusivity}}
+
+To find the pathway neuroexclusivity of a gene, we simply divide the
+count of nervous pathways by the count of all pathways it participates
+in.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pathway_classification <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}
+   \DataTypeTok{file      =} \StringTok{"../data/neuroexclusivity_classification_pathway.tsv"}
+\NormalTok{  ,}\DataTypeTok{col_types =} \StringTok{"cci"}
+\NormalTok{)}
+
+\NormalTok{link_pathway_entrez <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}
+   \DataTypeTok{file      =} \StringTok{"../data-raw/download/link_pathway_entrez.tsv"}
+\NormalTok{  ,}\DataTypeTok{col_names =} \KeywordTok{c}\NormalTok{(}\StringTok{"entrez_id"}\NormalTok{, }\StringTok{"pathway_id"}\NormalTok{)}
+\NormalTok{  ,}\DataTypeTok{col_types =} \StringTok{"cc"}
+\NormalTok{)}
+
+\CommentTok{# Removing "hsa:" prefix}
+\NormalTok{link_pathway_entrez[[}\StringTok{"entrez_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{:"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+
+\CommentTok{# Pathway data related to our genes of interest}
+\NormalTok{selected_genes_pathways <-}\StringTok{ }\NormalTok{link_pathway_entrez }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(entrez_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"entrez_id"}\NormalTok{]]) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(pathway_classification) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{drop_na }\CommentTok{# Dropping general pathways}
+
+\CommentTok{# Measuring pathway neuroexclusivity}
+\NormalTok{pathway_neuroexclusivity <-}\StringTok{ }\NormalTok{selected_genes_pathways }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(entrez_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{pathway_neuroexclusivity =} \KeywordTok{sum}\NormalTok{(is_nervous)}\OperatorTok{/}\KeywordTok{length}\NormalTok{(is_nervous)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"neuroexclusivity_pathway.tsv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

@@ -116,7 +116,6 @@ Batesia
 Zenkerella
 Chondracanthus
 Schwartzia
-Sporobolomyces
 Caccobius
 Pollia
 Campanella
@@ -574,9 +573,7 @@ Glomerella
 Diaspis
 Canarium
 Chelidonium
-Acremonium
 Verticillium
-Acremonium
 Norrisia
 Obba
 Karenia
@@ -754,7 +751,6 @@ Gustavia
 Eremothera
 Amphipogon
 Cephalosphaera
-Desertella
 Urolepis
 Lasiurus
 Diplotaxis
@@ -823,7 +819,7 @@ Haplolobus
 Kelloggia
 Powellia
 Microtis
-Coniosporium
+Bonordeniella
 Sclerophyton
 Rhexia
 Ophioderma
@@ -877,6 +873,7 @@ Ruizia
 Harmandia
 Malagasia
 Jamesia
+Iconella
 Lutzia
 Irania
 Burchellia
@@ -901,6 +898,7 @@ Adamsiella
 Crassa
 Placosoma
 Appendicularia
+Howea
 Sergia
 Crassula
 Riopa
@@ -923,3 +921,9 @@ Abrus
 Howella
 Underwoodia
 Osa
+Recchia
+Atkinsonia
+Miyakea
+Fioria
+Munda
+Olla

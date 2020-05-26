@@ -1,36 +1,36 @@
 tissue	is_nervous
 adipose tissue	NA
 adrenal gland	NA
-bone marrow	NA
 cerebral cortex	NA
 colon	NA
 duodenum	NA
-endometrium	NA
-esophagus	NA
 fallopian tube	NA
-gall bladder	NA
 heart	NA
 kidney	NA
 liver	NA
 lung	NA
+prostate gland	NA
+small intestine	NA
+spleen	NA
+testis	NA
+thyroid gland	NA
+tonsil	NA
+vermiform appendix	NA
+zone of skin	NA
+bone marrow	NA
+endometrium	NA
+esophagus	NA
+gall bladder	NA
 lymph node	NA
 ovary	NA
 pancreas	NA
 placenta	NA
-prostate gland	NA
 rectum	NA
 saliva-secreting gland	NA
 skeletal muscle tissue	NA
-small intestine	NA
 smooth muscle tissue	NA
-spleen	NA
 stomach	NA
-testis	NA
-thyroid gland	NA
-tonsil	NA
 urinary bladder	NA
-vermiform appendix	NA
-zone of skin	NA
 amygdala	NA
 brain	NA
 brain meninx	NA
@@ -104,7 +104,6 @@ cortex of kidney	NA
 ectocervix	NA
 endocervix	NA
 esophagogastric junction	NA
-esophagus mucosa	NA
 esophagus muscularis mucosa	NA
 greater omentum	NA
 hypothalamus	NA
@@ -117,3 +116,4 @@ tibial artery	NA
 tibial nerve	NA
 transformed skin fibroblast	NA
 transverse colon	NA
+esophagus mucosa	NA

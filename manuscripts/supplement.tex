@@ -1,0 +1,338 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Supplementary Information},
+  pdfauthor={Lucas H. Viscardi; Danilo O. Imparato; Maria Cátira Bortolini; Rodrigo J. S. Dalmolin},
+  pdfkeywords={Evolution, Nervous system},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=0.8in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{22,22,22}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.81,0.69}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.50,0.62,0.50}{\textbf{#1}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.86,0.64,0.64}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.86,0.64,0.64}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.33,0.33,0.33}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.50,0.62,0.50}{\textbf{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.86,0.64,0.64}{\textbf{#1}}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.94,0.87,0.69}{#1}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.87,0.87,0.75}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.86,0.86,0.80}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.50,0.62,0.50}{#1}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.76,0.75,0.62}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.75,0.75,0.82}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.01,0.53,0.82}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.50,0.62,0.50}{\textbf{#1}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.01,0.53,0.82}{#1}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.93,0.21,0.64}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.01,0.53,0.82}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{1.00,0.81,0.69}{\textbf{#1}}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.86,0.64,0.64}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.35,0.77,0.33}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.35,0.77,0.33}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.82,0.82,0.82}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.35,0.77,0.33}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.50,0.62,0.50}{\textbf{#1}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{subfig}
+\usepackage{caption}
+\captionsetup{justification=raggedright,singlelinecheck=false}
+\captionsetup{margin={2pt,0pt}}
+\floatplacement{figure}{H}
+\setmonofont[Path=style/,Contextuals={Alternate},AutoFakeSlant]{FiraCode-Light.ttf}
+\makeatletter
+\def\verbatim@nolig@list{}
+\makeatother
+\let\oldverbatim\verbatim
+\let\endoldverbatim\endverbatim
+\renewenvironment{verbatim}{\scriptsize\oldverbatim}{\endoldverbatim}
+\let\oldShaded\Shaded
+\let\endoldShaded\endShaded
+\usepackage{tcolorbox}
+\tcbuselibrary{breakable, skins}
+\definecolor{chaos-bg}{HTML}{161616}
+\newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
+\renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
+\newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
+\DeclareTextFontCommand{\e}{\emojifont}
+\renewcommand{\figurename}{Supplementary Figure}
+
+\title{Supplementary Information}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Ionotropic receptors as the driving force behind human synapse
+establishment}
+\author{Lucas H. Viscardi \and Danilo O. Imparato \and Maria Cátira Bortolini \and Rodrigo J. S. Dalmolin}
+\date{}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\hypertarget{project-structure}{%
+\section{Project structure}\label{project-structure}}
+
+This project is organized as an R package research compendium. Research
+compendia aim to provide a \emph{``standard and easily recognizable way
+for organizing the digital materials of a research project to enable
+other researchers to inspect, reproduce, and extend the research''}
+\href{https://doi.org/10.1080/00031305.2017.1375986}{(Marwick, Boettiger
+\& Mullen, 2018)}. Project structure overview:
+
+\texttt{└──}\e{📦} \texttt{neurotransmissionevolution/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{analysis/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📁}
+\texttt{plots/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{geneplast.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{geneplast\_roots.tsv}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{data/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{💾}
+\texttt{cogs.rda}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{gene\_annotation.tsv}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+data-\texttt{raw/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{tree\_ncbi.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{tree\_ncbi.nwk}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{inst/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{man/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📂}
+\texttt{manuscripts/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📓}
+\texttt{supplement.Rmd}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📰}
+\texttt{supplement.pdf}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📁}
+\texttt{R/}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{├──}\e{📄}
+\texttt{utils.R}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{│}~~~~\texttt{└──}
+\texttt{...}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📄}
+\texttt{DESCRIPTION}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{📄}
+\texttt{NAMESPACE}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{├──}\e{®}
+\texttt{neurotransmissionevolution.Rproj}\\
+\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\hspace*{0.333em}\texttt{└──}\e{📄}
+\texttt{README.md}
+
+The main manuscript analysis is inside \texttt{analysis/} and uses
+preprocessed data from \texttt{data/}. Preprocessing steps are included
+in \texttt{data-raw/}. Everything is documented in RMarkdown. Some
+miscellaneous utility functions reside in \texttt{R/}. Additionally,
+both preprocessed data and utility functions are documented by roxygen2
+and can be examined by usual help commands. To explore and tweak this
+project, users can download the repository's latest release on github
+(``\href{mailto:daniloimparato/neurotransmissionevolution@v1.0.0}{\nolinkurl{daniloimparato/neurotransmissionevolution@v1.0.0}}'')
+and run \texttt{devtools::install()}.
+
+\hypertarget{preprocessing}{%
+\section{Preprocessing}\label{preprocessing}}
+
+This section mainly refers to data preprocessing steps done before the
+actual analysis with the intent of making it either simpler or faster.
+
+\hypertarget{eukaryota-species-tree}{%
+\subsection{Eukaryota species tree}\label{eukaryota-species-tree}}
+
+We opted to use the TimeTree database to obtain an standardized
+Eukaryota species tree, although some target species were absent from
+it. Absent species were filled in based on NCBI Taxonomy data.
+
+\hypertarget{ncbi-taxonomy-tree}{%
+\subsubsection{NCBI Taxonomy tree}\label{ncbi-taxonomy-tree}}
+
+The following topics describe how we retrieved a target species tree
+from NCBI Taxonomy data. \input{data-raw.tree_ncbi.tex}
+
+\hypertarget{hybrid-tree}{%
+\subsubsection{Hybrid tree}\label{hybrid-tree}}
+
+Once we have both the NCBI Eukaryota tree and the list of duplicated
+genera, we can start assembling the complete hybrid tree.
+\input{data-raw.tree_hybrid.tex}
+
+\hypertarget{gene-selection-and-annotation}{%
+\subsection{Gene selection and
+annotation}\label{gene-selection-and-annotation}}
+
+The anchoring point of our analysis is gene identifiers. This section
+describes the process of structuring an identifier dictionary as well as
+other useful annotation, like KEGG pathways. The goal is to have a table
+to which all kinds of additional data can be left joined.
+\input{data-raw.kegg.tex}
+
+\hypertarget{neuroexclusivity}{%
+\subsection{Neuroexclusivity}\label{neuroexclusivity}}
+
+Neuroexclusivity data consists of gene expression collected from Gene
+Expression Atlas and the KEGG pathways themselves. This data is cleaned
+and subsetted prior to analysis. \input{data-raw.neuroexclusivity.tex}
+
+\hypertarget{orthology-data}{%
+\subsection{Orthology data}\label{orthology-data}}
+
+This section refers to orthology data exported for geneplast use.
+Essentially, we subset the global STRING mapping between proteins and
+orthologous groups into a smaller dataset containing only information
+about orthogroups related to eukaryotic species.
+\input{data-raw.cogs.tex}
+
+\hypertarget{network}{%
+\subsection{Network}\label{network}}
+
+We use our gene dictionary to retrieve the corresponding human
+protein-protein interaction network. This is done through the STRING
+API. In the end, we recompute combined interaction scores.
+\input{data-raw.string_edgelist.tex}
+
+\hypertarget{analysis}{%
+\section{Analysis}\label{analysis}}
+
+This section focuses on analyses and results reported in the main
+manuscript.
+
+\hypertarget{root-inference}{%
+\subsection{Root inference}\label{root-inference}}
+
+To estimate the evolutionary root of a given gene (i.e.~the ancestor
+from which its genetic archetype was vertically inherited), we use
+orthologous group annotation from the STRING database. The presence and
+absence of an orthologous group in a species tree is used to determine
+its most likely evolutionary root. \input{analysis.geneplast.tex}
+
+\hypertarget{neuroexclusivity-1}{%
+\subsection{Neuroexclusivity}\label{neuroexclusivity-1}}
+
+We characterize the relevance of a gene to the nervous system by
+inspecting what proportion of its activity is related to nervous
+processes. To do this, we rely on tissue RNA-Seq data, as well as KEGG's
+pathways themselves. \input{analysis.neuroexclusivity.tex}
+
+\hypertarget{network-1}{%
+\subsection{Network}\label{network-1}}
+
+This section describes the steps for reproducing most of the manuscript
+figures. A lot of it is concerned with plotting particularities and
+visual styling. \input{analysis.network.tex}
+
+\hypertarget{abundance}{%
+\subsection{Abundance}\label{abundance}}
+
+Abundance is the average number of proteins in neurotransmission
+orthogroups present in a species. This abundance is decomposed by
+orthogroup function. The orthogroup function is considered to be the
+function of its humans proteins in neurotransmission.
+\input{analysis.abundance.tex}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{#}
+\end{Highlighting}
+\end{Shaded}
+
+\end{document}

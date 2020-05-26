@@ -1,18 +1,14 @@
-Package: neurotransmission
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: What license it uses
+Package: neurotransmissionevolution
+Version: 1.0.0.0
+Title: Ionotropic receptors as the driving force behind human synapse establishment.
+Description: This package serves as a research compendium for the paper titled "Ionotropic receptors as the driving force behind human synapse establishment" (Viscardi et al 2020), outlining aspects of the evolution of human neurotransmission.
+Author: Lucas Viscardi, Danilo Imparato, Maria Cátira Bortolini, Rodrigo Dalmolin
+Maintainer: Danilo Imparato, <imparatodanilo@gmail.com>
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.0.2
 Imports:
+    dplyr,
     igraph,
     shiny,
     jsonlite,

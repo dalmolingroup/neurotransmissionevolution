@@ -1,0 +1,257 @@
+Loading initial resources:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Data manipulation}
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\KeywordTok{library}\NormalTok{(magrittr)}
+
+\CommentTok{# Utils}
+\KeywordTok{library}\NormalTok{(neurotransmissionevolution)}
+
+\CommentTok{# Packaged data}
+\KeywordTok{data}\NormalTok{(}
+\NormalTok{   cogs}
+\NormalTok{  ,gene_ids}
+\NormalTok{  ,gene_cogs}
+\NormalTok{  ,string_eukaryotes}
+\NormalTok{  ,}\DataTypeTok{package =} \StringTok{"neurotransmissionevolution"}
+\NormalTok{)}
+
+\CommentTok{# Fresh analysis data}
+\NormalTok{cog_roots                   <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_roots.tsv"}\NormalTok{,             }\DataTypeTok{col_types =} \StringTok{"ci"}\NormalTok{)}
+\NormalTok{clade_names                 <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{,       }\DataTypeTok{col_types =} \StringTok{"ic"}\NormalTok{)}
+\NormalTok{clade_taxids                <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_taxids.tsv"}\NormalTok{,      }\DataTypeTok{col_types =} \StringTok{"ici"}\NormalTok{)}
+
+\CommentTok{# Collapsing similar functions}
+\NormalTok{gene_annotation <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"../data/gene_annotation.tsv"}\NormalTok{, }\DataTypeTok{col_types =} \StringTok{"cc"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{annotation =} \KeywordTok{case_when}\NormalTok{(}
+     \KeywordTok{grepl}\NormalTok{(}\StringTok{"clearance"}\NormalTok{,   annotation) }\OperatorTok{~}\StringTok{ "depletion"}
+\NormalTok{    ,}\KeywordTok{grepl}\NormalTok{(}\StringTok{"degradation"}\NormalTok{, annotation) }\OperatorTok{~}\StringTok{ "depletion"}
+\NormalTok{    ,}\KeywordTok{grepl}\NormalTok{(}\StringTok{"transport"}\NormalTok{,   annotation) }\OperatorTok{~}\StringTok{ "synthesis"}
+\NormalTok{    ,}\OtherTok{TRUE} \OperatorTok{~}\StringTok{ }\NormalTok{annotation}
+\NormalTok{  ))}
+\end{Highlighting}
+\end{Shaded}
+
+We start by setting up reusable data frames with useful metrics.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# If a gene has more than 1 COG, select the oldest one.}
+\CommentTok{# This is unusual, but can happen in cases of gene fusion, for instance.}
+\NormalTok{gene_cogs }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_roots) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{max}\NormalTok{(root))}
+
+\CommentTok{# The function of a COG is the function of its proteins}
+\NormalTok{cog_annotation <-}\StringTok{ }\NormalTok{gene_ids }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(gene_cogs) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(gene_annotation) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{distinct}\NormalTok{(cog_id, annotation)}
+
+\CommentTok{# Number of proteins in a COG in every species}
+\NormalTok{cog_size_by_taxid <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(cog_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_cogs[[}\StringTok{"cog_id"}\NormalTok{]]) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{(taxid, cog_id,  }\DataTypeTok{name =} \StringTok{"cog_size"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(cog_annotation)}
+
+\CommentTok{# Mapping species to clade info}
+\NormalTok{ordered_species <-}\StringTok{ }\NormalTok{string_eukaryotes }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(taxid, ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(clade_taxids) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(clade_names, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"lca"}\NormalTok{ =}\StringTok{ "root"}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+     \DataTypeTok{ncbi_name  =} \KeywordTok{fct_reorder}\NormalTok{(ncbi_name, }\OperatorTok{-}\NormalTok{taxid_order)}
+\NormalTok{    ,}\DataTypeTok{clade_name =} \KeywordTok{fct_reorder}\NormalTok{(clade_name, }\OperatorTok{-}\NormalTok{taxid_order)}
+\NormalTok{  )}
+
+\CommentTok{# Plotting colors}
+\NormalTok{annotation_colors <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
+   \StringTok{"depletion"}\NormalTok{             =}\StringTok{ "#F40000"}
+\NormalTok{  ,}\StringTok{"excitability"}\NormalTok{          =}\StringTok{ "#FFAB00"}
+\NormalTok{  ,}\StringTok{"receptor-associated"}\NormalTok{   =}\StringTok{ "#D6EE00"}
+\NormalTok{  ,}\StringTok{"ionotropic receptor"}\NormalTok{   =}\StringTok{ "#43FF1C"}
+\NormalTok{  ,}\StringTok{"metabotropic receptor"}\NormalTok{ =}\StringTok{ "#18FFFF"}
+\NormalTok{  ,}\StringTok{"signaling"}\NormalTok{             =}\StringTok{ "#0091EA"}
+\NormalTok{  ,}\StringTok{"g-protein"}\NormalTok{             =}\StringTok{ "#0033ff"}
+\NormalTok{  ,}\StringTok{"synthesis"}\NormalTok{             =}\StringTok{ "#AA00FF"}
+\NormalTok{  ,}\StringTok{"vesicle"}\NormalTok{               =}\StringTok{ "#FF00AA"}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+Abundance is finally computed as the number of proteins pertaining to a
+function divided by the number of neurotransmission COGs in a species.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{abundance_by_function <-}\StringTok{ }\NormalTok{cog_size_by_taxid }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(taxid, annotation) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{abundance =} \KeywordTok{mean}\NormalTok{(cog_size)) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Adding species and clade info}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(ordered_species)}
+\end{Highlighting}
+\end{Shaded}
+
+Plotting:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)}
+\NormalTok{metazoa_line <-}\StringTok{ }\KeywordTok{geom_vline}\NormalTok{(}
+   \DataTypeTok{xintercept =} \StringTok{"Mnemiopsis leidyi"}
+\NormalTok{  ,}\DataTypeTok{color      =} \StringTok{"#FF0000"}
+\NormalTok{  ,}\DataTypeTok{linetype   =} \StringTok{"11"}
+\NormalTok{  ,}\DataTypeTok{alpha      =} \DecValTok{1}
+\NormalTok{  ,}\DataTypeTok{size       =} \FloatTok{0.25}
+\NormalTok{)}
+
+\CommentTok{# This tick function is used in scale_y_continuous to display only innermost ticks}
+\CommentTok{# tick_function <- function(skip_head = 1, skip_tail = 1) \{}
+\CommentTok{#   function(x)\{}
+\CommentTok{#     breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)}
+\CommentTok{#     ceiling(breaks/5)*5}
+\CommentTok{#   \}}
+\CommentTok{# \}}
+\NormalTok{tick_function <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
+  \KeywordTok{seq}\NormalTok{(x[}\DecValTok{2}\NormalTok{], }\DecValTok{0}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{3}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{head}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tail}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{ceiling}\NormalTok{(.}\OperatorTok{/}\DecValTok{5}\NormalTok{)}\OperatorTok{*}\DecValTok{5}\NormalTok{ \}}
+\NormalTok{\}}
+
+\CommentTok{# Capping abundance values based on metazoan mean}
+\NormalTok{capped_abundance_by_function <-}\StringTok{ }\NormalTok{abundance_by_function }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# mutate(capped_abundance = ifelse(abundance >= 100, 100, abundance)) %>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(annotation) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+     \CommentTok{# max_abundance = max(abundance[lca <= 29])}
+     \DataTypeTok{max_abundance =}\NormalTok{ abundance[lca }\OperatorTok{<=}\StringTok{ }\DecValTok{29}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{mean}\NormalTok{(.) }\OperatorTok{+}\StringTok{ }\DecValTok{3}\OperatorTok{*}\KeywordTok{sd}\NormalTok{(.) \}}
+\NormalTok{    ,}\DataTypeTok{abundance     =} \KeywordTok{ifelse}\NormalTok{(abundance }\OperatorTok{>=}\StringTok{ }\NormalTok{max_abundance, }\KeywordTok{pmin}\NormalTok{(max_abundance, }\DecValTok{100}\NormalTok{), }\KeywordTok{pmin}\NormalTok{(abundance, }\DecValTok{100}\NormalTok{))}
+\NormalTok{  )}
+
+\CommentTok{# Plotting}
+\NormalTok{abundance_plot <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{(capped_abundance_by_function) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Geoms  ----------------}
+\StringTok{  }\NormalTok{metazoa_line }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
+     \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
+\NormalTok{    ,}\DataTypeTok{stat =} \StringTok{"identity"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Labels  ---------------}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Taxa"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Protein abundance in COGs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Scales ----------------}
+\StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.1}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# coord_cartesian(ylim = c(0, 100)) +}
+\StringTok{  }\CommentTok{# Styling ---------------}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(annotation }\OperatorTok{~}\StringTok{ }\NormalTok{clade_name, }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{2.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.background.x =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.background.y =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{fill=}\StringTok{"#E0E0E0"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"#F5F5F5"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.background   =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{fill =} \StringTok{'#EEEEEE'}\NormalTok{, }\DataTypeTok{colour =} \StringTok{'#E0E0E0'}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{2}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{legend.position    =} \StringTok{"none"}
+\NormalTok{  )}
+\KeywordTok{ggsave}\NormalTok{(}\StringTok{"plots/fig5_raw.pdf"}\NormalTok{, abundance_plot, }\DataTypeTok{width =} \DecValTok{16}\NormalTok{, }\DataTypeTok{height =} \DecValTok{6}\NormalTok{)}
+
+\CommentTok{# Uncapped abundances for supplementary text}
+\NormalTok{abundance_plot }\OperatorTok{%+%}\StringTok{ }\NormalTok{abundance_by_function}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-5-1} 
+
+}
+
+\caption{Abundance values by species. Species are ordered like in Supplementary Figure 1.}\label{fig:unnamed-chunk-5}
+\end{figure}
+
+Abundances averaged by clades:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{ggplot}\NormalTok{(abundance_by_function) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ clade_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
+\NormalTok{    ,}\DataTypeTok{stat =} \StringTok{"summary"}
+\NormalTok{    ,}\DataTypeTok{fun  =} \StringTok{"mean"}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors, }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(annotation }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\DecValTok{1}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-6-1} 
+
+}
+
+\caption{Abundances averaged by clades.}\label{fig:unnamed-chunk-6}
+\end{figure}
+
+Breaking the data even further into the number of proteins in each
+neurotransmission COG.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Merging mixed COG functions}
+\NormalTok{cog_annotation_collapsed <-}\StringTok{ }\NormalTok{cog_annotation }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(cog_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{annotation =} \KeywordTok{paste}\NormalTok{(annotation, }\DataTypeTok{collapse =} \StringTok{"/"}\NormalTok{))}
+
+\CommentTok{# Adding colors for mixed COGs}
+\NormalTok{annotation_colors }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}
+   \StringTok{"vesicle/synthesis"}\NormalTok{      =}\StringTok{ "#808080"}
+\NormalTok{  ,}\StringTok{"depletion/vesicle"}\NormalTok{      =}\StringTok{ "#808080"}
+\NormalTok{  ,}\StringTok{"signaling/excitability"}\NormalTok{ =}\StringTok{ "#808080"}
+\NormalTok{)}
+
+\CommentTok{# Simply joining cog annotation and sizes}
+\NormalTok{protein_count_by_cog <-}\StringTok{ }\NormalTok{cog_size_by_taxid }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_annotation_collapsed) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(ordered_species) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(annotation) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{cog_id =} \KeywordTok{fct_inorder}\NormalTok{(cog_id))}
+
+\KeywordTok{ggplot}\NormalTok{(protein_count_by_cog) }\OperatorTok{+}
+\StringTok{  }\NormalTok{metazoa_line }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ cog_size, }\DataTypeTok{fill =}\NormalTok{ annotation), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.2}\NormalTok{), }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(cog_id }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free_y"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{1.25}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{)}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+
+{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-7-1} 
+
+}
+
+\caption{Number of proteins in each neurotransmission COG, for every species.}\label{fig:unnamed-chunk-7}
+\end{figure}

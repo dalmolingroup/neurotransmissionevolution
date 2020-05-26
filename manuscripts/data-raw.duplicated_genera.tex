@@ -1,0 +1,23 @@
+For \texttt{taxid\_rank} and \texttt{ncbi\_taxon\_names} see
+\hyperref[tab:ncbi_edgelist]{Table 3} and
+\hyperref[tab:ncbi_taxon_names]{Table 4}, respectively.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# keeping genera nodes}
+\NormalTok{taxid_rank }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(rank }\OperatorTok{==}\StringTok{ "genus"}\NormalTok{)}
+
+\CommentTok{# keeping scientific names}
+\NormalTok{ncbi_taxon_names }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(type }\OperatorTok{==}\StringTok{ "scientific name"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(taxid, ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(taxid_rank)}
+
+\CommentTok{# extracting and saving duplicated values}
+\NormalTok{duplicated_genera <-}\StringTok{ }\NormalTok{ncbi_taxon_names }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{pull}\NormalTok{(ncbi_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{extract}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(.)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write}\NormalTok{(}\StringTok{"duplicated_genera.txt"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

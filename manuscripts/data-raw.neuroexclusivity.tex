@@ -1,0 +1,161 @@
+\hypertarget{expression-neuroexclusivity}{%
+\subsubsection{Expression
+neuroexclusivity}\label{expression-neuroexclusivity}}
+
+Multiple wide .tsv files are preprocessed into a single long data frame.
+We also create a template file for manually classifying tissues into
+nervous or non-nervous categories.
+
+\textbf{Resources}\\
+We start by searching Gene Expression Atlas for experiments that have
+human baseline expression data at the tissue level. For each experiment,
+TPM expression data is downloaded to the \texttt{data-raw/download/gxa/}
+directory. The following 8 experiments could be found (hyperlinked):
+
+\begin{itemize}
+\tightlist
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-513}{E-MTAB-513}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-2836}{E-MTAB-2836}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3358}{E-MTAB-3358}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3708}{E-MTAB-3708}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-3716}{E-MTAB-3716}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-4344}{E-MTAB-4344}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-4840}{E-MTAB-4840}
+\item
+  \href{https://www.ebi.ac.uk/gxa/experiments/E-MTAB-5214}{E-MTAB-5214}
+\end{itemize}
+
+\textbf{Reshaping}\\
+Loading and pivoting all data to a long format.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Loading}
+\NormalTok{gene_expression <-}\StringTok{ }\KeywordTok{sapply}\NormalTok{(}
+  \KeywordTok{list.files}\NormalTok{(}\StringTok{"download/gxa/"}\NormalTok{, }\DataTypeTok{full.names =}\NormalTok{ T),}
+\NormalTok{  read_tsv,}
+  \DataTypeTok{comment =} \StringTok{"#"}\NormalTok{,}
+  \DataTypeTok{simplify =} \OtherTok{FALSE}\NormalTok{,}
+  \DataTypeTok{USE.NAMES =} \OtherTok{TRUE}
+\NormalTok{)}
+
+\CommentTok{# Pivoting}
+\NormalTok{gene_expression }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{map_dfr}\NormalTok{(pivot_longer, }\DataTypeTok{cols =} \OperatorTok{-}\NormalTok{(}\DecValTok{1}\OperatorTok{:}\DecValTok{2}\NormalTok{), }\DataTypeTok{names_to =} \StringTok{"tissue"}\NormalTok{, }\DataTypeTok{values_to =} \StringTok{"tpm"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{na.omit }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\DataTypeTok{ensembl_id =} \StringTok{`}\DataTypeTok{Gene ID}\StringTok{`}\NormalTok{, tissue, tpm)}
+\end{Highlighting}
+\end{Shaded}
+
+\textbf{Cleaning}\\
+A lot of tissue annotation can be collapsed into single levels
+(e.g.~``brain'' and ``brain fragment'' can be considered the same
+tissue). The cleaning is performed and expression data is exported for
+analysis.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# E-MTAB-4840 has comma separated developmental stage info (removing everything before ", ")}
+\NormalTok{gene_expression }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{tissue =} \KeywordTok{str_remove}\NormalTok{(tissue, }\StringTok{"^.+, "}\NormalTok{))}
+
+\NormalTok{tissue_names_fix <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
+  \StringTok{"brain fragment"}\NormalTok{                     =}\StringTok{ "brain"}\NormalTok{,}
+  \StringTok{"forebrain fragment"}\NormalTok{                 =}\StringTok{ "forebrain"}\NormalTok{,}
+  \StringTok{"forebrain and midbrain"}\NormalTok{             =}\StringTok{ "forebrain"}\NormalTok{,}
+  \StringTok{"hindbrain fragment"}\NormalTok{                 =}\StringTok{ "hindbrain"}\NormalTok{,}
+  \StringTok{"hindbrain without cerebellum"}\NormalTok{       =}\StringTok{ "hindbrain"}\NormalTok{,}
+  \StringTok{"hippocampus proper"}\NormalTok{                 =}\StringTok{ "hippocampus"}\NormalTok{,}
+  \StringTok{"hippocampal formation"}\NormalTok{              =}\StringTok{ "hippocampus"}\NormalTok{,}
+  \StringTok{"diencephalon and midbrain"}\NormalTok{          =}\StringTok{ "diencephalon"}\NormalTok{,}
+  \StringTok{"visceral (omentum) adipose tissue"}\NormalTok{  =}\StringTok{ "adipose tissue"}\NormalTok{,}
+  \StringTok{"subcutaneous adipose tissue"}\NormalTok{        =}\StringTok{ "adipose tissue"}\NormalTok{,}
+  \StringTok{"spinal cord (cervical c-1)"}\NormalTok{         =}\StringTok{ "spinal cord"}\NormalTok{,}
+  \StringTok{"C1 segment of cervical spinal cord"}\NormalTok{ =}\StringTok{ "spinal cord"}
+\NormalTok{)}
+
+\NormalTok{gene_expression }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{tissue =} \KeywordTok{recode}\NormalTok{(tissue, }\OperatorTok{!!!}\NormalTok{tissue_names_fix))}
+           
+\CommentTok{# Subseting for genes of interest}
+\NormalTok{gene_expression }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ensembl_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"ensembl_id"}\NormalTok{]])}
+
+\CommentTok{# Exporting for package use}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_expression, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\textbf{Tissue classification}\\
+For subsequent analyses, we need to distinguish if a tissue is part of
+the nervous system or not. This is done by hand. The first step is to
+write a temp file to
+\texttt{data-raw/temp/temp\_tissue\_classification.tsv} with all tissue
+names. This serves as a base for the completed
+\texttt{data/neuroexclusivity\_classification\_tissue} file.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{gene_expression }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(tissue) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{unique }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{arrange }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{is_nervous =} \OtherTok{NA}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"temp/temp_tissue_classification.tsv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{pathway-neuroexclusivity}{%
+\subsubsection{Pathway
+neuroexclusivity}\label{pathway-neuroexclusivity}}
+
+In this section we create a template file for classifying pathways into
+nervous or non-nervous.
+
+\textbf{Resources} For \texttt{link\_pathway\_entrez} see
+\hyperref[tab:link_pathway_entrez]{Table 5}.
+
+\begin{table}[H]
+
+\caption{\label{tab:pathway_names}KEGG pathway names.}
+\resizebox{\linewidth}{!}{
+\begin{tabular}[t]{rlllll}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{pathway\_names}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & pathway\_id & character & yes & path:hsa04726 & KEGG pathway ID\\
+2 & pathway\_name & character & yes & Serotonergic synapse - Homo sapiens (human) & pathway name\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/pathway\_names.tsv}\\
+\multicolumn{6}{l}{\textbf{Source: } http://rest.kegg.jp/list/pathway/hsa}\\
+\end{tabular}}
+\end{table}
+
+\textbf{Pathway classification}\\
+Just like tissues, we need to distinguish if a pathway is related to the
+nervous system or not. This is done by hand. The first step is to write
+a temp file to \texttt{data-raw/temp/temp\_pathway\_classification.tsv}
+with all pathway names. This serves as a base for the completed
+\texttt{data/neuroexclusivity\_classification\_pathway.tsv} file.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Removing species prefix ("hsa:")}
+\NormalTok{link_pathway_entrez[[}\StringTok{"entrez_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split_n}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{:"}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+
+\NormalTok{selected_genes_pathways <-}\StringTok{ }\NormalTok{link_pathway_entrez }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(entrez_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"entrez_id"}\NormalTok{]])}
+
+\NormalTok{unique_pathway_ids <-}\StringTok{ }\NormalTok{selected_genes_pathways }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(pathway_id) }\OperatorTok{%>%}\StringTok{ }\NormalTok{unique}
+
+\NormalTok{pathway_names }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(pathway_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{unique_pathway_ids) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{is_nervous =} \OtherTok{NA}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"temp/temp_pathway_classification.tsv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

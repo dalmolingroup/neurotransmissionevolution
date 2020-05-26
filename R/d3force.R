@@ -1,6 +1,3 @@
-#' @export
-#' @import igraph
-#' @import dplyr
 d3force <- function(graph, layout = NULL){
   if(is.matrix(layout)){
     V(graph)$x <- layout[,1]

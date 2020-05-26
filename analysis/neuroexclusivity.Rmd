@@ -1,0 +1,78 @@
+---
+title: "Neuroexclusivity"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+)
+```
+
+Loading resources:
+```{r}
+library(tidyverse)
+library(magrittr)
+
+data(
+   gene_ids
+  ,gene_pathways
+  ,gene_expression
+  ,package = "neurotransmissionevolution"
+)
+```
+
+### Expression neuroexclusivity
+We start by averaging all `gene_expression` collected from the Expression Atlas by tissue (`tpm_avg`). The averaged expression is filtered for values greather than 0.5 TPM. This ensures further computations only account for tissues in which genes are actually expressed. Then, we add the manual tissue classification indicating which tissues are nervous or not (described in Preprocessing). The neuroexclusivity index for a gene is the sum of its `tpm_avg` values in nervous tissues divided by the sum its values in all tissues.
+```{r}
+tissue_classification <- read_tsv(
+  file      = "../data/neuroexclusivity_classification_tissue.tsv"
+ ,col_types = "ci"
+)
+
+# Averaging TPM expression by tissue
+avg_by_tissue <- gene_expression %>%
+  group_by(ensembl_id, tissue) %>%
+  summarise(tpm_avg = mean(tpm)) %>%
+  filter(tpm_avg >= 0.5) %>%
+  left_join(tissue_classification)
+
+# Measuring expression neuroexclusivity
+expression_neuroexclusivity <- avg_by_tissue %>%
+  group_by(ensembl_id) %>%
+  summarise(expression_neuroexclusivity = sum(tpm_avg[is_nervous == 1])/sum(tpm_avg)) %>%
+  write_tsv("neuroexclusivity_expression.tsv")
+```
+
+### Pathway neuroexclusivity
+To find the pathway neuroexclusivity of a gene, we simply divide the count of nervous pathways by the count of all pathways it participates in.
+```{r}
+pathway_classification <- read_tsv(
+   file      = "../data/neuroexclusivity_classification_pathway.tsv"
+  ,col_types = "cci"
+)
+
+link_pathway_entrez <- read_tsv(
+   file      = "../data-raw/download/link_pathway_entrez.tsv"
+  ,col_names = c("entrez_id", "pathway_id")
+  ,col_types = "cc"
+)
+
+# Removing "hsa:" prefix
+link_pathway_entrez[["entrez_id"]] %<>% str_split_n("\\:", 2)
+
+# Pathway data related to our genes of interest
+selected_genes_pathways <- link_pathway_entrez %>%
+  filter(entrez_id %in% gene_ids[["entrez_id"]]) %>%
+  left_join(pathway_classification) %>%
+  drop_na # Dropping general pathways
+
+# Measuring pathway neuroexclusivity
+pathway_neuroexclusivity <- selected_genes_pathways %>%
+  group_by(entrez_id) %>%
+  summarise(pathway_neuroexclusivity = sum(is_nervous)/length(is_nervous)) %>%
+  write_tsv("neuroexclusivity_pathway.tsv")
+```
+

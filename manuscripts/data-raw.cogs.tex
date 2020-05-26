@@ -1,0 +1,39 @@
+\begin{table}[H]
+
+\caption{\label{tab:cogs}Orthologous groups (COGs, NOGs, KOGs) and their proteins.}
+\resizebox{\linewidth}{!}{
+\begin{tabular}[t]{rllll>{\raggedright\arraybackslash}p{18em}}
+\toprule
+\multicolumn{6}{c}{\bgroup\fontsize{12}{14}\selectfont \cellcolor[HTML]{EEEEEE}{\ttfamily{\textbf{cogs}}}\egroup{}} \\
+\cmidrule(l{3pt}r{3pt}){1-6}
+\# & Col. name & Col. type & Used? & Example & Description\\
+\midrule
+\rowcolor{gray!6}  1 & taxid.string\_id & character & yes & 9606.ENSP00000269305 & STRING protein ID\\
+2 & start\_position & numeric & no & 1 & residue where orthogroup mapping starts\\
+\rowcolor{gray!6}  3 & end\_position & numeric & no & 393 & residue where orthogroup mapping ends\\
+4 & cog\_id & character & yes & NOG08732 & orthologous group ID\\
+\rowcolor{gray!6}  5 & protein\_annotation & character & no & Cellular tumor antigen p53; [...] & protein description\\
+\bottomrule
+\multicolumn{6}{l}{\textbf{Location: } data-raw/download/COG.mappings.v11.0.txt.gz}\\
+\multicolumn{6}{l}{\textbf{Source: } https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz}\\
+\end{tabular}}
+\end{table}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Spliting first column into taxid and string_id}
+\NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{separate}\NormalTok{(taxid.string_id, }\DataTypeTok{into =} \KeywordTok{c}\NormalTok{(}\StringTok{"taxid"}\NormalTok{,}\StringTok{"string_id"}\NormalTok{), }\DataTypeTok{sep =} \StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, }\DataTypeTok{extra =} \StringTok{"merge"}\NormalTok{)}
+
+\CommentTok{# Subsetting cogs of interest}
+\NormalTok{gene_cogs <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_ids[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
+
+\NormalTok{cogs }\OperatorTok{%<>%}
+\StringTok{  }\CommentTok{# leave only eukaryotes}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]])}
+
+\CommentTok{# Exporting for package use}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

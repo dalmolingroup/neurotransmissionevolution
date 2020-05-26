@@ -1,0 +1,302 @@
+---
+title: "Hybrid tree assembly"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+  ,cache.extra = list(
+     file.mtime("ncbi_tree.nwk")
+    ,file.mtime("download/Eukaryota_species.nwk")
+    ,file.mtime("download/timetree_335_eukaryotes.nwk")
+  )
+)
+
+library(ape)
+library(phytools)
+library(tidyverse)
+library(magrittr)
+library(igraph)
+library(neurotransmissionevolution)
+```
+
+` `  
+**Resources**  
+Besides downloading all TimeTree species data (`Eukaryota_species.nwk`) we also need to manually query the website for the 476 STRING eukaryotes (`476_ncbi_eukaryotes.txt`). The file is called `476_ncbi_eukaryotes.txt` because it contains updated NCBI Taxonomy names rather than STRING outdated names. This ensures better results.
+```{r}
+download_if_missing(
+  paste0("http://timetree.org/ajax/direct_download",
+         "?direct-download-format=newick",
+         "&direct-download-id=23070",
+         "&direct-download-rank=species"),
+  "Eukaryota_species.nwk"
+)
+```
+
+`timetree_newick` is the tree obtained by manually uploading `476_ncbi_eukaryotes.txt` to the TimeTree website. `tree_85k` is the complete Eukaryota tree we have just downloaded.
+```{r}
+# loading species names and taxon ids
+load("../data/string_eukaryotes.rda")
+
+# loading newick tree manually obtained from timetree
+timetree_newick <- read.tree("download/timetree_335_eukaryotes.nwk")
+
+# the following genera names are unreliable and should not be searched for
+duplicated_genera <- scan("duplicated_genera.txt", what = "character")
+
+# loading all TimeTree species data we have just download (85000 species)
+tree_85k <- read.tree("download/Eukaryota_species.nwk")
+```
+
+**Unfound species with matching genera**  
+Some of the 476 STRING eukaryotes are not present in the TimeTree database. However, sometimes TimeTree does contain tree data for closely related species (e.g. _Monosiga brevicollis_ is not present, but _Monosiga ovata_ is). Therefore, we can use these closely related species as proxies for the actual species. This is done by searching for genera names in the complete database (`Eukaryota_species.nwk`). In the given _Monosiga brevicollis_ example, we search for _Monosiga_ in the complete database. We see that there is information for at least one other species of the _Monosiga_ genus (in this case, _Monosiga ovata_), so we add _Monosiga brevicollis_ as a sister branch to the found species.  
+  
+When you search for a term in TimeTree, it uses a synonym list obtained from NCBI to try to resolve it. Sometimes TimeTree will resolve a searched term to a scientific name different from the one you searched for. The problem with this is that TimeTree does not make it obvious that it is returning a different term. The first step is to find out which species resolved to different names in the `timetree_335_eukaryotes.nwk` file:
+```{r}
+# plot(timetree_newick %>% ladderize, type = "cladogram", use.edge.length = F)
+
+# replacing timetree species underscores with spaces
+timetree_newick[["tip.label"]] %<>% str_replace_all("_", " ")
+
+# which timetree species' names exactly match with ncbi's
+taxid_indexes <- timetree_newick[["tip.label"]] %>% match(string_eukaryotes[["ncbi_name"]])
+
+# find out which timetree species names didn't exactly match ncbi's
+unmatched_names <- timetree_newick[["tip.label"]] %>% magrittr::extract(taxid_indexes %>% is.na)
+print(unmatched_names)
+
+# manually creating lookup table to be joined
+ncbi_to_timetree <- tribble(
+  ~timetree_name,              ~ncbi_name,
+  "Cercospora fijiensis",      "Pseudocercospora fijiensis",
+  "Arthroderma benhamiae",     "Trichophyton benhamiae",
+  "Macropus eugenii",          "Notamacropus eugenii",
+  "Ostreococcus lucimarinus",  "Ostreococcus sp. 'lucimarinus'",
+  "Oryza nivara",              "Oryza sativa f. spontanea"
+)
+
+# joining info
+species_dictionary <- string_eukaryotes %>% left_join(ncbi_to_timetree)
+
+# coalescing NAs to ncbi_name
+species_dictionary %<>%
+  mutate(timetree_name = coalesce(timetree_name, ncbi_name)) %>%
+  mutate(timetree_name = ifelse(timetree_name %in% timetree_newick[["tip.label"]], timetree_name, NA))
+```
+
+Now we can start looking for unfound species genera in the complete tree data.
+```{r}
+# annotating genera
+species_dictionary %<>%
+  mutate(genus_search = coalesce(timetree_name, ncbi_name) %>%
+  strsplit(" ") %>%
+  sapply("[", 1))
+
+# unique genera
+selected_genera <- species_dictionary[["genus_search"]] %>% unique
+
+# these are unreliable selected_genera:
+unreliable_genera <- intersect(selected_genera, duplicated_genera)
+
+# ensuring a cleaner newick file with only necessary data
+# this is actually really important
+tree_85k[["node.label"]] <- NULL
+tree_85k[["edge.length"]] <- NULL
+
+# replacing timetree's underscores with spaces
+tree_85k[["tip.label"]] %<>% str_replace_all("_", " ")
+
+# storing genus
+tree_85k[["tip.genus"]] <- sapply(strsplit(tree_85k[["tip.label"]]," "), "[", 1)
+tree_85k_genera <- tree_85k[["tip.genus"]] %>% unique
+
+# subtracting unreliable genera
+tree_85k_genera %<>% setdiff(unreliable_genera)
+
+# keeping only selected genera, including unreliable ones
+tree_genus <- tree_85k %$% keep.tip(., tip.label[tip.genus %in% selected_genera])
+tree_genus[["tip.genus"]] <- sapply(strsplit(tree_genus[["tip.label"]]," "), "[", 1)
+
+# unfound species which genera are present in the 85k tree
+unfound_species <- species_dictionary %>%
+  filter(is.na(timetree_name) & genus_search %in% tree_85k_genera)
+```
+
+Once we figured out which species have proxy genera in the complete data, we can start filling them in as sister branches.
+```{r}
+# for each unfound species which genus is present in the 85k tree,
+for(i in 1:nrow(unfound_species)){
+  # we search for all species of this genus ("sister species") in the 85k tree
+  # this part is tricky because bind.tip rebuilds the tree from scratch
+  # so we need to keep removing underscores. there are better ways to do this.
+  tip_genus <- tree_genus[["tip.label"]] %>% strsplit("[_ ]") %>% sapply("[", 1)
+  sister_species <- tree_genus[["tip.label"]][tip_genus == unfound_species[[i, "genus_search"]]]
+  # we obtain the sister_species' most recent common ancestor (MRCA)
+  # c(.[1]) is a hack because the MRCA function only works with at least 2 nodes
+  where <- getMRCA(tree_genus, sister_species %>% c(.[1]))
+  # and then add a leaf node linked to this MRCA
+  tree_genus %<>% bind.tip(tip.label = unfound_species[[i, "ncbi_name"]], where = where)
+}
+
+# for some reason bind.tip adds underscores to species names
+tree_genus[["tip.label"]] %<>% str_replace_all("_", " ")
+
+# keeping track of found species
+found_species <- species_dictionary %>% filter(!is.na(timetree_name) | genus_search %in% tree_85k_genera)
+# forced_name means it either was found in timetree or we forced it by looking at genera names
+found_species %<>% mutate(forced_name = coalesce(timetree_name, ncbi_name))
+
+# so we keep only found species in this tree we are building (timetree + forced by genera)
+tree_genus %<>% keep.tip(found_species[["forced_name"]])
+
+# which found_species rows correspond to each tip.label?
+match_tiplabel_name <- match(tree_genus[["tip.label"]], found_species[["forced_name"]])
+
+tree_genus %<>% list_modify(
+# converting to ncbi taxids
+  tip.label = found_species[["new_taxid"]][match_tiplabel_name]
+)
+```
+
+**Species of unfound genera**  
+In this part, we try to fill in the remaining missing species (those which genera were not found in TimeTree) by searching for their closest relatives (according to NCBI Taxonomy) that are present in the current tree. Once we find its two closest relatives, we can add the missing species as a branch from their LCA. This is a conservative approach.
+```{r}
+# converting ncbi phylo to igraph
+graph_ncbi <- read.tree("tree_ncbi.nwk") %>% as.igraph.phylo(directed = TRUE)
+
+# converting phylo to igraph
+graph_genus <- as.igraph.phylo(tree_genus, directed = TRUE)
+
+# for each species which genus is not in timetree
+# we'll look for its two closest species (in the NCBI tree) which are present in the tree_genus we just built
+unfound_genera <- species_dictionary %>% filter(is.na(timetree_name) & !genus_search %in% tree_85k_genera)
+
+# this is the igraph equivalent of "phylo_tree$tip.label"
+tip_nodes <- V(graph_ncbi)[degree(graph_ncbi, mode = "out") == 0]
+
+# undirected distances between all species nodes
+tip_distances <- graph_ncbi %>%
+  distances(v = tip_nodes, to = tip_nodes, mode = "all") %>%
+  as_tibble(rownames = "from") %>%
+  pivot_longer(-from, names_to = "to", values_to = "distance")
+
+# removing self references (zero distances)
+tip_distances %<>% filter(distance > 0)
+
+# we only want to search for species of unfound genera
+tip_distances %<>% inner_join(unfound_genera %>% select(from = new_taxid))
+
+# we only want to find species already present in the genus_tree
+tip_distances %<>% inner_join(found_species %>% select(to = new_taxid))
+
+# we only want the two closest relatives
+tip_distances %<>%
+  group_by(from) %>%
+  top_n(-2, distance) %>% # top 2 smallest distances
+  top_n(2, to) # more than 2 species have the same smallest distance, so we get the first ones
+
+# out distance matrix between all nodes in tree, needed to find MRCAs
+out_distances <- graph_genus %>% distances(mode = "out")
+
+# for each species of unfound genera,
+# we find the MRCA for its two closest relatives
+unfound_genera_mrca <- tip_distances %>% group_by(from) %>% summarise(mrca = {
+  # which rows have no infinite distances? the last one represents the MRCA
+  mrca_row_index <- max(which(rowSums(is.infinite(out_distances[, to])) == 0))
+  rownames(out_distances)[mrca_row_index]
+})
+
+# adding unfound genera species nodes
+graph_genus %<>% add_vertices(nrow(unfound_genera_mrca), color = "red", attr = list(name = unfound_genera_mrca[["from"]]))
+
+# defining unfound genera species edges
+# edges_to_add[1] -> edges_to_add[2], edges_to_add[2] -> edges_to_add[3]...
+edges_to_add <- V(graph_genus)[unfound_genera_mrca %>% select(mrca, from) %>% t %>% as.vector]$name
+
+# connecting species leafs to the supposed MRCA
+graph_genus %<>% add_edges(V(graph_genus)[edges_to_add])
+
+# plotting
+# plot(as.undirected(graph_genus), layout = layout_as_tree(graph_genus), vertex.label = NA, vertex.size=2)
+
+# finally converting to phylo format
+phylo_graph_genus <- treeio::as.phylo(graph_genus)
+
+# which species_dictionary rows correspond to each tip.label?
+match_tiplabel_taxid <- match(phylo_graph_genus[["tip.label"]], species_dictionary[["new_taxid"]])
+
+phylo_graph_genus %<>% list_modify(
+  # adding tip.alias (this is not exported with write.tree)
+  tip.alias = species_dictionary[["string_name"]][match_tiplabel_taxid],
+  # converting back to string ids
+  tip.label = species_dictionary[["taxid"]][match_tiplabel_taxid]
+)
+
+# ensuring a cleaner newick file with only necessary data
+phylo_graph_genus[["node.label"]] <- NULL
+phylo_graph_genus[["edge.length"]] <- NULL
+
+# usethis::use_data(phylo_graph_genus, overwrite = TRUE)
+# write.tree(phylo_graph_genus, "../data/hybrid_tree.nwk")
+```
+
+
+**Ctenophora as sister to all animals**  
+According to TimeTree, Ctenophora remains as a sister group to Cnidaria. We believe the most recent consensus in literature is to consider them a sister group to all animals. The following code block moves _Mnemiopsis leidyi_, the only ctenophore in our analysis, to the base of the metazoan lineage.
+```{r}
+# reordering tip.labels
+from_to <- c(
+  "400682" = "27923",  # amphimedon to mnemiopsis
+  "10228"  = "400682", # trichoplax to amphimedon
+  "27923"  = "10228"   # mnemiopsis to trichoplax
+)
+
+modified_phylo <- phylo_graph_genus
+
+modified_phylo[["tip.label"]] %<>% recode(!!!from_to)
+
+write.tree(modified_phylo, "../data/hybrid_tree_modified.nwk")
+```
+
+```{r include=FALSE}
+species_dictionary %<>% mutate(method = case_when(
+  ncbi_name == timetree_name               ~ "normal", # direct match in timetree
+  ncbi_name != timetree_name               ~ "name_fix", # direct match, name correction
+  ncbi_name %in% found_species$forced_name ~ "genus_proxy", # only genus match
+  TRUE                                     ~ "closest_relative", # inferred from NCBI
+))
+
+tip_color_ref <- c(
+  normal           = "#263238",
+  name_fix         = "#00C853",
+  genus_proxy      = "#2962FF",
+  closest_relative = "#DD2C00"
+)
+
+species_dictionary %<>% mutate(tip_color = tip_color_ref[method])
+
+temp_modified_phylo <- modified_phylo %>% rotatePhyloTree("9606")
+
+temp_modified_phylo %<>% list_modify(
+  tip.color = species_dictionary %$% tip_color[match(temp_modified_phylo$tip.label, taxid)],
+  tip.label = .$tip.alias
+)
+
+pdf("tree_hybrid_raw.pdf", width = 5, height = 9)
+  plot(
+    temp_modified_phylo,
+    type = "cladogram",
+    tip.color = temp_modified_phylo$tip.color,
+    edge.color = "#263238",
+    cex = 0.125,
+    edge.width = 0.1,
+    no.margin = T,
+    direction = "rightwards"
+  )
+dev.off()
+```
+![Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy. Clade naming is described further in this document.](../data-raw/tree_hybrid.pdf){height=95%}
+

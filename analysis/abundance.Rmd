@@ -1,177 +1,224 @@
 ---
-title: "Network"
-output:
-  html_document:
-    df_print: paged
-    theme: default
-    highlight: espresso
-    toc: true
-    toc_depth: 2
-    toc_float: true
-    number_sections: true
+title: "Abundance"
+knit: neurotransmissionevolution::custom_knit
 ---
-# Intro
-Obter o layout da rede no RedeR
-```{r message=FALSE}
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 2
+  ,autodep     = T
+  # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
+)
+```
+
+Loading initial resources:
+```{r}
+# Data manipulation
 library(tidyverse)
 library(magrittr)
-```
 
-# Dados
-```{r rows.print=5}
+# Utils
+library(neurotransmissionevolution)
+
+# Packaged data
 data(
-  ogr,
-  ogp,
-  gene_ids,
-  gene_pathways,
-  neurotransmission_cogs,
-  string_eukaryotes,
-  package = "neurotransmission"
+   cogs
+  ,gene_ids
+  ,gene_cogs
+  ,string_eukaryotes
+  ,package = "neurotransmissionevolution"
 )
 
-gene_annotation <- read_tsv("../inst/extdata/gene_annotation.tsv", col_types = "cc") %>%
+# Fresh analysis data
+cog_roots                   <- read_tsv("geneplast_roots.tsv",             col_types = "ci")
+clade_names                 <- read_tsv("geneplast_clade_names.tsv",       col_types = "ic")
+clade_taxids                <- read_tsv("geneplast_clade_taxids.tsv",      col_types = "ici")
+
+# Collapsing similar functions
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
   mutate(annotation = case_when(
-    grepl("clearance",annotation) ~ "depletion",
-    grepl("degradation",annotation) ~ "depletion",
-    grepl("transport",annotation) ~ "synthesis",
-    TRUE ~ annotation
+     grepl("clearance",   annotation) ~ "depletion"
+    ,grepl("degradation", annotation) ~ "depletion"
+    ,grepl("transport",   annotation) ~ "synthesis"
+    ,TRUE ~ annotation
   ))
-
-cog_roots <- read_tsv("../inst/extdata/cogs_roots.tsv", col_types = "ci")
-
-spbranches <- ogr@spbranches %>% select(taxid = ssp_id, root = `9606`)
 ```
 
-# joining data
+We start by setting up reusable data frames with useful metrics.
 ```{r}
-neurotransmission_cogs %<>%
+# If a gene has more than 1 COG, select the oldest one.
+# This is unusual, but can happen in cases of gene fusion, for instance.
+gene_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
   filter(root == max(root))
 
-info <- gene_ids %>%
-  na.omit %>%
-  inner_join(gene_pathways) %>%
+# The function of a COG is the function of its proteins
+cog_annotation <- gene_ids %>%
+  inner_join(gene_cogs) %>%
   inner_join(gene_annotation) %>%
-  inner_join(neurotransmission_cogs)
-```
+  distinct(cog_id, annotation)
 
-# wrangle
-```{r}
-cog_annotation <- info %>% select(cog_id, annotation) %>% unique
+# Number of proteins in a COG in every species
+cog_size_by_taxid <- cogs %>%
+  filter(cog_id %in% gene_cogs[["cog_id"]]) %>%
+  count(taxid, cog_id,  name = "cog_size") %>%
+  left_join(cog_annotation)
 
-orthodist <- ogp@orthodist %>%
-  as.data.frame %>%
-  rownames_to_column("taxid") %>%
-  pivot_longer(cols = -taxid, names_to = "cog_id", values_to = "count")
-
-orthodist_annotation <- inner_join(orthodist, cog_annotation)
-```
-
-# plot
-```{r message=FALSE}
-ssp_abundance <- orthodist %>%
-  group_by(taxid) %>%
-  summarise(abundance = { sum(count)/sum(count > 0) }) %>%
-  inner_join(spbranches) %>%
-  arrange(-root) %>%
-  mutate(taxid = factor(taxid, levels = taxid[order(-root)]))
-  
-ggplot(ssp_abundance) +
-  geom_bar(aes(x = taxid, y = abundance), stat="identity")
-```
-
-
-```{r message=FALSE}
-annotation_abundance <- orthodist_annotation %>%
-  filter(count > 0) %>%
-  group_by(taxid, annotation) %>%
-  summarise(abundance = { sum(count)/sum(count > 0) }) %>%
-  ungroup(taxid, annotation) %>%
-  inner_join(spbranches) %>%
-  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
-  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
-
-porifera_xintercept <- which(levels(annotation_abundance$ncbi_name) == "Amphimedon queenslandica")
-
-plot_config <- list(
-  facet_grid(annotation ~ ., scales = "free_y"),
-  geom_vline(xintercept = porifera_xintercept, color = "#FF0000", linetype = "11", size = 0.25),
-  theme(axis.text.x = element_text(size = 3, angle = 90, hjust = 1, vjust = 0)),
-  theme(plot.title = element_text(size = 20, face = "bold"))
-)
-
-ggplot(annotation_abundance) +
-  geom_bar(aes(x = ncbi_name, y = abundance), stat="identity") +
-  ggtitle("numero de proteinas por funcao dividido pelo numero de cogs da funcao") +
-  plot_config
-ggsave("plots/abundance_by_function.pdf", width = 20, height = 10)
-```
-
-
-```{r message=FALSE}
-annotation_count <- orthodist_annotation %>%
-  group_by(taxid, annotation) %>%
-  summarise(count = sum(count)) %>%
-  ungroup(taxid, annotation) %>%
-  inner_join(spbranches) %>%
-  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
-  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
-
-ggplot(annotation_count) +
-  geom_bar(aes(x = ncbi_name, y = count), stat="identity") +
-  ggtitle("numero de proteinas por funcao") +
-  plot_config
-ggsave("plots/abundance_count.pdf", width = 20, height = 10)
-```
-
-
-```{r}
-cog_count_by_taxid <- orthodist %>%
-  group_by(taxid) %>%
-  summarise(count_cog = sum(count > 0))
-
-annotation_count_by_all_cogs <- orthodist_annotation %>%
-  group_by(taxid, annotation) %>%
-  summarise(count_annotation = sum(count)) %>%
-  ungroup(taxid, annotation) %>%
-  inner_join(cog_count_by_taxid) %>%
-  inner_join(spbranches) %>%
-  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
-  mutate(abundance = count_annotation / count_cog) %>%
-  mutate(ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique))
-
-ggplot(annotation_count_by_all_cogs) +
-  geom_bar(aes(x = ncbi_name, y = abundance), stat="identity") +
-  ggtitle("numero de proteinas por funcao dividido pelo numero de cogs na especie") +
-  plot_config
-ggsave("plots/abundance_by_all_cogs.pdf", width = 20, height = 10)
-```
-
-
-```{r message=FALSE}
-cog_annotation_collapse <- cog_annotation %>%
-  group_by(cog_id) %>%
-  summarise(annotation = paste(annotation, collapse = " "))
-
-protein_count_by_cog <- orthodist %>%
-  group_by(taxid, cog_id) %>%
-  summarise(count = sum(count)) %>%
-  ungroup(taxid, annotation) %>%
-  inner_join(cog_annotation_collapse) %>%
-  inner_join(spbranches) %>%
-  inner_join(string_eukaryotes %>% select(taxid, ncbi_name)) %>%
+# Mapping species to clade info
+ordered_species <- string_eukaryotes %>%
+  select(taxid, ncbi_name) %>%
+  left_join(clade_taxids) %>%
+  left_join(clade_names, by = c("lca" = "root")) %>%
   mutate(
-    ncbi_name = factor(ncbi_name, levels = ncbi_name[order(-root)] %>% unique),
-    cog_id    = factor(cog_id,  levels = cog_id[order(annotation)] %>% unique)
+     ncbi_name  = fct_reorder(ncbi_name, -taxid_order)
+    ,clade_name = fct_reorder(clade_name, -taxid_order)
   )
 
-t <- ggplot(protein_count_by_cog) +
-  geom_bar(aes(x = ncbi_name, y = count, fill = annotation), stat="identity") +
+# Plotting colors
+annotation_colors <- c(
+   "depletion"             = "#F40000"
+  ,"excitability"          = "#FFAB00"
+  ,"receptor-associated"   = "#D6EE00"
+  ,"ionotropic receptor"   = "#43FF1C"
+  ,"metabotropic receptor" = "#18FFFF"
+  ,"signaling"             = "#0091EA"
+  ,"g-protein"             = "#0033ff"
+  ,"synthesis"             = "#AA00FF"
+  ,"vesicle"               = "#FF00AA"
+)
+```
+
+Abundance is finally computed as the number of proteins pertaining to a function divided by the number of neurotransmission COGs in a species.
+```{r}
+abundance_by_function <- cog_size_by_taxid %>%
+  group_by(taxid, annotation) %>%
+  summarise(abundance = mean(cog_size)) %>%
+  # Adding species and clade info
+  left_join(ordered_species)
+```
+
+Plotting:
+```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure 1."}
+# This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)
+metazoa_line <- geom_vline(
+   xintercept = "Mnemiopsis leidyi"
+  ,color      = "#FF0000"
+  ,linetype   = "11"
+  ,alpha      = 1
+  ,size       = 0.25
+)
+
+# This tick function is used in scale_y_continuous to display only innermost ticks
+# tick_function <- function(skip_head = 1, skip_tail = 1) {
+#   function(x){
+#     breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)
+#     ceiling(breaks/5)*5
+#   }
+# }
+tick_function <- function(x) {
+  seq(x[2], 0, length.out = 3) %>% head(-1) %>% tail(-1) %>% { ceiling(./5)*5 }
+}
+
+# Capping abundance values based on metazoan mean
+capped_abundance_by_function <- abundance_by_function %>%
+  # mutate(capped_abundance = ifelse(abundance >= 100, 100, abundance)) %>%
+  group_by(annotation) %>%
+  mutate(
+     # max_abundance = max(abundance[lca <= 29])
+     max_abundance = abundance[lca <= 29] %>% { mean(.) + 3*sd(.) }
+    ,abundance     = ifelse(abundance >= max_abundance, pmin(max_abundance, 100), pmin(abundance, 100))
+  )
+
+# Plotting
+abundance_plot <- ggplot(capped_abundance_by_function) +
+  # Geoms  ----------------
+  metazoa_line +
+  geom_bar(
+     aes(x = ncbi_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+    ,stat = "identity"
+  ) +
+  # Labels  ---------------
+  xlab("Taxa") +
+  ylab("Protein abundance in COGs") +
+  # Scales ----------------
+  scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
+  scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
+  # coord_cartesian(ylim = c(0, 100)) +
+  # Styling ---------------
+  facet_grid(annotation ~ clade_name, scales = "free", space = "free") +
+  theme(
+     panel.spacing      = unit(2.5, "pt")
+    ,strip.background.x = element_blank()
+    ,strip.background.y = element_rect(fill="#E0E0E0")
+    ,panel.grid.major.x = element_blank()
+    ,panel.grid.major.y = element_line(colour = "#F5F5F5", size = 0.25)
+    ,panel.background   = element_rect(fill = '#EEEEEE', colour = '#E0E0E0')
+    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5)
+    ,strip.text.y       = element_text(size = 8, vjust = 0.5)
+    ,axis.text.x        = element_text(size = 2, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 6)
+    ,legend.position    = "none"
+  )
+ggsave("plots/fig5_raw.pdf", abundance_plot, width = 16, height = 6)
+
+# Uncapped abundances for supplementary text
+abundance_plot %+% abundance_by_function
+```
+
+Abundances averaged by clades:
+```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="Abundances averaged by clades."}
+ggplot(abundance_by_function) +
+  geom_bar(
+    aes(x = clade_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+    ,stat = "summary"
+    ,fun  = "mean"
+  ) +
+  scale_fill_manual(values = annotation_colors, guide = "none") +
+  facet_grid(annotation ~ ., scales = "free") +
+  theme(
+     panel.spacing      = unit(1, "pt")
+    ,strip.text.y       = element_text(angle = 0, hjust = 0)
+    ,axis.text.x        = element_text(size = 5, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 5)
+  )
+```
+
+Breaking the data even further into the number of proteins in each neurotransmission COG.
+```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="Number of proteins in each neurotransmission COG, for every species."}
+# Merging mixed COG functions
+cog_annotation_collapsed <- cog_annotation %>%
+  group_by(cog_id) %>%
+  summarise(annotation = paste(annotation, collapse = "/"))
+
+# Adding colors for mixed COGs
+annotation_colors %<>% c(
+   "vesicle/synthesis"      = "#808080"
+  ,"depletion/vesicle"      = "#808080"
+  ,"signaling/excitability" = "#808080"
+)
+
+# Simply joining cog annotation and sizes
+protein_count_by_cog <- cog_size_by_taxid %>%
+  inner_join(cog_annotation_collapsed) %>%
+  left_join(ordered_species) %>%
+  arrange(annotation) %>%
+  mutate(cog_id = fct_inorder(cog_id))
+
+ggplot(protein_count_by_cog) +
+  metazoa_line + 
+  geom_bar(aes(x = ncbi_name, y = cog_size, fill = annotation), stat = "identity") +
+  scale_fill_manual(values = annotation_colors %>% darken(0.2), guide = "none") +
+  scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   facet_grid(cog_id ~ ., scales = "free_y") +
-  ggtitle("numero de proteinas por cog, para cada especie") +
-  plot_config[-1] +
-  theme(strip.text.y = element_text(size = 6)) #+
-  # theme(legend.text = element_text(margin = margin(t = 1.5, b = 1.5, unit = "in")))
-ggsave("plots/abundance_protein_count_by_cog.pdf", t, width = 20, height = 50, limitsize = FALSE)
+  theme(
+     panel.spacing      = unit(0.5, "pt")
+    ,panel.grid.major.x = element_blank()
+    ,panel.grid.major.y = element_line(size = 0.1, linetype = "dashed")
+    ,strip.text.y       = element_text(size = 4, angle = 0, hjust = 0)
+    ,axis.text.x        = element_text(size = 1.25, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 4)
+    ,axis.ticks         = element_line(size = 0.1)
+  )
 ```
