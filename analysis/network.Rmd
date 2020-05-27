@@ -35,8 +35,6 @@ data(
   ,gene_cogs
   ,gene_pathways
   ,string_edgelist
-  ,pathway_neuroexclusivity
-  ,expression_neuroexclusivity
   ,package = "neurotransmissionevolution"
 )
 
@@ -480,7 +478,7 @@ ggplot(cumulative_emergence) +
   #----- Styling ------
   scale_color_manual(values = element_colors) +
   facet_grid(name ~ .) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
+  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust = 0))
 ```
 
 ### Manuscript figure 4  
@@ -593,7 +591,7 @@ iwalk(roots, ~ {
     ,stroke  = 0.25
   )
   
-  plot_text <- geom_text(data = current_genes, text_aes, size = 1, nudge_y = 2, alpha = 0.5)
+  plot_text <- geom_text(data = current_genes, text_aes, size = 0.75, nudge_y = 4, alpha = 0.5)
   
   base <- ggplot() +
     ggtitle(paste0("Human-", .y, " LCA (#", .x, ")")) +

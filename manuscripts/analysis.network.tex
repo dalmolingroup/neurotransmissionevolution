@@ -25,8 +25,6 @@ Loading resources:
 \NormalTok{  ,gene_cogs}
 \NormalTok{  ,gene_pathways}
 \NormalTok{  ,string_edgelist}
-\NormalTok{  ,pathway_neuroexclusivity}
-\NormalTok{  ,expression_neuroexclusivity}
 \NormalTok{  ,}\DataTypeTok{package =} \StringTok{"neurotransmissionevolution"}
 \NormalTok{)}
 
@@ -543,7 +541,7 @@ Plotting such cumulative counts:
 \StringTok{  }\CommentTok{#----- Styling ------}
 \StringTok{  }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ element_colors) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{facet_grid}\NormalTok{(name }\OperatorTok{~}\StringTok{ }\NormalTok{.) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{1}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{1}\NormalTok{))}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -691,7 +689,7 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 \NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
 \NormalTok{  )}
   
-\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, text_aes, }\DataTypeTok{size =} \DecValTok{1}\NormalTok{, }\DataTypeTok{nudge_y =} \DecValTok{2}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.5}\NormalTok{)}
+\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, text_aes, }\DataTypeTok{size =} \FloatTok{0.75}\NormalTok{, }\DataTypeTok{nudge_y =} \DecValTok{4}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.5}\NormalTok{)}
   
 \NormalTok{  base <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
 \StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(}\StringTok{"Human-"}\NormalTok{, .y, }\StringTok{" LCA (#"}\NormalTok{, .x, }\StringTok{")"}\NormalTok{)) }\OperatorTok{+}
