@@ -78,11 +78,6 @@ string_eukaryotes %<>% mutate(
 )
 
 write(string_eukaryotes[["lineage_txt"]], "temp/species_lineages.txt")
-  
-# collapse_names(c("a","b","a")) == "a (2); b (1)"
-collapse_names <- function(clade_names) {
-  table(clade_names) %>% sort(TRUE) %>% paste0(names(.), " (", .,")", collapse = "; ")
-}
 
 root_names <- string_eukaryotes %>%
   # Long format lineages
@@ -90,19 +85,21 @@ root_names <- string_eukaryotes %>%
      lineage_split = strsplit(lineage_txt, "; ")
   ) %>%
   unnest_longer(
-     col             = lineage_split
-    ,values_to       = "clade_name"
-    ,indices_to      = "clade_depth"
+     col        = lineage_split
+    ,values_to  = "clade_name"
+    ,indices_to = "clade_depth"
   ) %>%
-  # Collapsing lineages at clade ranks
-  group_by(root, clade_depth) %>%
+  # Counting and dropping the last group
+  group_by(root, clade_depth, clade_name) %>%
+  tally(sort = TRUE) %>%
+  # Collapsing lineages by clade depths
   summarise(
      diverging_rank = n_distinct(clade_name) > 1
-    ,clade_name     = ifelse(diverging_rank, collapse_names(clade_name), clade_name)
+    ,clade_name     = ifelse(diverging_rank, paste0(clade_name, " (", n,")", collapse = "; "), clade_name)
   ) %>%
-  # Removing subsequent divergences
+  # Removing diverging ranks after the first one
   filter(cumsum(diverging_rank) <= 1) %>%
-  # Removing irrelevant ranks
+  # Removing irrelevant basal ranks (eg Eukaryota)
   group_by(clade_depth) %>%
   arrange(root) %>%
   filter(!(duplicated(clade_name) | duplicated(clade_name, fromLast = TRUE)) | diverging_rank) %>%
@@ -172,7 +169,7 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
     strip.background   = element_rect(colour = "#FFFFFF"),
     strip.text.x       = element_text(size = 6, angle = 90),
     strip.text.y       = element_text(size = 3, angle = 0, hjust = 0, lineheight = 3),
-    axis.text.x        = element_text(size = 6, angle = -45, vjust = 0, hjust = 0),
+    axis.text.x        = element_text(size = 5, angle = -45, vjust = 0, hjust = 0),
     legend.position    = "none"
   )
 ```

@@ -97,11 +97,6 @@ of our scope.
 \NormalTok{)}
 
 \KeywordTok{write}\NormalTok{(string_eukaryotes[[}\StringTok{"lineage_txt"}\NormalTok{]], }\StringTok{"temp/species_lineages.txt"}\NormalTok{)}
-  
-\CommentTok{# collapse_names(c("a","b","a")) == "a (2); b (1)"}
-\NormalTok{collapse_names <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(clade_names) \{}
-  \KeywordTok{table}\NormalTok{(clade_names) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{sort}\NormalTok{(}\OtherTok{TRUE}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\KeywordTok{names}\NormalTok{(.), }\StringTok{" ("}\NormalTok{, .,}\StringTok{")"}\NormalTok{, }\DataTypeTok{collapse =} \StringTok{"; "}\NormalTok{)}
-\NormalTok{\}}
 
 \NormalTok{root_names <-}\StringTok{ }\NormalTok{string_eukaryotes }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Long format lineages}
@@ -109,19 +104,21 @@ of our scope.
      \DataTypeTok{lineage_split =} \KeywordTok{strsplit}\NormalTok{(lineage_txt, }\StringTok{"; "}\NormalTok{)}
 \NormalTok{  ) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{unnest_longer}\NormalTok{(}
-     \DataTypeTok{col             =}\NormalTok{ lineage_split}
-\NormalTok{    ,}\DataTypeTok{values_to       =} \StringTok{"clade_name"}
-\NormalTok{    ,}\DataTypeTok{indices_to      =} \StringTok{"clade_depth"}
+     \DataTypeTok{col        =}\NormalTok{ lineage_split}
+\NormalTok{    ,}\DataTypeTok{values_to  =} \StringTok{"clade_name"}
+\NormalTok{    ,}\DataTypeTok{indices_to =} \StringTok{"clade_depth"}
 \NormalTok{  ) }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# Collapsing lineages at clade ranks}
-\StringTok{  }\KeywordTok{group_by}\NormalTok{(root, clade_depth) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Counting and dropping the last group}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(root, clade_depth, clade_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{tally}\NormalTok{(}\DataTypeTok{sort =} \OtherTok{TRUE}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Collapsing lineages by clade depths}
 \StringTok{  }\KeywordTok{summarise}\NormalTok{(}
      \DataTypeTok{diverging_rank =} \KeywordTok{n_distinct}\NormalTok{(clade_name) }\OperatorTok{>}\StringTok{ }\DecValTok{1}
-\NormalTok{    ,}\DataTypeTok{clade_name     =} \KeywordTok{ifelse}\NormalTok{(diverging_rank, }\KeywordTok{collapse_names}\NormalTok{(clade_name), clade_name)}
+\NormalTok{    ,}\DataTypeTok{clade_name     =} \KeywordTok{ifelse}\NormalTok{(diverging_rank, }\KeywordTok{paste0}\NormalTok{(clade_name, }\StringTok{" ("}\NormalTok{, n,}\StringTok{")"}\NormalTok{, }\DataTypeTok{collapse =} \StringTok{"; "}\NormalTok{), clade_name)}
 \NormalTok{  ) }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# Removing subsequent divergences}
+\StringTok{  }\CommentTok{# Removing diverging ranks after the first one}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{cumsum}\NormalTok{(diverging_rank) }\OperatorTok{<=}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# Removing irrelevant ranks}
+\StringTok{  }\CommentTok{# Removing irrelevant basal ranks (eg Eukaryota)}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(clade_depth) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{arrange}\NormalTok{(root) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(}\OperatorTok{!}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(clade_name) }\OperatorTok{|}\StringTok{ }\KeywordTok{duplicated}\NormalTok{(clade_name, }\DataTypeTok{fromLast =} \OtherTok{TRUE}\NormalTok{)) }\OperatorTok{|}\StringTok{ }\NormalTok{diverging_rank) }\OperatorTok{%>%}
@@ -249,7 +246,7 @@ species' clades
     \DataTypeTok{strip.background   =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"#FFFFFF"}\NormalTok{),}
     \DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{),}
     \DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{lineheight =} \DecValTok{3}\NormalTok{),}
-    \DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{),}
+    \DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{),}
     \DataTypeTok{legend.position    =} \StringTok{"none"}
 \NormalTok{  )}
 \end{Highlighting}

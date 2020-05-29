@@ -52,9 +52,9 @@ We start by setting up reusable data frames with useful metrics.
 \StringTok{  }\KeywordTok{distinct}\NormalTok{(cog_id, annotation)}
 
 \CommentTok{# Number of proteins in a COG in every species}
-\NormalTok{cog_size_by_taxid <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
+\NormalTok{cog_abundance_by_taxid <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(cog_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{gene_cogs[[}\StringTok{"cog_id"}\NormalTok{]]) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{count}\NormalTok{(taxid, cog_id,  }\DataTypeTok{name =} \StringTok{"cog_size"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{count}\NormalTok{(taxid, cog_id,  }\DataTypeTok{name =} \StringTok{"abundance"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(cog_annotation)}
 
 \CommentTok{# Mapping species to clade info}
@@ -82,14 +82,14 @@ We start by setting up reusable data frames with useful metrics.
 \end{Highlighting}
 \end{Shaded}
 
-Abundance is finally computed as the number of proteins pertaining to a
-function divided by the number of neurotransmission COGs in a species.
+The average orthogroup abundances are finally computed for each species
+according to the function of orthogroups.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{abundance_by_function <-}\StringTok{ }\NormalTok{cog_size_by_taxid }\OperatorTok{%>%}
+\NormalTok{avg_abundance_by_function <-}\StringTok{ }\NormalTok{cog_abundance_by_taxid }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(taxid, annotation) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{abundance =} \KeywordTok{mean}\NormalTok{(cog_size)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{avg_abundance =} \KeywordTok{mean}\NormalTok{(abundance)) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Adding species and clade info}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(ordered_species)}
 \end{Highlighting}
@@ -107,26 +107,17 @@ Plotting:
 \NormalTok{  ,}\DataTypeTok{alpha      =} \DecValTok{1}
 \NormalTok{  ,}\DataTypeTok{size       =} \FloatTok{0.25}
 \NormalTok{)}
-
-\CommentTok{# This tick function is used in scale_y_continuous to display only innermost ticks}
-\CommentTok{# tick_function <- function(skip_head = 1, skip_tail = 1) \{}
-\CommentTok{#   function(x)\{}
-\CommentTok{#     breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)}
-\CommentTok{#     ceiling(breaks/5)*5}
-\CommentTok{#   \}}
-\CommentTok{# \}}
 \NormalTok{tick_function <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
   \KeywordTok{seq}\NormalTok{(x[}\DecValTok{2}\NormalTok{], }\DecValTok{0}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{3}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{head}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tail}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{ceiling}\NormalTok{(.}\OperatorTok{/}\DecValTok{5}\NormalTok{)}\OperatorTok{*}\DecValTok{5}\NormalTok{ \}}
 \NormalTok{\}}
 
 \CommentTok{# Capping abundance values based on metazoan mean}
-\NormalTok{capped_abundance_by_function <-}\StringTok{ }\NormalTok{abundance_by_function }\OperatorTok{%>%}
+\NormalTok{capped_abundance_by_function <-}\StringTok{ }\NormalTok{avg_abundance_by_function }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# mutate(capped_abundance = ifelse(abundance >= 100, 100, abundance)) %>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(annotation) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
-     \CommentTok{# max_abundance = max(abundance[lca <= 29])}
-     \DataTypeTok{max_abundance =}\NormalTok{ abundance[lca }\OperatorTok{<=}\StringTok{ }\DecValTok{29}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{mean}\NormalTok{(.) }\OperatorTok{+}\StringTok{ }\DecValTok{3}\OperatorTok{*}\KeywordTok{sd}\NormalTok{(.) \}}
-\NormalTok{    ,}\DataTypeTok{abundance     =} \KeywordTok{ifelse}\NormalTok{(abundance }\OperatorTok{>=}\StringTok{ }\NormalTok{max_abundance, }\KeywordTok{pmin}\NormalTok{(max_abundance, }\DecValTok{100}\NormalTok{), }\KeywordTok{pmin}\NormalTok{(abundance, }\DecValTok{100}\NormalTok{))}
+     \DataTypeTok{max_abundance =}\NormalTok{ avg_abundance[lca }\OperatorTok{<=}\StringTok{ }\DecValTok{29}\NormalTok{] }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{mean}\NormalTok{(.) }\OperatorTok{+}\StringTok{ }\DecValTok{3}\OperatorTok{*}\KeywordTok{sd}\NormalTok{(.) \}}
+\NormalTok{    ,}\DataTypeTok{avg_abundance =} \KeywordTok{ifelse}\NormalTok{(avg_abundance }\OperatorTok{>=}\StringTok{ }\NormalTok{max_abundance, }\KeywordTok{pmin}\NormalTok{(max_abundance, }\DecValTok{100}\NormalTok{), }\KeywordTok{pmin}\NormalTok{(avg_abundance, }\DecValTok{100}\NormalTok{))}
 \NormalTok{  )}
 
 \CommentTok{# Plotting}
@@ -134,16 +125,15 @@ Plotting:
 \StringTok{  }\CommentTok{# Geoms  ----------------}
 \StringTok{  }\NormalTok{metazoa_line }\OperatorTok{+}
 \StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
-     \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
+     \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ avg_abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
 \NormalTok{    ,}\DataTypeTok{stat =} \StringTok{"identity"}
 \NormalTok{  ) }\OperatorTok{+}
 \StringTok{  }\CommentTok{# Labels  ---------------}
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Taxa"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Protein abundance in COGs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Average protein abundance in orthogroups"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\CommentTok{# Scales ----------------}
 \StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.1}\NormalTok{)) }\OperatorTok{+}
-\StringTok{  }\CommentTok{# coord_cartesian(ylim = c(0, 100)) +}
 \StringTok{  }\CommentTok{# Styling ---------------}
 \StringTok{  }\KeywordTok{facet_grid}\NormalTok{(annotation }\OperatorTok{~}\StringTok{ }\NormalTok{clade_name, }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
@@ -162,7 +152,7 @@ Plotting:
 \KeywordTok{ggsave}\NormalTok{(}\StringTok{"plots/fig5_raw.pdf"}\NormalTok{, abundance_plot, }\DataTypeTok{width =} \DecValTok{16}\NormalTok{, }\DataTypeTok{height =} \DecValTok{6}\NormalTok{)}
 
 \CommentTok{# Uncapped abundances for supplementary text}
-\NormalTok{abundance_plot }\OperatorTok{%+%}\StringTok{ }\NormalTok{abundance_by_function}
+\NormalTok{abundance_plot }\OperatorTok{%+%}\StringTok{ }\NormalTok{avg_abundance_by_function}
 \end{Highlighting}
 \end{Shaded}
 
@@ -175,13 +165,13 @@ Plotting:
 \caption{Abundance values by species. Species are ordered like in Supplementary Figure 1.}\label{fig:unnamed-chunk-5}
 \end{figure}
 
-Abundances averaged by clades:
+Species-specific average abundances, now averaged by clades:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{ggplot}\NormalTok{(abundance_by_function) }\OperatorTok{+}
+\KeywordTok{ggplot}\NormalTok{(avg_abundance_by_function) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
-    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ clade_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
+    \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ clade_name, }\DataTypeTok{y =}\NormalTok{ avg_abundance, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =} \KeywordTok{after_scale}\NormalTok{(}\KeywordTok{darken}\NormalTok{(fill, }\FloatTok{0.1}\NormalTok{)))}
 \NormalTok{    ,}\DataTypeTok{stat =} \StringTok{"summary"}
 \NormalTok{    ,}\DataTypeTok{fun  =} \StringTok{"mean"}
 \NormalTok{  ) }\OperatorTok{+}
@@ -205,8 +195,7 @@ Abundances averaged by clades:
 \caption{Abundances averaged by clades.}\label{fig:unnamed-chunk-6}
 \end{figure}
 
-Breaking the data even further into the number of proteins in each
-neurotransmission COG.
+Plain protein abundance in single orthogroups
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -223,7 +212,7 @@ neurotransmission COG.
 \NormalTok{)}
 
 \CommentTok{# Simply joining cog annotation and sizes}
-\NormalTok{protein_count_by_cog <-}\StringTok{ }\NormalTok{cog_size_by_taxid }\OperatorTok{%>%}
+\NormalTok{protein_count_by_cog <-}\StringTok{ }\NormalTok{cog_abundance_by_taxid }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_annotation_collapsed) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(ordered_species) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{arrange}\NormalTok{(annotation) }\OperatorTok{%>%}
@@ -231,7 +220,7 @@ neurotransmission COG.
 
 \KeywordTok{ggplot}\NormalTok{(protein_count_by_cog) }\OperatorTok{+}
 \StringTok{  }\NormalTok{metazoa_line }\OperatorTok{+}\StringTok{ }
-\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ cog_size, }\DataTypeTok{fill =}\NormalTok{ annotation), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.2}\NormalTok{), }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{facet_grid}\NormalTok{(cog_id }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free_y"}\NormalTok{) }\OperatorTok{+}

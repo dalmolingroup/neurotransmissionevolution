@@ -61,9 +61,9 @@ cog_annotation <- gene_ids %>%
   distinct(cog_id, annotation)
 
 # Number of proteins in a COG in every species
-cog_size_by_taxid <- cogs %>%
+cog_abundance_by_taxid <- cogs %>%
   filter(cog_id %in% gene_cogs[["cog_id"]]) %>%
-  count(taxid, cog_id,  name = "cog_size") %>%
+  count(taxid, cog_id,  name = "abundance") %>%
   left_join(cog_annotation)
 
 # Mapping species to clade info
@@ -90,11 +90,11 @@ annotation_colors <- c(
 )
 ```
 
-Abundance is finally computed as the number of proteins pertaining to a function divided by the number of neurotransmission COGs in a species.
+The average orthogroup abundances are finally computed for each species according to the function of orthogroups.
 ```{r}
-abundance_by_function <- cog_size_by_taxid %>%
+avg_abundance_by_function <- cog_abundance_by_taxid %>%
   group_by(taxid, annotation) %>%
-  summarise(abundance = mean(cog_size)) %>%
+  summarise(avg_abundance = mean(abundance)) %>%
   # Adding species and clade info
   left_join(ordered_species)
 ```
@@ -109,26 +109,17 @@ metazoa_line <- geom_vline(
   ,alpha      = 1
   ,size       = 0.25
 )
-
-# This tick function is used in scale_y_continuous to display only innermost ticks
-# tick_function <- function(skip_head = 1, skip_tail = 1) {
-#   function(x){
-#     breaks <- seq(x[2], 0, length.out = 4) %>% head(-skip_head) %>% tail(-skip_tail)
-#     ceiling(breaks/5)*5
-#   }
-# }
 tick_function <- function(x) {
   seq(x[2], 0, length.out = 3) %>% head(-1) %>% tail(-1) %>% { ceiling(./5)*5 }
 }
 
 # Capping abundance values based on metazoan mean
-capped_abundance_by_function <- abundance_by_function %>%
+capped_abundance_by_function <- avg_abundance_by_function %>%
   # mutate(capped_abundance = ifelse(abundance >= 100, 100, abundance)) %>%
   group_by(annotation) %>%
   mutate(
-     # max_abundance = max(abundance[lca <= 29])
-     max_abundance = abundance[lca <= 29] %>% { mean(.) + 3*sd(.) }
-    ,abundance     = ifelse(abundance >= max_abundance, pmin(max_abundance, 100), pmin(abundance, 100))
+     max_abundance = avg_abundance[lca <= 29] %>% { mean(.) + 3*sd(.) }
+    ,avg_abundance = ifelse(avg_abundance >= max_abundance, pmin(max_abundance, 100), pmin(avg_abundance, 100))
   )
 
 # Plotting
@@ -136,16 +127,15 @@ abundance_plot <- ggplot(capped_abundance_by_function) +
   # Geoms  ----------------
   metazoa_line +
   geom_bar(
-     aes(x = ncbi_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+     aes(x = ncbi_name, y = avg_abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
     ,stat = "identity"
   ) +
   # Labels  ---------------
   xlab("Taxa") +
-  ylab("Protein abundance in COGs") +
+  ylab("Average protein abundance in orthogroups") +
   # Scales ----------------
   scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
-  # coord_cartesian(ylim = c(0, 100)) +
   # Styling ---------------
   facet_grid(annotation ~ clade_name, scales = "free", space = "free") +
   theme(
@@ -164,14 +154,14 @@ abundance_plot <- ggplot(capped_abundance_by_function) +
 ggsave("plots/fig5_raw.pdf", abundance_plot, width = 16, height = 6)
 
 # Uncapped abundances for supplementary text
-abundance_plot %+% abundance_by_function
+abundance_plot %+% avg_abundance_by_function
 ```
 
-Abundances averaged by clades:
+Species-specific average abundances, now averaged by clades:
 ```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="Abundances averaged by clades."}
-ggplot(abundance_by_function) +
+ggplot(avg_abundance_by_function) +
   geom_bar(
-    aes(x = clade_name, y = abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
+    aes(x = clade_name, y = avg_abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
     ,stat = "summary"
     ,fun  = "mean"
   ) +
@@ -185,7 +175,7 @@ ggplot(abundance_by_function) +
   )
 ```
 
-Breaking the data even further into the number of proteins in each neurotransmission COG.
+Plain protein abundance in single orthogroups
 ```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="Number of proteins in each neurotransmission COG, for every species."}
 # Merging mixed COG functions
 cog_annotation_collapsed <- cog_annotation %>%
@@ -200,7 +190,7 @@ annotation_colors %<>% c(
 )
 
 # Simply joining cog annotation and sizes
-protein_count_by_cog <- cog_size_by_taxid %>%
+protein_count_by_cog <- cog_abundance_by_taxid %>%
   inner_join(cog_annotation_collapsed) %>%
   left_join(ordered_species) %>%
   arrange(annotation) %>%
@@ -208,7 +198,7 @@ protein_count_by_cog <- cog_size_by_taxid %>%
 
 ggplot(protein_count_by_cog) +
   metazoa_line + 
-  geom_bar(aes(x = ncbi_name, y = cog_size, fill = annotation), stat = "identity") +
+  geom_bar(aes(x = ncbi_name, y = abundance, fill = annotation), stat = "identity") +
   scale_fill_manual(values = annotation_colors %>% darken(0.2), guide = "none") +
   scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   facet_grid(cog_id ~ ., scales = "free_y") +
