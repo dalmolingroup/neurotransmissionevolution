@@ -190,7 +190,7 @@ This section describes the steps for reproducing most of the manuscript figures.
 <!--- Abundance -->
 Abundance
 -----------
-Abundances are the number of proteins in orthogroups of a species. These abundances are aggregated and averaged according to the function of their corresponding orthogroups. The orthogroup function is considered to be the function of its human proteins. 
+Abundance is the number of proteins of a single species in a single orthologous group. Abundances are aggregated and averaged according to the function of their corresponding orthogroups. The function of an orthogroup is considered to be the function of its human proteins. 
 \input{analysis.abundance.tex}
 
 
