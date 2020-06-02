@@ -6,7 +6,7 @@ knit: neurotransmissionevolution::custom_knit
 knitr::opts_chunk$set(
    warning     = FALSE
   ,message     = FALSE
-  ,cache       = 2
+  ,cache       = 1
   ,autodep     = T
   # ,cache.extra = file.mtime("download/link_pathway_entrez.tsv")
 )
@@ -132,7 +132,7 @@ abundance_plot <- ggplot(capped_abundance_by_function) +
   ) +
   # Labels  ---------------
   xlab("Taxa") +
-  ylab("Average protein abundance in orthogroups") +
+  ylab("Average protein abundance in orthologous groups") +
   # Scales ----------------
   scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   scale_fill_manual(values = annotation_colors %>% darken(0.1)) +
@@ -158,15 +158,16 @@ abundance_plot %+% avg_abundance_by_function
 ```
 
 Species-specific average abundances, now averaged by clades:
-```{r fig.align="center", fig.height=4, fig.width=5, fig.cap="Abundances averaged by clades."}
+```{r fig.align="center", fig.height=4.5, fig.width=6, fig.cap="Abundances averaged by clades."}
 ggplot(avg_abundance_by_function) +
   geom_bar(
     aes(x = clade_name, y = avg_abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
     ,stat = "summary"
     ,fun  = "mean"
   ) +
+  scale_y_continuous(breaks = tick_function, minor_breaks = NULL) +
   scale_fill_manual(values = annotation_colors, guide = "none") +
-  facet_grid(annotation ~ ., scales = "free") +
+  facet_grid(annotation ~ ., scales = "free", space = "free_y") +
   theme(
      panel.spacing      = unit(1, "pt")
     ,strip.text.y       = element_text(angle = 0, hjust = 0)
@@ -177,26 +178,26 @@ ggplot(avg_abundance_by_function) +
 
 Plain protein abundance in single orthogroups
 ```{r fig.align="center", fig.height=11.69, fig.width=8.27, fig.cap="Number of proteins in each neurotransmission COG, for every species."}
-# Merging mixed COG functions
-cog_annotation_collapsed <- cog_annotation %>%
-  group_by(cog_id) %>%
-  summarise(annotation = paste(annotation, collapse = "/"))
+# Collapsing COGs with multiple functions
+cog_abundance_collapsed <- cog_abundance_by_taxid %>%
+  group_by(taxid, cog_id) %>%
+  summarise(
+     annotation = paste(annotation, collapse = "/")
+    ,abundance  = unique(abundance)
+  ) %>%
+  ungroup %>%
+  left_join(ordered_species) %>%
+  arrange(annotation) %>%
+  mutate(cog_id = fct_inorder(cog_id))
 
-# Adding colors for mixed COGs
+# Adding colors for such COGs
 annotation_colors %<>% c(
    "vesicle/synthesis"      = "#808080"
   ,"depletion/vesicle"      = "#808080"
   ,"signaling/excitability" = "#808080"
 )
 
-# Simply joining cog annotation and sizes
-protein_count_by_cog <- cog_abundance_by_taxid %>%
-  inner_join(cog_annotation_collapsed) %>%
-  left_join(ordered_species) %>%
-  arrange(annotation) %>%
-  mutate(cog_id = fct_inorder(cog_id))
-
-ggplot(protein_count_by_cog) +
+ggplot(cog_abundance_collapsed) +
   metazoa_line + 
   geom_bar(aes(x = ncbi_name, y = abundance, fill = annotation), stat = "identity") +
   scale_fill_manual(values = annotation_colors %>% darken(0.2), guide = "none") +
