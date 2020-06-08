@@ -1,11 +1,11 @@
 ---
 title: "Supplementary Information"
 subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
-author: 
-  - Lucas H. Viscardi
-  - Danilo O. Imparato
-  - Maria Cátira Bortolini
-  - Rodrigo J. S. Dalmolin
+# author: 
+#   - Lucas H. Viscardi
+#   - Danilo O. Imparato
+#   - Maria Cátira Bortolini
+#   - Rodrigo J. S. Dalmolin
   
 keywords:
   - Evolution
@@ -118,7 +118,7 @@ This project is organized as an R package research compendium. Research compendi
       `└──`\e{📄} `README.md`  
 
 The main manuscript analysis is inside `analysis/` and uses preprocessed data from `data/`. Preprocessing steps are included in `data-raw/`. Everything is documented in RMarkdown. Some miscellaneous utility functions reside in `R/`. Additionally, both preprocessed data and utility functions are documented by roxygen2 and can be examined by usual help commands.
-To explore and tweak this project, users can download the repository's latest release from github [(daniloimparato/neurotransmissionevolution)](https://github.com/daniloimparato/neurotransmissionevolution/releases) and run `devtools::install()`.  
+To explore and tweak this project, users can download the repository's latest release from github and run `devtools::install()`.  
 
 <!-- Preprocessing -->
 Preprocessing
