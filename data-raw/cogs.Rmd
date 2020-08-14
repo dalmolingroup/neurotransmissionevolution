@@ -53,13 +53,50 @@ cogs_spec <- tribble(
 # Spliting first column into taxid and string_id
 cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
 
+# keeping only eukaryotes
+cogs %<>% filter(taxid %in% string_eukaryotes[["taxid"]])
+
 # Subsetting cogs of interest
-gene_cogs <- cogs %>% filter(string_id %in% gene_ids[["string_id"]]) %>% select(-taxid)
+gene_cogs <- cogs %>%
+    filter(string_id %in% gene_ids[["string_id"]]) %>%
+    select(-taxid) %>%
+    group_by(string_id) %>%
+    summarise(n = n(), cog_id = paste(cog_id, collapse = "/"))
+```
 
-cogs %<>%
-  # leave only eukaryotes
-  filter(taxid %in% string_eukaryotes[["taxid"]])
+Some proteins are assigned to multiple COGs. It is our understanding that such infrequent cases are merely artifacts of the clustering algorithm. Therefore, we choose to manually assign them to single COGs. The criteria we use is how similar the human proteins are to other ones in the group. For instance, SHANK1 (ENSP00000293441) is assigned to both COG0666 and KOG4375 groups. However, COG0666 represents an akyrin repeat and bears no other similarities to SHANK1.
+```{r eval=FALSE}
+gene_cogs %>% filter(n > 1)
+```
+```{r results="asis", echo=FALSE}
+gene_cogs %>% filter(n > 1) %>%
+  knitr::kable(booktabs = T) %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+```
 
+```{r}
+gene_cogs_resolved <- tribble(
+##############################
+       ~string_id,   ~cog_id,#
+"ENSP00000356436", "KOG1325",# PLA2G4A
+"ENSP00000396045", "KOG1325",# PLA2G4B
+"ENSP00000290472", "KOG1325",# PLA2G4D
+"ENSP00000382434", "KOG1325",# PLA2G4E
+"ENSP00000380442", "KOG1325",# PLA2G4F
+"ENSP00000371886", "KOG1325",# JMJD7-PLA2G4B
+"ENSP00000293441", "KOG4375",# SHANK1
+"ENSP00000469689", "KOG4375",# SHANK2
+)#############################
+
+gene_cogs %<>%
+  # Removing unresolved cases
+  filter(n == 1) %>%
+  select(-n) %>%
+  # Adding the manual assignments
+  bind_rows(gene_cogs_resolved)
+```
+
+```{r results="hide"}
 # Exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)
 usethis::use_data(gene_cogs, overwrite = TRUE)
