@@ -83,6 +83,7 @@ of our scope.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# Querying NCBI Taxonomy with our taxids}
 \NormalTok{lineages <-}\StringTok{ }\KeywordTok{entrez_fetch}\NormalTok{(}
   \DataTypeTok{db      =} \StringTok{"taxonomy"}\NormalTok{,}
   \DataTypeTok{id      =}\NormalTok{ string_eukaryotes[[}\StringTok{"new_taxid"}\NormalTok{]],}
@@ -91,14 +92,22 @@ of our scope.
   \DataTypeTok{parsed  =} \OtherTok{TRUE}
 \NormalTok{)}
 
+\CommentTok{# Parsing the XML result and retrieving lineage data}
 \NormalTok{string_eukaryotes }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}
   \DataTypeTok{root        =}\NormalTok{ ogr}\OperatorTok{@}\NormalTok{tree}\OperatorTok{$}\NormalTok{tip.group[taxid],}
   \DataTypeTok{lineage_txt =} \KeywordTok{xpathSApply}\NormalTok{(lineages, }\StringTok{"//Lineage"}\NormalTok{, XML}\OperatorTok{::}\NormalTok{xmlValue)}
 \NormalTok{)}
 
-\KeywordTok{write}\NormalTok{(string_eukaryotes[[}\StringTok{"lineage_txt"}\NormalTok{]], }\StringTok{"temp/species_lineages.txt"}\NormalTok{)}
+\CommentTok{# Writing all lineage data to manually check for edge cases}
+\NormalTok{string_eukaryotes }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(root, lineage_txt) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(root, lineage_txt) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{write_tsv}\NormalTok{(}\StringTok{"temp/species_lineage.txt"}\NormalTok{)}
 
+\CommentTok{# The following chain of dplyr verbs}
+\CommentTok{# is responsible for figuring out the best clade names}
 \NormalTok{root_names <-}\StringTok{ }\NormalTok{string_eukaryotes }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Long format lineages}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
      \DataTypeTok{lineage_split =} \KeywordTok{strsplit}\NormalTok{(lineage_txt, }\StringTok{"; "}\NormalTok{)}
@@ -108,20 +117,25 @@ of our scope.
 \NormalTok{    ,}\DataTypeTok{values_to  =} \StringTok{"clade_name"}
 \NormalTok{    ,}\DataTypeTok{indices_to =} \StringTok{"clade_depth"}
 \NormalTok{  ) }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Counting and dropping the last group}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(root, clade_depth, clade_name) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{tally}\NormalTok{(}\DataTypeTok{sort =} \OtherTok{TRUE}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Collapsing lineages by clade depths}
 \StringTok{  }\KeywordTok{summarise}\NormalTok{(}
      \DataTypeTok{diverging_rank =} \KeywordTok{n_distinct}\NormalTok{(clade_name) }\OperatorTok{>}\StringTok{ }\DecValTok{1}
 \NormalTok{    ,}\DataTypeTok{clade_name     =} \KeywordTok{ifelse}\NormalTok{(diverging_rank, }\KeywordTok{paste0}\NormalTok{(clade_name, }\StringTok{" ("}\NormalTok{, n,}\StringTok{")"}\NormalTok{, }\DataTypeTok{collapse =} \StringTok{"; "}\NormalTok{), clade_name)}
 \NormalTok{  ) }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Removing diverging ranks after the first one}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(}\KeywordTok{cumsum}\NormalTok{(diverging_rank) }\OperatorTok{<=}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Removing irrelevant basal ranks (eg Eukaryota)}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(clade_depth) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{arrange}\NormalTok{(root) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(}\OperatorTok{!}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(clade_name) }\OperatorTok{|}\StringTok{ }\KeywordTok{duplicated}\NormalTok{(clade_name, }\DataTypeTok{fromLast =} \OtherTok{TRUE}\NormalTok{)) }\OperatorTok{|}\StringTok{ }\NormalTok{diverging_rank) }\OperatorTok{%>%}
+\StringTok{  }
 \StringTok{  }\CommentTok{# Choosing name}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(root) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{clade_name =} \KeywordTok{first}\NormalTok{(clade_name, }\DataTypeTok{order_by =}\NormalTok{ clade_depth)) }\OperatorTok{%>%}
@@ -237,26 +251,45 @@ species' clades
 
 \KeywordTok{ggplot}\NormalTok{(long_pam, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ cog_id, }\DataTypeTok{y =}\NormalTok{ species)) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{geom_tile}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{fill =}\NormalTok{ clade_stripe }\OperatorTok{+}\StringTok{ }\FloatTok{0.3} \OperatorTok{*}\StringTok{ }\KeywordTok{xor}\NormalTok{(spp_stripe, cog_stripe))) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_fill_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#37474F"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#263238"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(clade_name }\OperatorTok{~}\StringTok{ }\KeywordTok{fct_rev}\NormalTok{(root), }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space=}\StringTok{'free'}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_gradient}\NormalTok{(}\DataTypeTok{low =} \StringTok{"#424242"}\NormalTok{, }\DataTypeTok{high =} \StringTok{"#212121"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(clade_name }\OperatorTok{~}\StringTok{ }\NormalTok{root, }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"COGs"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Species"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
-    \DataTypeTok{text               =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{2}\NormalTok{),}
-    \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\DecValTok{1}\NormalTok{, }\StringTok{"pt"}\NormalTok{),}
-    \DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{(),}
-    \DataTypeTok{strip.background   =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"#FFFFFF"}\NormalTok{),}
-    \DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{),}
-    \DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{lineheight =} \DecValTok{3}\NormalTok{),}
-    \DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{),}
-    \DataTypeTok{legend.position    =} \StringTok{"none"}
+     \DataTypeTok{legend.position    =} \StringTok{"none"}
+\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{3}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \FloatTok{0.125}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{0.25}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{plot.margin        =} \KeywordTok{unit}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{), }\StringTok{"mm"}\NormalTok{)}
 \NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{figure}
+\clearpage
 
-{\centering \includegraphics{figs/analysis.geneplast.unnamed-chunk-7-1} 
+\thispagestyle{empty}
 
-}
+\newgeometry{margin=0.4in}
 
-\caption{Presence of orthologous groups in species. The horizontal axis is grouped by COGs rooted at some specific LCA. The vertical axis is grouped by species' clades. A checkerboard pattern is superimposed to aid visual examination.}\label{fig:unnamed-chunk-7}
+\pdfpageheight=33in
+
+\begin{figure}[p]
+
+\caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns}
+
+{\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} }
+
 \end{figure}
+
+\clearpage
+
+\restoregeometry
+
+\pdfpageheight=11in

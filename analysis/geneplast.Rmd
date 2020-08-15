@@ -64,6 +64,7 @@ roots <- groot(ogr, nPermutations = 1) %>%
 ### Clade names
 Each root branches to a clade that diverged from humans some time in the past. It is nice to have these clades taxonomically named to ease our interpretation. Unlike NCBI Taxonomy, TimeTree's internal nodes are not named. Therefore, we query the NCBI Taxonomy API to try to find most clade names automatically. It is important to note that we are using a hybrid tree primarily built from TimeTree data. This means NCBI Taxonomy naming will not perfectly match clades in our tree. For instance, root #36 branches to a clade containing 38 species from the SAR supergroup, but also 1 species from the Haptista rank, namely _Emiliania huxleyi_. The Haptista group is a sister clade to SAR, so it might be the case that _Emiliania huxleyi_ is actually correctly placed together with SAR species by TimeTree, given their evolutionary proximity. Resolving these naming conflicts is not trivial and falls out of our scope.
 ```{r}
+# Querying NCBI Taxonomy with our taxids
 lineages <- entrez_fetch(
   db      = "taxonomy",
   id      = string_eukaryotes[["new_taxid"]],
@@ -72,14 +73,22 @@ lineages <- entrez_fetch(
   parsed  = TRUE
 )
 
+# Parsing the XML result and retrieving lineage data
 string_eukaryotes %<>% mutate(
   root        = ogr@tree$tip.group[taxid],
   lineage_txt = xpathSApply(lineages, "//Lineage", XML::xmlValue)
 )
 
-write(string_eukaryotes[["lineage_txt"]], "temp/species_lineages.txt")
+# Writing all lineage data to manually check for edge cases
+string_eukaryotes %>%
+  select(root, lineage_txt) %>%
+  arrange(root, lineage_txt) %>%
+  write_tsv("temp/species_lineage.txt")
 
+# The following chain of dplyr verbs
+# is responsible for figuring out the best clade names
 root_names <- string_eukaryotes %>%
+  
   # Long format lineages
   mutate(
      lineage_split = strsplit(lineage_txt, "; ")
@@ -89,20 +98,25 @@ root_names <- string_eukaryotes %>%
     ,values_to  = "clade_name"
     ,indices_to = "clade_depth"
   ) %>%
+  
   # Counting and dropping the last group
   group_by(root, clade_depth, clade_name) %>%
   tally(sort = TRUE) %>%
+  
   # Collapsing lineages by clade depths
   summarise(
      diverging_rank = n_distinct(clade_name) > 1
     ,clade_name     = ifelse(diverging_rank, paste0(clade_name, " (", n,")", collapse = "; "), clade_name)
   ) %>%
+  
   # Removing diverging ranks after the first one
   filter(cumsum(diverging_rank) <= 1) %>%
+  
   # Removing irrelevant basal ranks (eg Eukaryota)
   group_by(clade_depth) %>%
   arrange(root) %>%
   filter(!(duplicated(clade_name) | duplicated(clade_name, fromLast = TRUE)) | diverging_rank) %>%
+  
   # Choosing name
   group_by(root) %>%
   summarise(clade_name = first(clade_name, order_by = clade_depth)) %>%
@@ -124,7 +138,7 @@ root_names %>%
 
 ### Phyletic patterns
 Visualizing the presence/absence matrix according to inferred roots and species' clades
-```{r fig.align="center", fig.height=10.5, fig.width=8, fig.cap="Presence of orthologous groups in species. The horizontal axis is grouped by COGs rooted at some specific LCA. The vertical axis is grouped by species' clades. A checkerboard pattern is superimposed to aid visual examination."}
+```{r phyletic_patterns, fig.show="hide", fig.height=31.5, fig.width=7.7}
 lca_names %<>% rename("lca" = root)
 
 lca_spp <- ogr@spbranches %>%
@@ -160,16 +174,43 @@ long_pam <- cog_pam %>%
 
 ggplot(long_pam, aes(x = cog_id, y = species)) +
   geom_tile(aes(fill = clade_stripe + 0.3 * xor(spp_stripe, cog_stripe))) +
-  scale_fill_gradient(low = "#37474F", high = "#263238") +
-  facet_grid(clade_name ~ fct_rev(root), scales = "free", space='free') +
+  scale_fill_gradient(low = "#424242", high = "#212121") +
+  facet_grid(clade_name ~ root, scales = "free", space = "free") +
+  xlab("COGs") +
+  ylab("Species") +
   theme(
-    text               = element_text(size = 2),
-    panel.spacing      = unit(1, "pt"),
-    panel.grid.major.x = element_blank(),
-    strip.background   = element_rect(colour = "#FFFFFF"),
-    strip.text.x       = element_text(size = 6, angle = 90),
-    strip.text.y       = element_text(size = 3, angle = 0, hjust = 0, lineheight = 3),
-    axis.text.x        = element_text(size = 5, angle = -45, vjust = 0, hjust = 0),
-    legend.position    = "none"
+     legend.position    = "none"
+    ,strip.background   = element_blank()
+    ,strip.text.x       = element_text(size = 4, angle = 0, vjust = 0)
+    ,strip.text.y       = element_text(size = 5, angle = 0, hjust = 0)
+    ,axis.text.x        = element_text(size = 3, angle = -45, vjust = 0, hjust = 0.125)
+    ,axis.text.y        = element_text(size = 4)
+    ,axis.title         = element_text(size = 8)
+    ,axis.ticks         = element_line(size = 0.25)
+    ,panel.grid.major.y = element_line(size = 0.25)
+    ,panel.grid.major.x = element_blank()
+    ,panel.spacing      = unit(0.25, "pt")
+    ,plot.margin        = unit(c(0,0,0,0), "mm")
   )
 ```
+\clearpage
+
+\thispagestyle{empty}
+
+\newgeometry{margin=0.4in}
+
+\pdfpageheight=33in
+
+\begin{figure}[p]
+
+\caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns}
+
+{\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} }
+
+\end{figure}
+
+\clearpage
+
+\restoregeometry
+
+\pdfpageheight=11in
