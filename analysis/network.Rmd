@@ -19,6 +19,7 @@ Loading resources:
 library(tidyverse)
 library(igraph)
 library(magrittr)
+library(fuzzyjoin)
 
 # Plotting dependencies
 library(scatterpie)
@@ -113,27 +114,49 @@ We use base ggplot2 to draw the network. Edges are represented by a common `geom
 # Recreating the vertices data.frame, now with layout coordinates (lazy way)
 vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
 
-# The edges data.frame will be used to draw lines with geom_path
+# The edges and edges_long data.frames will be used to draw lines with geom_path
 edges <- string_edgelist %>%
     map(match, vertices[["string_id"]]) %>%
     map_dfr(~ vertices[.x,]) %>%
-    select(x:y) %>%
+    select(x, y, string_id) %>%
     cbind(group = 1:nrow(string_edgelist))
+
+edges_long <- string_edgelist %$%
+  data.frame(
+     string_id        = c(stringId_A, stringId_B)
+    ,group            = 1:nrow(.)
+    ,stringsAsFactors = FALSE
+  )
 ```
 
 Setting up reusable aesthetic parameters to avoid code duplication.
 ```{r}
-pie_colors <- c(
-   "cholinergic"   = "#D84315"
-  ,"dopaminergic"  = "#F9A825"
-  ,"gabaergic"     = "#558B2F"
-  ,"glutamatergic" = "#1565C0"
-  ,"serotonergic"  = "#6A1B9A"
+systems <- c(
+   "cholinergic"
+  ,"dopaminergic"
+  ,"gabaergic"
+  ,"glutamatergic"
+  ,"serotonergic"
 )
-plot_pie_fill <- scale_fill_manual(values = pie_colors)
+systems_labeller <- c(
+   "Cholinergic"   = "cholinergic"
+  ,"Dopaminergic"  = "dopaminergic"
+  ,"GABAergic"     = "gabaergic"
+  ,"Glutamatergic" = "glutamatergic"
+  ,"Serotonergic"  = "serotonergic"
+)
 
-element_colors <- c(
-   "depletion"             = "#F40000"
+edge_color <- rgb(0.7, 0.7, 0.7, alpha = 0.3)
+
+color_mappings <- c(
+  #----- neurotransmitter systems ----
+   "cholinergic"           = "#D84315"
+  ,"dopaminergic"          = "#F9A825"
+  ,"gabaergic"             = "#558B2F"
+  ,"glutamatergic"         = "#1565C0"
+  ,"serotonergic"          = "#6A1B9A"
+  #--- neurotransmission functions ---
+  ,"depletion"             = "#F40000"
   ,"excitability"          = "#FFAB00"
   ,"receptor-associated"   = "#D6EE00"
   ,"ionotropic receptor"   = "#43FF1C"
@@ -142,20 +165,25 @@ element_colors <- c(
   ,"g-protein"             = "#0033ff"
   ,"synthesis"             = "#AA00FF"
   ,"vesicle"               = "#FF00AA"
-  #------- is_neuroexclusive --------
+  #------- is_neuroexclusive ---------
   ,"TRUE"                  = "#00BFC4"
   ,"FALSE"                 = "#F8766D"
+  #-------- network faceting ---------
+  ,"past"                  = "#FFFFFF"
+  ,"other"                 = "#A0A0A0"
+  ,"other_edge"            = rgb(0.7, 0.7, 0.7)
+  ,"ne_border"             = "#000000"
 )
+
+node_fill_scale  <- scale_fill_manual(values = color_mappings)
+node_color_scale <- scale_color_manual(values = color_mappings %>% darken(0.2))
+
 # Color and size scales for neurotransmission functions
 plot_scales <- list(
-   scale_fill_manual(values = element_colors)
-  ,scale_color_manual(values = element_colors %>% darken(0.25))
+   node_fill_scale
+  ,node_color_scale
   ,scale_radius(range = c(1.75, 5.00), guide = FALSE)
 )
-
-systems <- names(pie_colors)
-
-edge_color <- rgb(0.7, 0.7, 0.7, alpha = 0.3)
 
 past_fill  <- "#FFFFFF" # past nodes' fill color
 past_color <- "#888888" # past nodes' border color
@@ -163,7 +191,7 @@ past_color <- "#888888" # past nodes' border color
 # Baking some aesthetic properties into the vertices data.frame
 vertices %<>% mutate(
   shape      = ifelse(ne, "square filled", "circle filled"),
-  color_node = ifelse(ne, "#000000", element_colors[annotation] %>% darken(0.2)),
+  color_node = ifelse(ne, "#000000", color_mappings[annotation] %>% darken(0.2)),
   color_pie  = ifelse(ne, "#000000", NA),
 )
 
@@ -213,7 +241,7 @@ upset_texts <- c(
 ```
 
 ### Manuscript figure 1
-```{r fig.align="center", fig.height=6, fig.width=14, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right)."}
+```{r fig1_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=6, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (left) and neurotransmission functions (right)."}
 ####################
 ## Common elements
 ####################
@@ -247,7 +275,7 @@ fig1a <- ggplot() +
   plot_theme +
   plot_edges +
   plot_pies +
-  plot_pie_fill +
+  node_fill_scale +
   plot_text
 
 ##############
@@ -268,12 +296,29 @@ fig1b <- ggplot() +
   plot_text
 
 # Plotting and saving
-fig1a + fig1b
-ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
+fig1a / fig1b
+# ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
+\clearpage
+
+<!-- \pdfpageheight=33in -->
+
+<!-- \begin{figure}[p] -->
+
+<!-- \caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns} -->
+
+<!-- {\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} } -->
+
+<!-- \end{figure} -->
+
+![test.](figs/analysis.network.fig1_raw-1){height=90%}
+
+\clearpage
+
+<!-- \pdfpageheight=11in -->
 
 ### Manuscript figure 2
-This figure is produced externally by a program called ViaComplex. ViaComplex superimposes a heatmap over the network layout based on a node property. This property, in our case, is a node's neuroexclusivity. The following block handles data formatting related to ViaComplex.
+This figure is produced externally by a program called ViaComplex. ViaComplex superimposes a heatmap over the network layout based on a node property. We are going to use nodes neuroexclusivity values. The following block handles data formatting related to ViaComplex.
 ```{r}
 # Retrieving the largest connected component
 subgraphs <- decompose.graph(g)
@@ -337,7 +382,7 @@ current_genes <- vertices %>% filter(root == 37)
 # Finding which edges should be drawn
 partial_ids   <- current_genes %>% pull(string_id)
 which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-partial_edges <- edges[which_edges,]
+partial_edges <- edges[which_edges %>% rep(2),]
 
 plot_edges <- geom_path(
    data    = partial_edges
@@ -368,14 +413,14 @@ fig3a <- ggplot() +
   plot_scales +
   xy_lim +
   plot_current_pies +
-  plot_pie_fill +
+  node_fill_scale +
   plot_text +
   plot_theme
 ```
 
 **Manuscript Figure 3B**  
 For Figure 3B, we want to see what nodes have numeric roots < 37 (Human-Metamonada LCA) and >= 26 (Human-Cnidaria LCA).
-```{r fig.align="center", fig.height=5.5, fig.width=14, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
+```{r fig3_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=5.5, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
 # Finding which genes should be drawn
 current_genes <- vertices %>% filter(root < 37 & root >= 26)
 past_genes    <- vertices %>% filter(root == 37)
@@ -383,7 +428,7 @@ past_genes    <- vertices %>% filter(root == 37)
 # Finding which edges should be drawn
 partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
 which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-partial_edges <- edges[which_edges,]
+partial_edges <- edges[which_edges %>% rep(2),]
 
 plot_edges <- geom_path(
    data    = partial_edges
@@ -424,14 +469,31 @@ fig3b <- ggplot() +
   plot_scales +
   xy_lim +
   plot_current_pies +
-  plot_pie_fill +
+  node_fill_scale +
   plot_text +
   plot_theme
 
 # Plotting and saving
-fig3a + fig3b
-ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
+fig3a / fig3b
+# ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
+\clearpage
+
+<!-- \pdfpageheight=33in -->
+
+<!-- \begin{figure}[p] -->
+
+<!-- \caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns} -->
+
+<!-- {\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} } -->
+
+<!-- \end{figure} -->
+
+![test.](figs/analysis.network.fig3_raw-1){height=90%}
+
+\clearpage
+
+<!-- \pdfpageheight=11in -->
 
 Additionally, we cumulatively count nodes by their categories (function and neuroexclusivity) and inferred root:
 ```{r}
@@ -476,14 +538,17 @@ ggplot(cumulative_emergence) +
     ,size    = 1
   ) +
   #----- Styling ------
-  scale_color_manual(values = element_colors) +
+  scale_color_manual(values = color_mappings) +
   facet_grid(name ~ .) +
-  theme(axis.text.x = element_text(angle = -45, vjust = 0, hjust = 0))
+  theme(
+     axis.title  = element_blank()
+    ,axis.text.x = element_text(angle = -45, vjust = 0, hjust = 0)
+  )
 ```
 
 ### Manuscript figure 4  
 Visualizing nodes with roots <= 30 (Human-Porifera LCA) and >= 26 (Human-Cnidaria LCA) at every distinct root.
-```{r fig.align="center", fig.height=2, fig.width=10, fig.cap="Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
+```{r fig4_raw, fig.show="hide", fig.align="center", fig.height=2, fig.width=10, fig.cap="Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
 plot_size <- scale_radius(range = c(0.5, 1.5), guide = FALSE)
 
 fig4 <- roots[roots >= 26 & roots <= 30] %>%
@@ -495,7 +560,7 @@ fig4 <- roots[roots >= 26 & roots <= 30] %>%
   # Finding which edges should be drawn
   partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
   which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-  partial_edges <- edges[which_edges,]
+  partial_edges <- edges[which_edges %>% rep(2),]
   
   plot_edges <- geom_path(
      data    = partial_edges
@@ -548,19 +613,36 @@ fig4 <- roots[roots >= 26 & roots <= 30] %>%
 
 fig4 <- invoke(grid.arrange, fig4, ncol = 5)
 
-ggsave(
-  "plots/fig4_raw.pdf"
-  ,plot        = fig4
-  ,width       = 9*0.9
-  ,height      = 5*0.9
-  ,onefile     = F
-  ,useDingbats = F
-)
+# ggsave(
+#   "plots/fig4_raw.pdf"
+#   ,plot        = fig4
+#   ,width       = 9*0.9
+#   ,height      = 5*0.9
+#   ,onefile     = F
+#   ,useDingbats = F
+# )
 ```
+\clearpage
+
+<!-- \pdfpageheight=33in -->
+
+<!-- \begin{figure}[p] -->
+
+<!-- \caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns} -->
+
+<!-- {\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} } -->
+
+<!-- \end{figure} -->
+
+![test.](figs/analysis.network.fig4_raw-1){width=100%}
+
+\clearpage
+
+<!-- \pdfpageheight=11in -->
 
 ### Supplementary network figures  
 The following supplementary figures help us see what nodes have been rooted at each LCA. Nodes rooted at previous LCAs are colored white.
-```{r fig.align="center", fig.height=10, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+```{r fig_sup_systems, fig.show="hide", fig.align="center", fig.height=20, fig.width=7.5, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
 system_plots   <- list()
 function_plots <- list()
 
@@ -572,7 +654,7 @@ iwalk(roots, ~ {
   # Finding which edges should be drawn
   partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
   which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-  partial_edges <- edges[which_edges,]
+  partial_edges <- edges[which_edges %>% rep(2),]
   
   # Common elements -----------
   plot_edges <- geom_path(
@@ -606,7 +688,7 @@ iwalk(roots, ~ {
   
   system_plots[[as.character(.x)]] <<- base +
     plot_current_pies +
-    plot_pie_fill +
+    node_fill_scale +
     plot_text
   
   # Nodes colored by function --------
@@ -627,11 +709,138 @@ iwalk(roots, ~ {
 })
 
 # Printing and saving
-arrangeGrob(grobs = system_plots, ncol = 3) %>% grid::grid.draw()
+arrangeGrob(grobs = system_plots, ncol = 2) %>% grid::grid.draw()
 ```
-```{r fig.align="center", fig.height=9.5, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
-arrangeGrob(grobs = function_plots, ncol = 3) %>% grid::grid.draw()
+\clearpage
+
+\thispagestyle{empty}
+
+\pdfpageheight=22in
+
+\begin{figure}[p]
+
+\caption{caption.}\label{fig:analysis.network.fig_sup_systems-1}
+
+{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_systems-1} }
+
+\end{figure}
+
+\clearpage
+
+\thispagestyle{empty}
+
+```{r fig_sup_functions, fig.show="hide", fig.align="center", fig.height=20, fig.width=7.5, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+arrangeGrob(grobs = function_plots, ncol = 2) %>% grid::grid.draw()
 ```
+
+\begin{figure}[p]
+
+\caption{caption.}\label{fig:analysis.network.fig_sup_functions-1}
+
+{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_functions-1} }
+
+\end{figure}
+
+\clearpage
+
+\pdfpageheight=11in
+
+```{r faceted_systems, fig.show="hide", fig.width=15, fig.height=35}
+# Pivoting vertices data.frame to enable faceting by systems
+vertices_long <- pivot_longer(
+   data      = vertices
+  ,cols      = systems
+  ,names_to  = "system"
+  ,values_to = "is_system"
+) %>%
+  mutate(
+     system_color     = ifelse(is_system,     system, "other")
+    ,annotation_color = ifelse(is_system, annotation, "other")
+  )
+
+edges_systems <- inner_join(edges_long, vertices_long, by = "string_id")
+
+# Determines from which root onwards and edge can be drawn (as well as its color)
+edges_systems %<>%
+  group_by(group, system) %>%
+  mutate(
+     edge_system = ifelse(is_system[which.min(root)], system, "other_edge")
+    ,edge_root   = min(root)
+  )
+
+# Reference data.frame for inequality join
+subsequent_duplicator <- vertices %>% distinct(facet_root = root)
+
+# Simply duplicating emerging edges in subsequent roots
+edges_in_roots <- edges_systems %>%
+  fuzzy_inner_join(subsequent_duplicator, by = c("edge_root" = "facet_root"), match_fun = list(`>=`)) %>%
+  mutate(
+     past = edge_root != facet_root
+    ,edge_color = ifelse(!past & (system_color == edge_system), system, "other_edge")
+  )
+
+# Simply duplicating emerging nodes in subsequent roots
+nodes_in_roots <- vertices_long %>%
+  fuzzy_inner_join(subsequent_duplicator, by = c("root" = "facet_root"), match_fun = list(`>=`)) %>%
+  mutate(
+     past              = root != facet_root
+    ,system_color      = ifelse(past, "past", system_color)
+    ,system_border     = ifelse(!past & ne, "ne_border", system_color)
+    ,annotation_border = ifelse(!past & ne, "ne_border", annotation_color)
+  )
+
+ggplot() +
+  geom_path(
+     data    = edges_in_roots
+    ,mapping = aes(
+       x     = x
+      ,y     = y
+      ,group = group
+    )
+    ,color   = color_mappings[edges_in_roots[["edge_color"]]] %>% alpha(0.3)
+    ,size    = 0.1
+  ) +
+  geom_point(
+     data = nodes_in_roots 
+    ,mapping = aes(
+       x     = x
+      ,y     = y
+      ,size  = size
+      ,shape = shape
+      ,fill  = system_color
+      ,color = system_border
+    )
+  ) +
+  node_fill_scale +
+  node_color_scale +
+  scale_shape_identity() +
+  scale_radius(range = c(1, 3)) +
+  facet_grid(-facet_root ~ system, switch = "y") +
+  theme_void() +
+  theme(
+     strip.text.y     = element_text(angle = 90)
+    ,strip.background = element_rect(color = "#c0c0c0", fill = "#c0c0c0", size = 0.5, linetype = "solid")
+    ,panel.border     = element_rect(color = "#c0c0c0", fill = NA, size = 0.5, linetype = "solid")
+  ) +
+  guides(fill = "none", color = "none", size = "none")
+```
+\clearpage
+
+\thispagestyle{empty}
+
+\pdfpagewidth=16.6in \pdfpageheight=37.6in
+
+\begin{figure}[p]
+
+\caption{caption.}\label{fig:analysis.network.faceted_systems-1}
+
+{\centering \includegraphics[height=35in, width=15in]{figs/analysis.network.faceted_systems-1} }
+
+\end{figure}
+
+\clearpage
+
+\pdfpagewidth=8.5in \pdfpageheight=11in
 
 ### Manuscript set diagrams  
 Given the dificulties of joining ggplot and base plots, the set diagrams have to be plotted by themselves:
@@ -645,7 +854,7 @@ get_colors <- function(df) {
     extract(. > 0) %>%
     extract(order(., names(.), decreasing = T))
 
-  pie_colors[names(ordered_systems)]
+  color_mappings[names(ordered_systems)]
 }
 
 # Figure 1A set diagram
