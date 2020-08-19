@@ -420,7 +420,7 @@ fig3a <- ggplot() +
 
 **Manuscript Figure 3B**  
 For Figure 3B, we want to see what nodes have numeric roots < 37 (Human-Metamonada LCA) and >= 26 (Human-Cnidaria LCA).
-```{r fig3_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=5.5, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
+```{r fig3_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=5.5, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions.", dev.args = list(pdf = list(useDingbats = FALSE))}
 # Finding which genes should be drawn
 current_genes <- vertices %>% filter(root < 37 & root >= 26)
 past_genes    <- vertices %>% filter(root == 37)
@@ -474,7 +474,9 @@ fig3b <- ggplot() +
   plot_theme
 
 # Plotting and saving
+pdf.options(useDingbats = FALSE)
 fig3a / fig3b
+pdf.options(useDingbats = TRUE)
 # ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)
 ```
 \clearpage
