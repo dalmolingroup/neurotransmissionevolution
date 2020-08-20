@@ -12,6 +12,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 library(magrittr)
 library(data.table)
+library(stringi)
 library(neurotransmissionevolution)
 
 load("../data/gene_ids.rda")
@@ -51,7 +52,12 @@ cogs_spec <- tribble(
 
 ```{r results="hide"}
 # Spliting first column into taxid and string_id
-cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
+separated_ids <- cogs %$%
+  stri_split_fixed(taxid.string_id, pattern = ".", n = 2, simplify = T)
+
+cogs[["taxid"]]     <- separated_ids[, 1]
+cogs[["string_id"]] <- separated_ids[, 2]
+# cogs %<>% separate(taxid.string_id, into = c("taxid","string_id"), sep = "\\.", extra = "merge")
 
 # keeping only eukaryotes
 cogs %<>% filter(taxid %in% string_eukaryotes[["taxid"]])
