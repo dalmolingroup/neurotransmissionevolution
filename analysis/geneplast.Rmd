@@ -138,7 +138,7 @@ root_names %>%
 
 ### Phyletic patterns
 Visualizing the presence/absence matrix according to inferred roots and species' clades
-```{r phyletic_patterns, fig.show="hide", fig.height=31.5, fig.width=7.7}
+```{r phyletic_patterns, fig.show="hide", fig.height=31, fig.width=7}
 lca_names %<>% rename("lca" = root)
 
 lca_spp <- ogr@spbranches %>%
@@ -197,7 +197,7 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 
 \thispagestyle{empty}
 
-\newgeometry{margin=0.4in}
+<!-- \newgeometry{margin=0.4in} -->
 
 \pdfpageheight=33in
 
@@ -205,12 +205,12 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 
 \caption{Presence of orthologous groups in species. The horizontal axis is grouped according to assigned roots. The vertical axis is grouped by clades. A checkerboard pattern is superimposed to aid visualization.}\label{fig:phyletic_patterns}
 
-{\centering \includegraphics[height=31.5in, keepaspectratio]{figs/analysis.geneplast.phyletic_patterns-1} }
+{\centering \includegraphics[height=31in, width=7in]{figs/analysis.geneplast.phyletic_patterns-1} }
 
 \end{figure}
 
 \clearpage
 
-\restoregeometry
+<!-- \restoregeometry -->
 
 \pdfpageheight=11in
