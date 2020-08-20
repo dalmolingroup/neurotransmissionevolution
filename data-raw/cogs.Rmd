@@ -61,10 +61,11 @@ gene_cogs <- cogs %>%
     filter(string_id %in% gene_ids[["string_id"]]) %>%
     select(-taxid) %>%
     group_by(string_id) %>%
-    summarise(n = n(), cog_id = paste(cog_id, collapse = "/"))
+    summarise(n = n(), cog_id = paste(cog_id, collapse = " / "))
 ```
 
-Some proteins are assigned to multiple COGs. It is our understanding that such infrequent cases are merely artifacts of the clustering algorithm. Therefore, we choose to manually assign them to single COGs. The criteria we use is how similar the human proteins are to other ones in the group. For instance, SHANK1 (ENSP00000293441) is assigned to both COG0666 and KOG4375 groups. However, COG0666 represents an akyrin repeat and bears no other similarities to SHANK1.
+### Proteins with multiple COGs  
+Some proteins are occasionally assigned to more than one orthologous group (OG) by the COG algorithm. Despite infrequent, a decision needs to be made to deal with these exceptions. Since we aim to identify the most ancient archetype that has been vertically inherited to humans, it is reasonable to resolve these proteins to their most ancient OG (in the case of a human protein assigned to more than one OG). However, this strategy can sometimes be inappropriate for multidomain proteins. For instance, the SHANK proteins are assigned to two OG, of which the most ancient one is simply associated with ankyrin repeats. A similar case involves the PLA2G4 family and C2 domains, where the six members are assigned to more than one OG. We decided to resolve SHANK and PLA2G4 proteins to their most recent OGs.
 ```{r eval=FALSE}
 gene_cogs %>% filter(n > 1)
 ```
