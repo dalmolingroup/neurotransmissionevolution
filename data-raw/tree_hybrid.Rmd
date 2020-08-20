@@ -261,11 +261,11 @@ modified_phylo[["tip.label"]] %<>% recode(!!!from_to)
 write.tree(modified_phylo, "../data/hybrid_tree_modified.nwk")
 ```
 
-```{r include=FALSE}
+```{r  tree_hybrid, include=FALSE, fig.show="hide", fig.height=22, fig.width=8.5}
 species_dictionary %<>% mutate(method = case_when(
-  ncbi_name == timetree_name               ~ "normal", # direct match in timetree
-  ncbi_name != timetree_name               ~ "name_fix", # direct match, name correction
-  ncbi_name %in% found_species$forced_name ~ "genus_proxy", # only genus match
+  ncbi_name == timetree_name               ~ "normal",           # direct match in timetree
+  ncbi_name != timetree_name               ~ "name_fix",         # direct match but name correction
+  ncbi_name %in% found_species$forced_name ~ "genus_proxy",      # only genus match
   TRUE                                     ~ "closest_relative", # inferred from NCBI
 ))
 
@@ -282,21 +282,39 @@ temp_modified_phylo <- modified_phylo %>% rotatePhyloTree("9606")
 
 temp_modified_phylo %<>% list_modify(
   tip.color = species_dictionary %$% tip_color[match(temp_modified_phylo$tip.label, taxid)],
-  tip.label = .$tip.alias
+  tip.label = species_dictionary %$% string_name[match(temp_modified_phylo$tip.label, taxid)]
 )
 
-pdf("tree_hybrid_raw.pdf", width = 5, height = 9)
-  plot(
-    temp_modified_phylo,
-    type = "cladogram",
-    tip.color = temp_modified_phylo$tip.color,
-    edge.color = "#263238",
-    cex = 0.125,
-    edge.width = 0.1,
-    no.margin = T,
-    direction = "rightwards"
-  )
-dev.off()
+plot(
+  temp_modified_phylo,
+  type       = "cladogram",
+  tip.color  = temp_modified_phylo$tip.color,
+  edge.color = "#bbbbbb",
+  cex        = 0.3,
+  edge.width = 0.1,
+  no.margin  = T,
+  direction  = "rightwards"
+)
 ```
-![Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy. Clade naming is described further in this document.](../data-raw/tree_hybrid.pdf){height=95%}
+\clearpage
+
+\thispagestyle{empty}
+
+<!-- \newgeometry{margin=0.4in} -->
+
+\pdfpageheight=21in
+
+\begin{figure}[p]
+
+\caption{Complete 476 eukaryotes tree. Green species have been filled in by a genus proxy in TimeTree. Red species have been filled in by looking at NCBI Taxonomy. Clade naming is described further in this document.}\label{fig:tree_hybrid}
+
+{\centering \includegraphics[height=20in, width=7in]{../data-raw/tree_hybrid} }
+
+\end{figure}
+
+\clearpage
+
+<!-- \restoregeometry -->
+
+\pdfpageheight=11in
 
