@@ -107,6 +107,21 @@ Plotting:
 \NormalTok{  ,}\DataTypeTok{alpha      =} \DecValTok{1}
 \NormalTok{  ,}\DataTypeTok{size       =} \FloatTok{0.25}
 \NormalTok{)}
+
+\CommentTok{# Facet labeller}
+\NormalTok{annotation_labels <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
+   \StringTok{"ionotropic receptor"}\NormalTok{   =}\StringTok{ "Ionotropic }\CharTok{\textbackslash{}n}\StringTok{receptor"}
+\NormalTok{  ,}\StringTok{"metabotropic receptor"}\NormalTok{ =}\StringTok{ "Metabotropic }\CharTok{\textbackslash{}n}\StringTok{receptor"}
+\NormalTok{  ,}\StringTok{"receptor-associated"}\NormalTok{   =}\StringTok{ "Receptor-}\CharTok{\textbackslash{}n}\StringTok{associated"}
+\NormalTok{  ,}\StringTok{"signaling"}\NormalTok{             =}\StringTok{ "Signaling"}
+\NormalTok{  ,}\StringTok{"vesicle"}\NormalTok{               =}\StringTok{ "Vesicle"}
+\NormalTok{  ,}\StringTok{"synthesis"}\NormalTok{             =}\StringTok{ "Synthesis"}
+\NormalTok{  ,}\StringTok{"depletion"}\NormalTok{             =}\StringTok{ "Depletion"}
+\NormalTok{  ,}\StringTok{"g-protein"}\NormalTok{             =}\StringTok{ "G protein"}
+\NormalTok{  ,}\StringTok{"excitability"}\NormalTok{          =}\StringTok{ "Excitability"}
+\NormalTok{)}
+
+\CommentTok{# Custom tick function}
 \NormalTok{tick_function <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(x) \{}
   \KeywordTok{seq}\NormalTok{(x[}\DecValTok{2}\NormalTok{], }\DecValTok{0}\NormalTok{, }\DataTypeTok{length.out =} \DecValTok{3}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{head}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{tail}\NormalTok{(}\OperatorTok{-}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{\{ }\KeywordTok{ceiling}\NormalTok{(.}\OperatorTok{/}\DecValTok{5}\NormalTok{)}\OperatorTok{*}\DecValTok{5}\NormalTok{ \}}
 \NormalTok{\}}
@@ -129,41 +144,73 @@ Plotting:
 \NormalTok{    ,}\DataTypeTok{stat =} \StringTok{"identity"}
 \NormalTok{  ) }\OperatorTok{+}
 \StringTok{  }\CommentTok{# Labels  ---------------}
-\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Taxa"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Species"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Average protein abundance in orthologous groups"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\CommentTok{# Scales ----------------}
 \StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.1}\NormalTok{)) }\OperatorTok{+}
 \StringTok{  }\CommentTok{# Styling ---------------}
-\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(annotation }\OperatorTok{~}\StringTok{ }\NormalTok{clade_name, }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{     annotation }\OperatorTok{~}\StringTok{ }\NormalTok{clade_name}
+\NormalTok{    ,}\DataTypeTok{scales   =} \StringTok{"free"}
+\NormalTok{    ,}\DataTypeTok{space    =} \StringTok{"free"}
+\NormalTok{    ,}\DataTypeTok{labeller =} \KeywordTok{labeller}\NormalTok{(}\DataTypeTok{annotation =}\NormalTok{ annotation_labels)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}\StringTok{ }
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
      \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{2.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.background.x =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{strip.background.y =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{fill=}\StringTok{"#E0E0E0"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
 \NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"#F5F5F5"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.background   =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{fill =} \StringTok{'#EEEEEE'}\NormalTok{, }\DataTypeTok{colour =} \StringTok{'#E0E0E0'}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{2}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dotted"}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{15}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.ticks.x       =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{5.5}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{legend.position    =} \StringTok{"none"}
 \NormalTok{  )}
-\KeywordTok{ggsave}\NormalTok{(}\StringTok{"plots/fig5_raw.pdf"}\NormalTok{, abundance_plot, }\DataTypeTok{width =} \DecValTok{16}\NormalTok{, }\DataTypeTok{height =} \DecValTok{6}\NormalTok{)}
+\KeywordTok{ggsave}\NormalTok{(}\StringTok{"plots/fig5_raw.pdf"}\NormalTok{, abundance_plot, }\DataTypeTok{width =} \DecValTok{18}\NormalTok{, }\DataTypeTok{height =} \DecValTok{6}\NormalTok{)}
 
 \CommentTok{# Uncapped abundances for supplementary text}
-\NormalTok{abundance_plot }\OperatorTok{%+%}\StringTok{ }\NormalTok{avg_abundance_by_function}
+\NormalTok{abundance_plot }\OperatorTok{%+%}\StringTok{ }\NormalTok{avg_abundance_by_function }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{     clade_name }\OperatorTok{~}\StringTok{ }\NormalTok{annotation}
+\NormalTok{    ,}\DataTypeTok{scales   =} \StringTok{"free"}
+\NormalTok{    ,}\DataTypeTok{space    =} \StringTok{"free"}
+\NormalTok{    ,}\DataTypeTok{labeller =} \KeywordTok{labeller}\NormalTok{(}\DataTypeTok{annotation =}\NormalTok{ annotation_labels)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_flip}\NormalTok{() }\OperatorTok{+}\StringTok{ }
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{panel.grid.major.x =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dotted"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{12}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"grey20"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{1}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{)}
+\NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{figure}
+\clearpage
 
-{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-5-1} 
+\thispagestyle{empty}
 
-}
+\pdfpageheight=33in
 
-\caption{Abundance values by species. Species are ordered like in Supplementary Figure 1.}\label{fig:unnamed-chunk-5}
+\begin{figure}[p]
+
+\caption{Abundance values by species. Species are ordered like in Supplementary Figure 1..}\label{fig:uncapped_abundances}
+
+{\centering \includegraphics[height=31.5in, width=7in]{figs/analysis.abundance.uncapped_abundances-1} }
+
 \end{figure}
+
+\clearpage
+
+\pdfpageheight=11in
 
 Species-specific average abundances, now averaged by clades:
 
@@ -177,26 +224,38 @@ Species-specific average abundances, now averaged by clades:
 \NormalTok{  ) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors, }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(annotation }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free_y"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}
+\NormalTok{     annotation }\OperatorTok{~}\StringTok{ }\NormalTok{.}
+\NormalTok{    ,}\DataTypeTok{scales   =} \StringTok{"free"}
+\NormalTok{    ,}\DataTypeTok{space    =} \StringTok{"free_y"}
+\NormalTok{    ,}\DataTypeTok{labeller =} \KeywordTok{labeller}\NormalTok{(}\DataTypeTok{annotation =} \KeywordTok{sub}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}n}\StringTok{"}\NormalTok{, }\StringTok{""}\NormalTok{, annotation_labels))}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Clades"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Average abundance averaged by clade"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}\StringTok{ }
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
      \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\DecValTok{1}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text          =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.text         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
 \NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{figure}
 
-{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-6-1} 
+{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-5-1} 
 
 }
 
-\caption{Abundances averaged by clades.}\label{fig:unnamed-chunk-6}
+\caption{Species-specific average abundances, now averaged by clades.}\label{fig:unnamed-chunk-5}
 \end{figure}
 
-Plain protein abundance in single orthogroups
+Plain protein abundance in single orthogroups:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -222,26 +281,44 @@ Plain protein abundance in single orthogroups
 \KeywordTok{ggplot}\NormalTok{(cog_abundance_collapsed) }\OperatorTok{+}
 \StringTok{  }\NormalTok{metazoa_line }\OperatorTok{+}\StringTok{ }
 \StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ ncbi_name, }\DataTypeTok{y =}\NormalTok{ abundance, }\DataTypeTok{fill =}\NormalTok{ annotation), }\DataTypeTok{stat =} \StringTok{"identity"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.2}\NormalTok{), }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ annotation_colors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.1}\NormalTok{), }\DataTypeTok{guide =} \StringTok{"none"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{breaks =}\NormalTok{ tick_function, }\DataTypeTok{minor_breaks =} \OtherTok{NULL}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(cog_id }\OperatorTok{~}\StringTok{ }\NormalTok{., }\DataTypeTok{scales =} \StringTok{"free_y"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(clade_name }\OperatorTok{~}\StringTok{ }\NormalTok{cog_id, }\DataTypeTok{scales =} \StringTok{"free"}\NormalTok{, }\DataTypeTok{space =} \StringTok{"free_y"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Species"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Protein abundance in orthologous groups"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{coord_flip}\NormalTok{() }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
      \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{1.25}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{4}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
+\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{4.5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{4.5}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{)}
 \NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{figure}
+\clearpage
 
-{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-7-1} 
+\thispagestyle{empty}
 
-}
+\newgeometry{left=0.4in, right=0.4in}
 
-\caption{Number of proteins in each neurotransmission COG, for every species.}\label{fig:unnamed-chunk-7}
+\pdfpagewidth=15.8in \pdfpageheight=37in
+
+\begin{figure}[p]
+
+\caption{Number of proteins in each neurotransmission COGs, for every species.}\label{fig:all_abundances}
+
+{\centering  \includegraphics[height=35in, width=15in]{figs/analysis.abundance.all_abundances-1} }
+
 \end{figure}
+
+\clearpage
+
+\restoregeometry
+
+\pdfpagewidth=8.5in \pdfpageheight=11in
