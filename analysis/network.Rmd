@@ -216,6 +216,7 @@ theme_facet <- list(
     ,panel.border     = element_rect(color = "#E0E0E0", fill = NA, size = 0.5, linetype = "solid")
   )
   ,guides(legend.position="none")
+  ,guides(fill = FALSE, color = FALSE, linetype = FALSE, shape = FALSE, size = FALSE)
 )
 ```
 
@@ -254,7 +255,8 @@ fig1a <- ggplot() +
   plot_edges +
   plot_pies +
   theme_facet +
-  plot_text
+  plot_text +
+  guides(fill="legend")
 
 ##############
 ## Figure 1B
@@ -272,7 +274,7 @@ fig1b <- ggplot() +
   theme_facet +
   plot_text +
   scale_radius(range = c(1.75, 5.00), guide = FALSE) +
-  guides(legend.position="none")
+  guides(fill="legend")
 
 # Plotting and saving
 fig1a / fig1b
