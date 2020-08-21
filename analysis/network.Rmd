@@ -112,20 +112,49 @@ V(g)$y <- -layout[, 2]
 We use base ggplot2 to draw the network. Edges are represented by a common `geom_path` layer. The following block retrieves tidy edge coordinates for the `geom_path` calls.
 ```{r}
 # Recreating the vertices data.frame, now with layout coordinates (lazy way)
-vertices <- igraph::as_data_frame(g, what = "vertices") %>% rename(string_id = name)
+vertices <- g %>%
+  igraph::as_data_frame(what = "vertices") %>%
+  rename(string_id = name) %>%
+  mutate(pie_border = NA)
 
-# The edges and edges_long data.frames will be used to draw lines with geom_path
-edges <- string_edgelist %>%
-    map(match, vertices[["string_id"]]) %>%
-    map_dfr(~ vertices[.x,]) %>%
-    select(x, y, string_id) %>%
-    cbind(group = 1:nrow(string_edgelist))
-
-edges_long <- string_edgelist %$%
+# The edges data.frames will be used to draw lines with geom_path
+edges_scaffold <- string_edgelist %$%
   data.frame(
      string_id        = c(stringId_A, stringId_B)
     ,group            = 1:nrow(.)
     ,stringsAsFactors = FALSE
+  )
+
+edges <- edges_scaffold %>%
+  # Joining vertices to obtain coordinates
+  inner_join(vertices, by = "string_id") %>%
+  
+  # Determining from which root onwards an edge can be drawn
+  group_by(group) %>%
+  mutate(edge_root = min(root))
+
+# Reference data.frame for inequality join
+subsequent_duplicator <- vertices %>%
+  distinct(root) %>%
+  inner_join(clade_names) %>%
+  transmute(
+     facet_root = root
+    ,root_name  = paste0("Human-", clade_name, " LCA (#", root,")") %>% fct_reorder(-root)
+  )
+
+# Simply duplicating emerging edges in subsequent roots
+edges_in_roots <- edges %>%
+  fuzzy_inner_join(subsequent_duplicator, by = c("edge_root" = "facet_root"), match_fun = list(`>=`)) %>%
+  mutate(past = edge_root != facet_root)
+
+# Simply duplicating emerging nodes in subsequent roots
+nodes_in_roots <- vertices %>%
+  fuzzy_inner_join(subsequent_duplicator, by = c("root" = "facet_root"), match_fun = list(`>=`)) %>%
+  mutate(
+     past        = root != facet_root
+    ,node_fill   = ifelse(past, "past", annotation)
+    ,node_border = ifelse(!past & ne, "ne_border", node_fill)
+    ,pie_border  = ifelse(past, "past", ifelse(ne, "ne_border", "no_border"))
   )
 ```
 
@@ -168,85 +197,30 @@ color_mappings <- c(
   ,"ne_border"             = "#000000"
 )
 
-node_fill_scale  <- scale_fill_manual(values = color_mappings)
-node_color_scale <- scale_color_manual(values = color_mappings %>% darken(0.25))
-
-# Color and size scales for neurotransmission functions
-plot_scales <- list(
-   node_fill_scale
-  ,node_color_scale
-  ,scale_radius(range = c(1.75, 5.00), guide = FALSE)
-)
-
-past_fill  <- "#FFFFFF" # past nodes' fill color
-past_color <- "#888888" # past nodes' border color
-
-# Baking some aesthetic properties into the vertices data.frame
-vertices %<>% mutate(
-  shape      = ifelse(ne, "square filled", "circle filled"),
-  color_node = ifelse(ne, "#000000", color_mappings[annotation] %>% darken(0.2)),
-  color_pie  = ifelse(ne, "#000000", NA),
-)
-
 # Some recurrent ggplot aesthetics
 edge_aes <- aes(x = x, y = y, group = group)
-text_aes <- aes(x = x, y = y, label = string_name)
-pie_aes  <- aes(x = x, y = y, color = color_pie, group = string_id, r = size^(0.94) - 1.5)
-
-# Fixing xy limits across all plots
-xy_lim <- list(
-  scale_x_continuous(limits = range(vertices[["x"]]) + c(-50, 50)),
-  scale_y_continuous(limits = range(vertices[["y"]]) + c(-50, 50))
-)
-
-# Emptying theme defaults
-plot_theme <- list(coord_equal(), theme_void())
+pie_aes  <- aes(x = x, y = y, color = pie_border, group = string_id, r = size^(0.94) - 1.5)
 
 theme_facet <- list(
-   coord_equal()
+   # Scales
+   scale_fill_manual(values = color_mappings)
+  ,scale_color_manual(values = color_mappings %>% darken(0.25) %>% c("no_border" = NA), guide = FALSE)
+  ,scale_shape_manual(values = c("TRUE" = "square filled", "FALSE" = "circle filled"), guide = FALSE)
+  ,coord_equal()
+  # Theme
   ,theme_void()
   ,theme(
      strip.text       = element_text(margin = margin(10, 10, 10, 10))
-    ,strip.text.x     = element_text(color = "#616161", size = 20)
+    ,strip.text.x     = element_text(color = "#616161", size = 10)
     ,strip.background = element_rect(color = "#E0E0E0", fill = "#E0E0E0", size = 0.5, linetype = "solid")
     ,panel.border     = element_rect(color = "#E0E0E0", fill = NA, size = 0.5, linetype = "solid")
   )
-  ,guides(fill = "none", color = "none", size = "none")
-)
-
-# Allowing more space for multiple network plots
-diff_theme <- list(
-  coord_equal(),
-  theme_void(),
-  theme(
-     plot.title         = element_text(size = 8, hjust = 0.5)
-    ,legend.text        = element_text(size = 6)
-    ,legend.title       = element_text(size = 8)
-    ,legend.key.size    = unit( 1, "mm")
-    ,legend.box.spacing = unit(-2, "mm")
-    ,legend.box.margin  = unit(c(0, 2, 0, 0), "mm")
-    ,plot.margin        = unit(c(0, 0, 0, 0), "mm")
-  )
-)
-
-# Numeric vector named with clade names
-roots <- vertices %>%
-  arrange(-root) %>%
-  distinct(root, clade_name) %$%
-  set_names(root, clade_name)
-
-upset_texts <- c(
-   3   #ytitle
-  ,2   #ytick
-  ,1   #setsizetitle
-  ,1.5 #setsizetick
-  ,2   #setnames
-  ,2.5 #barnums
+  ,guides(legend.position="none")
 )
 ```
 
 ### Manuscript figure 1
-```{r fig1_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=6, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom)."}
+```{r fig1, fig.align="center", fig.height=8, fig.width=6, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom)."}
 ####################
 ## Common elements
 ####################
@@ -259,7 +233,7 @@ plot_edges <- geom_path(
 
 plot_text <- geom_text(
    data    = vertices
-  ,mapping = text_aes
+  ,mapping = aes(x, y, label = string_name)
   ,size    = 1
   ,vjust   = 0
   ,nudge_y = 6
@@ -273,14 +247,13 @@ plot_pies <- geom_scatterpie(
    data    = vertices
   ,mapping = pie_aes
   ,cols    = systems
-  ,color   = NA
+  # ,color   = NA
 )
 
 fig1a <- ggplot() +
-  plot_theme +
   plot_edges +
   plot_pies +
-  node_fill_scale +
+  theme_facet +
   plot_text
 
 ##############
@@ -294,21 +267,22 @@ plot_nodes <- geom_point(
 )
   
 fig1b <- ggplot() +
-  plot_theme +
   plot_edges +
   plot_nodes +
-  plot_scales +
-  plot_text
+  theme_facet +
+  plot_text +
+  scale_radius(range = c(1.75, 5.00), guide = FALSE) +
+  guides(legend.position="none")
 
 # Plotting and saving
 fig1a / fig1b
-ggsave("plots/fig1_raw.pdf", width = 6, height = 8, onefile = F, useDingbats = F)
+ggsave("plots/fig1_raw.pdf", width = 6, height = 10, useDingbats = F)
 ```
-\clearpage
+<!-- \clearpage -->
 
-![Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom).](figs/analysis.network.fig1_raw-1){height=90%}
+<!-- ![Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom).](figs/analysis.network.fig1_raw-1){height=90%} -->
 
-\clearpage
+<!-- \clearpage -->
 
 ### Manuscript figure 2
 This figure is produced externally by a program called ViaComplex. ViaComplex superimposes a heatmap over the network layout based on a node property. We are going to use nodes neuroexclusivity values. The following block handles data formatting related to ViaComplex.
@@ -366,131 +340,58 @@ write_tsv(
 
 ### Manuscript figure 3  
 The process for generating Figures 3 and 4 is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the oldest common ancestor to humans in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root number 1 is represented by _Homo sapiens_ itself.  
-The nodes we need to draw are either `current_nodes` (roots in a specified numeric range), or `past_nodes` (roots > such specified range). The edges we need to draw are all edges between both sets of nodes.  
-**Manuscript Figure 3A**
-```{r}
-# Finding which genes should be drawn
-current_genes <- vertices %>% filter(root == 37)
+The nodes we need to draw are either `current_nodes` (roots in a specified numeric range), or `past_nodes` (roots > such specified range). The edges we need to draw are all edges between both sets of nodes.
+```{r fig3, fig.align="center", fig.height=8, fig.width=6, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions."}
+# Subsetting node data for the two roots
+nodes_in_roots_fig3 <- nodes_in_roots %>%
+  filter(facet_root %in% c(37,26)) %>%
+  mutate(
+     # Correctly color coding every node between these roots
+     past        = (root == 37) & (root != facet_root)
+    ,pie_border  = ifelse(past, "past", ifelse(ne, "ne_border", "no_border"))
+  )
 
-# Finding which edges should be drawn
-partial_ids   <- current_genes %>% pull(string_id)
-which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-partial_edges <- edges[which_edges %>% rep(2),]
+# Nodes from root 37 should be white in root 26
+nodes_in_roots_fig3[nodes_in_roots_fig3[["past"]], systems] <- 0
 
-plot_edges <- geom_path(
-   data    = partial_edges
-  ,mapping = edge_aes
-  ,color   = edge_color
-  ,size    = 0.1
-)
+ggplot() +
+  # Edges
+  geom_path(
+     data    = edges_in_roots %>% filter(facet_root %in% c(37,26))
+    ,mapping = edge_aes
+    ,color   = edge_color
+    ,size    = 0.1
+  ) +
+  # Non-neuroexclusive nodes
+  geom_scatterpie(
+     data    = nodes_in_roots_fig3 %>% filter(ne == FALSE)
+    ,mapping = pie_aes
+    ,cols    = systems %>% c("past")
+  ) +
+  # Neuroexclusive nodes
+  geom_scatterpie(
+     data    = nodes_in_roots_fig3 %>% filter(ne == TRUE)
+    ,mapping = pie_aes
+    ,cols    = systems %>% c("past")
+    ,n       = 5 # Square nodes
+  ) +
+  geom_text(
+     data = nodes_in_roots_fig3 %>% filter(past == FALSE)
+    ,mapping = aes(x = x, y = y + linMap(system_count, 10, 16), label = string_name)
+    ,size = 1.5
+    ,alpha = 0.75
+  ) +
+  scale_radius(range = c(2, 5)) +
+  facet_wrap(. ~ root_name, ncol = 1) +
+  theme_facet
 
-plot_text <- geom_text(
-   data    = current_genes
-  ,mapping = text_aes
-  ,size    = 1
-  ,vjust   = 0
-  ,nudge_y = 1.75
-  ,alpha   = 0.5
-)
-
-plot_current_pies_nne <- geom_scatterpie(
-   data    = current_genes %>% filter(ne == FALSE)
-  ,mapping = pie_aes
-  ,cols    = systems
-)
-
-plot_current_pies_ne <- geom_scatterpie(
-   data    = current_genes %>% filter(ne == TRUE)
-  ,mapping = pie_aes
-  ,cols    = systems
-  ,n       = 5 # Square nodes
-)
-
-# Assembling
-fig3a <- ggplot() +
-  plot_edges +
-  plot_scales +
-  xy_lim +
-  plot_current_pies_nne +
-  plot_current_pies_ne +
-  node_fill_scale +
-  scale_color_identity() +
-  plot_text +
-  plot_theme
+ggsave("plots/fig3_raw.pdf", width = 6, height = 10, useDingbats = F)
 ```
+<!-- \clearpage -->
 
-**Manuscript Figure 3B**  
-For Figure 3B, we want to see what nodes have numeric roots < 37 (Human-Metamonada LCA) and >= 26 (Human-Cnidaria LCA).
-```{r fig3_raw, fig.show="hide", fig.align="center", fig.height=8, fig.width=6, fig.cap="Unedited manuscript figure 3. The human neurotransmission network with nodes colored by neurotransmitter systems and neurotransmission functions.", dev.args = list(pdf = list(useDingbats = FALSE))}
-# Finding which genes should be drawn
-current_genes <- vertices %>% filter(root < 37 & root >= 26)
-past_genes    <- vertices %>% filter(root == 37)
+<!-- ![test.](figs/analysis.network.fig3_raw-1){height=90%} -->
 
-# Finding which edges should be drawn
-partial_ids   <- c(current_genes[["string_id"]], past_genes[["string_id"]])
-which_edges   <- apply(string_edgelist, 1, function(r) all(r %in% partial_ids))
-partial_edges <- edges[which_edges %>% rep(2),]
-
-plot_edges <- geom_path(
-   data    = partial_edges
-  ,mapping = edge_aes
-  ,color   = edge_color
-  ,size    = 0.1
-)
-
-plot_past <- geom_point(
-   data    = past_genes
-  ,mapping = aes(x, y, size = size)
-  ,fill    = past_fill
-  ,color   = past_color
-  ,shape   = past_genes$shape
-  ,stroke  = 0.25
-)
-
-plot_text <- geom_text(
-   data    = current_genes
-  ,mapping = text_aes
-  ,size    = 1
-  ,vjust   = 0
-  ,nudge_y = 1.75
-  ,alpha   = 0.5
-)
-
-plot_current_pies_nne <- geom_scatterpie(
-   data    = current_genes %>% filter(ne == FALSE)
-  ,mapping = pie_aes
-  ,cols    = systems
-)
-
-plot_current_pies_ne <- geom_scatterpie(
-   data    = current_genes %>% filter(ne == TRUE)
-  ,mapping = pie_aes
-  ,cols    = systems
-  ,n       = 5 # Square nodes
-)
-
-# Assembling
-fig3b <- ggplot() +
-  plot_edges +
-  plot_past +
-  plot_scales +
-  xy_lim +
-  plot_current_pies_nne +
-  plot_current_pies_ne +
-  node_fill_scale +
-  scale_color_identity() +
-  plot_text +
-  plot_theme
-
-# Plotting and saving
-fig3a / fig3b
-ggsave("plots/fig3_raw.pdf", width = 7, height = 14, onefile = F, useDingbats = F)
-```
-\clearpage
-
-![test.](figs/analysis.network.fig3_raw-1){height=90%}
-
-\clearpage
+<!-- \clearpage -->
 
 Additionally, we cumulatively count nodes by their categories (function and neuroexclusivity) and inferred root:
 ```{r}
@@ -515,9 +416,9 @@ cumulative_emergence <- vertices %>%
 ```
 
 Plotting such cumulative counts:
-```{r fig.align="center", fig.height=8, fig.width=16, fig.cap="Cumulative node counts by categories at each root."}
+```{r fig3_barplots, fig.align="center", fig.height=8, fig.width=16, fig.cap="Cumulative node counts by categories at each root."}
+# Creating ordered factors for plotting
 cumulative_emergence %<>% ungroup %>%
-  # Creating ordered factors for plotting
   mutate(
      clade_name = fct_reorder(clade_name, -root)
     ,value      = fct_reorder(value, name)
@@ -547,97 +448,71 @@ ggplot(cumulative_emergence) +
 
 ### Manuscript figure 4  
 Visualizing nodes with roots <= 30 (Human-Porifera LCA) and >= 26 (Human-Cnidaria LCA) at every distinct root.
-```{r fig4_raw, fig.align="center", fig.height=4, fig.width=20, fig.cap="Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
-edges_infos <- inner_join(edges_long, vertices, by = "string_id")
-
-# Determines from which root onwards and edge can be drawn
-edges_infos %<>%
-  group_by(group) %>%
-  mutate(edge_root = min(root))
-
-# Reference data.frame for inequality join
-subsequent_duplicator <- vertices %>% distinct(facet_root = root)
-
-# Simply duplicating emerging edges in subsequent roots
-edges_in_roots <- edges_infos %>%
-  fuzzy_inner_join(subsequent_duplicator, by = c("edge_root" = "facet_root"), match_fun = list(`>=`)) %>%
-  mutate(past = edge_root != facet_root)
-
-# Simply duplicating emerging nodes in subsequent roots
-nodes_in_roots <- vertices %>%
-  fuzzy_inner_join(subsequent_duplicator, by = c("root" = "facet_root"), match_fun = list(`>=`)) %>%
-  mutate(
-     past        = root != facet_root
-    ,node_fill   = ifelse(past, "past", annotation)
-    ,node_border = ifelse(!past & ne, "ne_border", node_fill)
-  )
-
+```{r fig4, fig.align="center", fig.height=4, fig.width=20, fig.cap="Unedited manuscript figure 4. The human neurotransmission network with nodes rooted between roots 30 (Human-Choanoflagellata LCA) and 26 (Human-Cnidaria LCA)."}
 ggplot() +
+  # Edges
   geom_path(
      data    = edges_in_roots %>% filter(facet_root >= 26 & facet_root <= 30)
     ,mapping = edge_aes
     ,color   = edge_color
     ,size    = 0.1
   ) +
+  # Nodes
   geom_point(
      data = nodes_in_roots %>% filter(facet_root >= 26 & facet_root <= 30)
     ,mapping = aes(
        x     = x
       ,y     = y
       ,size  = size
-      ,shape = shape
+      ,shape = ne
       ,fill  = node_fill
       ,color = node_border
     )
   ) +
+  # Labels
   geom_text(
      data = nodes_in_roots %>% filter(past == FALSE & facet_root >= 26 & facet_root <= 30)
     ,mapping = aes(x = x, y = y + linMap(system_count, 10, 16), label = string_name)
     ,size = 2
     ,alpha = 0.75
   ) +
-  node_fill_scale +
-  node_color_scale +
-  scale_shape_identity() +
   scale_radius(range = c(1.75, 4.5)) +
-  facet_wrap(. ~ reorder(facet_root, -facet_root), ncol = 5) +
+  facet_wrap(. ~ root_name, ncol = 5) +
   theme_facet
-
-ggsave("plots/fig4_raw.pdf", width = 20, height = 3.75, useDingbats = F)
 ```
 
 ### Supplementary network figures  
 The following supplementary figures help us see what nodes have been rooted at each LCA. Nodes rooted at previous LCAs are colored white.
-```{r fig_sup_functions, fig.show="hide", fig.align="center", fig.height=22, fig.width=8.5, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+```{r wrap_functions, fig.show="hide", fig.align="center", fig.height=20, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
 ggplot() +
+  # Edges
   geom_path(
      data    = edges_in_roots
     ,mapping = edge_aes
     ,color   = edge_color
     ,size    = 0.1
   ) +
+  # Nodes
   geom_point(
      data = nodes_in_roots
     ,mapping = aes(
        x     = x
       ,y     = y
       ,size  = size
-      ,shape = shape
+      ,shape = ne
       ,fill  = node_fill
       ,color = node_border
     )
   ) +
+  # Labels
   geom_text(
      data = nodes_in_roots %>% filter(past == FALSE)
     ,mapping = aes(x = x, y = y + linMap(system_count, 10, 16), label = string_name)
     ,size = 2
     ,alpha = 0.75
   ) +
-  node_fill_scale +
-  node_color_scale +
-  scale_shape_identity() +
-  scale_radius(range = c(2, 5)) +
-  facet_wrap(. ~ reorder(facet_root, -facet_root), ncol = 2) +
+  scale_radius(range = c(1, 4)) +
+  facet_wrap(. ~ root_name, ncol = 2) +
   theme_facet
 ```
 \clearpage
@@ -648,9 +523,9 @@ ggplot() +
 
 \begin{figure}[p]
 
-\caption{caption.}\label{fig:analysis.network.fig_sup_functions-1}
+\caption{caption.}\label{fig:analysis.network.wrap_functions-1}
 
-{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_functions-1} }
+{\centering \includegraphics[width=6in, height=20in]{figs/analysis.network.wrap_functions-1} }
 
 \end{figure}
 
@@ -658,45 +533,48 @@ ggplot() +
 
 \thispagestyle{empty}
 
-```{r fig_sup_systems, fig.show="hide", fig.align="center", fig.height=22, fig.width=8.5, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+```{r wrap_systems, fig.show="hide", fig.align="center", fig.height=20, fig.width=8, fig.cap="The human neurotransmission network with nodes rooted at each human LCA."}
+# Past nodes should be white (ie have no systems)
 nodes_in_roots[nodes_in_roots[["past"]], systems] <- 0
 
 ggplot() +
+  # Edges
   geom_path(
      data    = edges_in_roots
     ,mapping = edge_aes
     ,color   = edge_color
     ,size    = 0.1
   ) +
+  # Non-neuroexclusive nodes
   geom_scatterpie(
      data    = nodes_in_roots %>% filter(ne == FALSE)
     ,mapping = pie_aes
     ,cols    = systems %>% c("past")
   ) +
+  # Neuroexclusive nodes
   geom_scatterpie(
      data    = nodes_in_roots %>% filter(ne == TRUE)
     ,mapping = pie_aes
     ,cols    = systems %>% c("past")
     ,n       = 5 # Square nodes
   ) +
+  # Labels
   geom_text(
      data = nodes_in_roots %>% filter(past == FALSE)
     ,mapping = aes(x = x, y = y + linMap(system_count, 10, 16), label = string_name)
     ,size = 2
     ,alpha = 0.75
   ) +
-  node_fill_scale +
-  scale_color_identity() +
   scale_radius(range = c(2, 5)) +
-  facet_wrap(. ~ reorder(facet_root, -facet_root), ncol = 2) +
+  facet_wrap(. ~ root_name, ncol = 2) +
   theme_facet
 ```
 
 \begin{figure}[p]
 
-\caption{caption.}\label{fig:analysis.network.fig_sup_systems-1}
+\caption{caption.}\label{fig:analysis.network.wrap_systems-1}
 
-{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_systems-1} }
+{\centering \includegraphics[width=8in, height=20in]{figs/analysis.network.wrap_systems-1} }
 
 \end{figure}
 
@@ -708,7 +586,7 @@ ggplot() +
 # Pivoting vertices data.frame to enable faceting by systems
 vertices_long <- pivot_longer(
    data      = vertices
-  ,cols      = systems
+  ,cols      = all_of(systems)
   ,names_to  = "system"
   ,values_to = "is_system"
 ) %>%
@@ -717,10 +595,9 @@ vertices_long <- pivot_longer(
     ,annotation_color = ifelse(is_system, annotation, "other")
   )
 
-edges_systems <- inner_join(edges_long, vertices_long, by = "string_id")
-
-# Determines from which root onwards and edge can be drawn (as well as its color)
-edges_systems %<>%
+edges_systems <- edges_scaffold %>%
+  inner_join(vertices_long, by = "string_id") %>%
+  # Determines from which root onwards and edge can be drawn (as well as its color)
   group_by(group, system) %>%
   mutate(
      edge_system = ifelse(is_system[which.min(root)], system, "other_edge")
@@ -745,41 +622,28 @@ nodes_in_roots <- vertices_long %>%
     ,annotation_border = ifelse(!past & ne, "ne_border", annotation_color)
   )
 
-systems_labels <- c(
-   "cholinergic"   = "Cholinergic"
-  ,"dopaminergic"  = "Dopaminergic"
-  ,"gabaergic"     = "GABAergic"
-  ,"glutamatergic" = "Glutamatergic"
-  ,"serotonergic"  = "Serotonergic"
-)
-
 ggplot() +
+  # Edges
   geom_path(
      data    = edges_in_roots
-    ,mapping = aes(
-       x     = x
-      ,y     = y
-      ,group = group
-    )
+    ,mapping = edge_aes
     ,color   = color_mappings[edges_in_roots[["edge_color"]]] %>% alpha(0.3)
     ,size    = 0.1
   ) +
+  # Nodes
   geom_point(
      data = nodes_in_roots 
     ,mapping = aes(
        x     = x
       ,y     = y
       ,size  = size
-      ,shape = shape
+      ,shape = ne
       ,fill  = system_color
       ,color = system_border
     )
   ) +
-  node_fill_scale +
-  node_color_scale +
-  scale_shape_identity() +
   scale_radius(range = c(1, 3)) +
-  facet_grid(reorder(facet_root, -facet_root) ~ system, switch = "y") +
+  facet_grid(root_name ~ system, switch = "y") +
   theme_facet
 ```
 \clearpage
@@ -802,7 +666,16 @@ ggplot() +
 
 ### Manuscript set diagrams  
 Given the dificulties of joining ggplot and base plots, the set diagrams have to be plotted by themselves:
-```{r results='hide', fig.cap='Set diagrams', fig.subcap=c('Set diagram for Figure 1A', 'Set diagram for Figure 3A', 'Set diagram for Figure 3B'), fig.width=20, fig.height=5, fig.ncol = 1}
+```{r sets, results='hide', fig.cap='Set diagrams', fig.subcap=c('Set diagram for Figure 1A', 'Set diagram for Figure 3A', 'Set diagram for Figure 3B'), fig.width=20, fig.height=5, fig.ncol = 1}
+upset_texts <- c(
+   3   #ytitle
+  ,2   #ytick
+  ,1   #setsizetitle
+  ,1.5 #setsizetick
+  ,2   #setnames
+  ,2.5 #barnums
+)
+
 # We have to manually find the correct order of colors
 # Because UpSetR does not understand named vectors
 get_colors <- function(df) {
