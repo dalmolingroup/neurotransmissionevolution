@@ -214,3 +214,33 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 <!-- \restoregeometry -->
 
 \pdfpageheight=11in
+
+### Adhesion genes
+Aditionally...
+```{r}
+data(
+  adhesion_genes,
+  gene_cogs_extra,
+  package = "neurotransmissionevolution"
+)
+
+cogs_of_interest_extra <- gene_cogs_extra %>% pull(cog_id) %>% unique
+
+ogr_extra <- groot.preprocess(
+  cogdata   = cogs,
+  phyloTree = phyloTree,
+  spid      = "9606",
+  cogids    = cogs_of_interest_extra
+)
+
+roots_extra <- groot(ogr_extra, nPermutations = 1) %>%
+  groot.get("results") %>%
+  rownames_to_column("cog_id") %>%
+  left_join(gene_cogs_extra) %>%
+  left_join(adhesion_genes) %>%
+  select(string_id, cog_id, entrez_name, pathway = pathway_name, root = Root)
+```
+```{r results="asis", echo=FALSE}
+knitr::kable(roots_extra, booktabs = T) %>%
+kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+```
