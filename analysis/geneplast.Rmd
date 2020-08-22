@@ -238,9 +238,13 @@ roots_extra <- groot(ogr_extra, nPermutations = 1) %>%
   rownames_to_column("cog_id") %>%
   left_join(gene_cogs_extra) %>%
   left_join(adhesion_genes) %>%
-  select(string_id, cog_id, entrez_name, pathway = pathway_name, root = Root)
+  left_join(lca_names, by = c("Root" = "lca"))
 ```
 ```{r results="asis", echo=FALSE}
-knitr::kable(roots_extra, booktabs = T) %>%
-kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+roots_extra %>%
+  arrange(Root, entrez_name) %>%
+  mutate(Root = paste0("Human-", clade_name, " LCA (#", Root,")")) %>%
+  select("String ID" = string_id, "COG" = cog_id, "Symbol" = entrez_name, Root) %>%
+  knitr::kable(caption = "Adhesion genes in the neural system (KEGG Pathway hsa04514).", booktabs = TRUE, linesep = "") %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
 ```

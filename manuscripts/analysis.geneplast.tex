@@ -326,7 +326,7 @@ Aditionally\ldots{}
 \StringTok{  }\KeywordTok{rownames_to_column}\NormalTok{(}\StringTok{"cog_id"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(gene_cogs_extra) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(adhesion_genes) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{select}\NormalTok{(string_id, cog_id, entrez_name, }\DataTypeTok{pathway =}\NormalTok{ pathway_name, }\DataTypeTok{root =}\NormalTok{ Root)}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(lca_names, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"Root"}\NormalTok{ =}\StringTok{ "lca"}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -336,60 +336,56 @@ Aditionally\ldots{}
 ##   |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
 \end{verbatim}
 
-\begin{tabular}{llllr}
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-8}Adhesion genes in the neural system (KEGG Pathway hsa04514).}
+\begin{tabular}[t]{llll}
 \toprule
-string\_id & cog\_id & entrez\_name & pathway & root\\
+String ID & COG & Symbol & Root\\
 \midrule
-\rowcolor{gray!6}  ENSP00000329797 & NOG10515 & CADM1 & adhesion & 20\\
-ENSP00000352513 & NOG16799 & MPZL1 & adhesion & 20\\
-\rowcolor{gray!6}  ENSP00000432943 & NOG16799 & MPZ & adhesion & 20\\
-ENSP00000361818 & NOG22019 & SDC4 & adhesion & 20\\
-\rowcolor{gray!6}  ENSP00000264025 & NOG09962 & NECTIN1 & adhesion & 21\\
-\addlinespace
-ENSP00000357106 & NOG09962 & CADM3 & adhesion & 21\\
-\rowcolor{gray!6}  ENSP00000418070 & NOG09962 & NECTIN3 & adhesion & 21\\
-ENSP00000307046 & NOG05154 & SDC2 & adhesion & 23\\
-\rowcolor{gray!6}  ENSP00000344468 & NOG05154 & SDC3 & adhesion & 23\\
-ENSP00000370542 & NOG05154 & SDC1 & adhesion & 23\\
-\addlinespace
-\rowcolor{gray!6}  ENSP00000265077 & NOG02372 & VCAN & adhesion & 26\\
-ENSP00000359085 & KOG3512 & NTNG1 & adhesion & 27\\
-\rowcolor{gray!6}  ENSP00000376921 & KOG3512 & NTNG2 & adhesion & 27\\
-ENSP00000264638 & KOG3516 & CNTNAP1 & adhesion & 27\\
-\rowcolor{gray!6}  ENSP00000354778 & KOG3516 & CNTNAP2 & adhesion & 27\\
-\addlinespace
-ENSP00000330633 & KOG3513 & CNTN2 & adhesion & 29\\
-\rowcolor{gray!6}  ENSP00000344786 & KOG3513 & NFASC & adhesion & 29\\
-ENSP00000359077 & KOG3513 & L1CAM & adhesion & 29\\
-\rowcolor{gray!6}  ENSP00000368314 & KOG3513 & NRCAM & adhesion & 29\\
-ENSP00000447006 & KOG3513 & CNTN1 & adhesion & 29\\
-\addlinespace
-\rowcolor{gray!6}  ENSP00000222573 & KOG1226 & ITGB8 & adhesion & 30\\
-ENSP00000379350 & KOG1226 & ITGB1 & adhesion & 30\\
-\rowcolor{gray!6}  ENSP00000350364 & KOG3510 & NEGR1 & adhesion & 30\\
-ENSP00000383392 & KOG3510 & NCAM2 & adhesion & 30\\
-\rowcolor{gray!6}  ENSP00000480132 & KOG3510 & NCAM1 & adhesion & 30\\
-\addlinespace
-ENSP00000265459 & KOG3514 & NRXN2 & adhesion & 30\\
-\rowcolor{gray!6}  ENSP00000385142 & KOG3514 & NRXN1 & adhesion & 30\\
-ENSP00000451648 & KOG3514 & NRXN3 & adhesion & 30\\
-\rowcolor{gray!6}  ENSP00000261769 & KOG3594 & CDH1 & adhesion & 30\\
-ENSP00000269141 & KOG3594 & CDH2 & adhesion & 30\\
-\addlinespace
-\rowcolor{gray!6}  ENSP00000261023 & KOG3637 & ITGAV & adhesion & 32\\
-ENSP00000367316 & KOG3637 & ITGA8 & adhesion & 32\\
-\rowcolor{gray!6}  ENSP00000376048 & KOG4475 & MAG & adhesion & 34\\
-ENSP00000305288 & COG2272 & NLGN2 & adhesion & 36\\
-\rowcolor{gray!6}  ENSP00000351591 & COG2272 & NLGN3 & adhesion & 36\\
-\addlinespace
-ENSP00000370485 & COG2272 & NLGN4X & adhesion & 36\\
-\rowcolor{gray!6}  ENSP00000392500 & COG2272 & NLGN1 & adhesion & 36\\
-ENSP00000249363 & COG4886 & LRRC4 & adhesion & 37\\
-\rowcolor{gray!6}  ENSP00000278198 & COG4886 & LRRC4C & adhesion & 37\\
-ENSP00000471502 & COG4886 & LRRC4B & adhesion & 37\\
-\addlinespace
-\rowcolor{gray!6}  ENSP00000353030 & COG5599 & PTPRF & adhesion & 37\\
-ENSP00000463325 & COG5599 & PTPRM & adhesion & 37\\
-\rowcolor{gray!6}  ENSP00000359085 & KOG1836 & NTNG1 & adhesion & 37\\
+\rowcolor{gray!6}  ENSP00000329797 & NOG10515 & CADM1 & Human-Actinopterygii LCA (\#20)\\
+ENSP00000432943 & NOG16799 & MPZ & Human-Actinopterygii LCA (\#20)\\
+\rowcolor{gray!6}  ENSP00000352513 & NOG16799 & MPZL1 & Human-Actinopterygii LCA (\#20)\\
+ENSP00000361818 & NOG22019 & SDC4 & Human-Actinopterygii LCA (\#20)\\
+\rowcolor{gray!6}  ENSP00000357106 & NOG09962 & CADM3 & Human-Tunicata LCA (\#21)\\
+ENSP00000264025 & NOG09962 & NECTIN1 & Human-Tunicata LCA (\#21)\\
+\rowcolor{gray!6}  ENSP00000418070 & NOG09962 & NECTIN3 & Human-Tunicata LCA (\#21)\\
+ENSP00000370542 & NOG05154 & SDC1 & Human-Ambulacraria LCA (\#23)\\
+\rowcolor{gray!6}  ENSP00000307046 & NOG05154 & SDC2 & Human-Ambulacraria LCA (\#23)\\
+ENSP00000344468 & NOG05154 & SDC3 & Human-Ambulacraria LCA (\#23)\\
+\rowcolor{gray!6}  ENSP00000265077 & NOG02372 & VCAN & Human-Cnidaria LCA (\#26)\\
+ENSP00000264638 & KOG3516 & CNTNAP1 & Human-Placozoa LCA (\#27)\\
+\rowcolor{gray!6}  ENSP00000354778 & KOG3516 & CNTNAP2 & Human-Placozoa LCA (\#27)\\
+ENSP00000359085 & KOG3512 & NTNG1 & Human-Placozoa LCA (\#27)\\
+\rowcolor{gray!6}  ENSP00000376921 & KOG3512 & NTNG2 & Human-Placozoa LCA (\#27)\\
+ENSP00000447006 & KOG3513 & CNTN1 & Human-Ctenophora LCA (\#29)\\
+\rowcolor{gray!6}  ENSP00000330633 & KOG3513 & CNTN2 & Human-Ctenophora LCA (\#29)\\
+ENSP00000359077 & KOG3513 & L1CAM & Human-Ctenophora LCA (\#29)\\
+\rowcolor{gray!6}  ENSP00000344786 & KOG3513 & NFASC & Human-Ctenophora LCA (\#29)\\
+ENSP00000368314 & KOG3513 & NRCAM & Human-Ctenophora LCA (\#29)\\
+\rowcolor{gray!6}  ENSP00000261769 & KOG3594 & CDH1 & Human-Unicellular holozoans LCA (\#30)\\
+ENSP00000269141 & KOG3594 & CDH2 & Human-Unicellular holozoans LCA (\#30)\\
+\rowcolor{gray!6}  ENSP00000379350 & KOG1226 & ITGB1 & Human-Unicellular holozoans LCA (\#30)\\
+ENSP00000222573 & KOG1226 & ITGB8 & Human-Unicellular holozoans LCA (\#30)\\
+\rowcolor{gray!6}  ENSP00000480132 & KOG3510 & NCAM1 & Human-Unicellular holozoans LCA (\#30)\\
+ENSP00000383392 & KOG3510 & NCAM2 & Human-Unicellular holozoans LCA (\#30)\\
+\rowcolor{gray!6}  ENSP00000350364 & KOG3510 & NEGR1 & Human-Unicellular holozoans LCA (\#30)\\
+ENSP00000385142 & KOG3514 & NRXN1 & Human-Unicellular holozoans LCA (\#30)\\
+\rowcolor{gray!6}  ENSP00000265459 & KOG3514 & NRXN2 & Human-Unicellular holozoans LCA (\#30)\\
+ENSP00000451648 & KOG3514 & NRXN3 & Human-Unicellular holozoans LCA (\#30)\\
+\rowcolor{gray!6}  ENSP00000367316 & KOG3637 & ITGA8 & Human-Amoebozoa LCA (\#32)\\
+ENSP00000261023 & KOG3637 & ITGAV & Human-Amoebozoa LCA (\#32)\\
+\rowcolor{gray!6}  ENSP00000376048 & KOG4475 & MAG & Human-Discoba LCA (\#34)\\
+ENSP00000392500 & COG2272 & NLGN1 & Human-SAR LCA (\#36)\\
+\rowcolor{gray!6}  ENSP00000305288 & COG2272 & NLGN2 & Human-SAR LCA (\#36)\\
+ENSP00000351591 & COG2272 & NLGN3 & Human-SAR LCA (\#36)\\
+\rowcolor{gray!6}  ENSP00000370485 & COG2272 & NLGN4X & Human-SAR LCA (\#36)\\
+ENSP00000249363 & COG4886 & LRRC4 & Human-Metamonada LCA (\#37)\\
+\rowcolor{gray!6}  ENSP00000471502 & COG4886 & LRRC4B & Human-Metamonada LCA (\#37)\\
+ENSP00000278198 & COG4886 & LRRC4C & Human-Metamonada LCA (\#37)\\
+\rowcolor{gray!6}  ENSP00000359085 & KOG1836 & NTNG1 & Human-Metamonada LCA (\#37)\\
+ENSP00000353030 & COG5599 & PTPRF & Human-Metamonada LCA (\#37)\\
+\rowcolor{gray!6}  ENSP00000463325 & COG5599 & PTPRM & Human-Metamonada LCA (\#37)\\
 \bottomrule
 \end{tabular}
+\end{table}
