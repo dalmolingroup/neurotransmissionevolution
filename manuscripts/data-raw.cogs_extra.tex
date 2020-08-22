@@ -1,0 +1,30 @@
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Spliting first column into taxid and string_id}
+\NormalTok{separated_ids <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%$%}\StringTok{ }\KeywordTok{stri_split_fixed}\NormalTok{(taxid.string_id, }\DataTypeTok{pattern =} \StringTok{"."}\NormalTok{, }\DataTypeTok{n =} \DecValTok{2}\NormalTok{, }\DataTypeTok{simplify =}\NormalTok{ T)}
+
+\NormalTok{cogs[[}\StringTok{"taxid"}\NormalTok{]]     <-}\StringTok{ }\NormalTok{separated_ids[, }\DecValTok{1}\NormalTok{]}
+\NormalTok{cogs[[}\StringTok{"string_id"}\NormalTok{]] <-}\StringTok{ }\NormalTok{separated_ids[, }\DecValTok{2}\NormalTok{]}
+
+\CommentTok{# Freeing up some memory}
+\KeywordTok{rm}\NormalTok{(separated_ids)}
+\KeywordTok{gc}\NormalTok{()}
+
+\CommentTok{# keeping only eukaryotes}
+\NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid.string_id) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{%in%}\StringTok{ }\NormalTok{string_eukaryotes[[}\StringTok{"taxid"}\NormalTok{]])}
+\KeywordTok{gc}\NormalTok{()}
+
+\CommentTok{# Subsetting cogs of interest}
+\NormalTok{gene_cogs_extra <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{adhesion_genes[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Exporting for package use}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs_extra, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

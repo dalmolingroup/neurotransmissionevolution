@@ -1,0 +1,68 @@
+We start by scraping the ``Cell adhesion molecules'' KEGG pathway page
+for the ``Neural system''-related genes:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{adhesion_html <-}\StringTok{ }\KeywordTok{read_html}\NormalTok{(}\StringTok{"https://www.genome.jp/kegg-bin/show_pathway?hsa04514"}\NormalTok{)}
+
+\CommentTok{# Scraping KEGG for neural adhesion genes}
+\NormalTok{neural_system <-}\StringTok{ }\NormalTok{adhesion_html }\OperatorTok{%>%}\StringTok{ }
+\StringTok{  }\KeywordTok{html_nodes}\NormalTok{(}\StringTok{'area[shape="rect"][href^="/dbget-bin/www_bget?hsa:"]'}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{keep}\NormalTok{(}\OperatorTok{~}\StringTok{ }\NormalTok{\{}
+\NormalTok{    x_coord <-}\StringTok{ }\KeywordTok{html_attr}\NormalTok{(.x, }\StringTok{"data-coords"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{strsplit}\NormalTok{(}\StringTok{","}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{map}\NormalTok{(}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{as.numeric}
+    \CommentTok{# The neural system-related genes are located between x coordinates 800 and 1200}
+    \KeywordTok{return}\NormalTok{(x_coord }\OperatorTok{>=}\StringTok{ }\DecValTok{800} \OperatorTok{&}\StringTok{ }\NormalTok{x_coord }\OperatorTok{<=}\StringTok{ }\DecValTok{1200}\NormalTok{)}
+\NormalTok{  \}) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{\{}
+\NormalTok{    entrez_id <-}\StringTok{ }\KeywordTok{html_attr}\NormalTok{(., }\StringTok{"href"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{strsplit}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{?"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{map_chr}\NormalTok{(}\DecValTok{2}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{strsplit}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{+"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{unlist}
+\NormalTok{    title     <-}\StringTok{ }\KeywordTok{html_attr}\NormalTok{(., }\StringTok{"title"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{strsplit}\NormalTok{(}\StringTok{", "}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{unlist}
+    \KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{entrez_id =}\NormalTok{ entrez_id, }\DataTypeTok{title =}\NormalTok{ title)}
+\NormalTok{  \} }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{distinct}
+
+\NormalTok{adhesion_genes <-}\StringTok{ }\NormalTok{neural_system }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{transmute}\NormalTok{(}
+     \DataTypeTok{entrez_id    =}\NormalTok{ entrez_id }\OperatorTok{%>%}\StringTok{ }\KeywordTok{str_split}\NormalTok{(}\StringTok{":"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{map_chr}\NormalTok{(}\DecValTok{2}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{pathway_name =} \StringTok{"adhesion"}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+Building the base ID lookup table:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Joining all data}
+\NormalTok{adhesion_genes }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{left_join}\NormalTok{(link_entrez_string) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{left_join}\NormalTok{(entrez_names)}
+\end{Highlighting}
+\end{Shaded}
+
+Some proteins were not available in STRING:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{adhesion_genes[}\OperatorTok{!}\KeywordTok{complete.cases}\NormalTok{(adhesion_genes),]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{tabular}{lllll}
+\toprule
+  & entrez\_id & pathway\_name & string\_id & entrez\_name\\
+\midrule
+\rowcolor{gray!6}  15 & 22829 & adhesion & NA & NLGN4Y\\
+\bottomrule
+\end{tabular}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Removing unfound proteins}
+\NormalTok{adhesion_genes }\OperatorTok{%<>%}\StringTok{ }\NormalTok{na.omit}
+
+\CommentTok{# Removing taxid prefix from STRING IDs}
+\NormalTok{adhesion_genes[[}\StringTok{"string_id"}\NormalTok{]] }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{str_split}\NormalTok{(}\StringTok{"}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{map_chr}\NormalTok{(}\DecValTok{2}\NormalTok{)}
+
+\CommentTok{# Exporting for package use}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(adhesion_genes, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+

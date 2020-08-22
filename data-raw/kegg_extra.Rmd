@@ -1,0 +1,86 @@
+---
+title: 'Gene identifiers and pathway annotation'
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+)
+library(neurotransmissionevolution)
+library(tidyverse)
+library(magrittr)
+library(rvest)
+```
+
+We start by scraping the "Cell adhesion molecules" KEGG pathway page for the "Neural system"-related genes:
+```{r}
+adhesion_html <- read_html("https://www.genome.jp/kegg-bin/show_pathway?hsa04514")
+
+# Scraping KEGG for neural adhesion genes
+neural_system <- adhesion_html %>% 
+  html_nodes('area[shape="rect"][href^="/dbget-bin/www_bget?hsa:"]') %>%
+  keep(~ {
+    x_coord <- html_attr(.x, "data-coords") %>% strsplit(",") %>% map(1) %>% as.numeric
+    # The neural system-related genes are located between x coordinates 800 and 1200
+    return(x_coord >= 800 & x_coord <= 1200)
+  }) %>%
+  {
+    entrez_id <- html_attr(., "href") %>% strsplit("\\?") %>% map_chr(2) %>% strsplit("\\+") %>% unlist
+    title     <- html_attr(., "title") %>% strsplit(", ") %>% unlist
+    data.frame(entrez_id = entrez_id, title = title)
+  } %>%
+  distinct
+
+adhesion_genes <- neural_system %>%
+  transmute(
+     entrez_id    = entrez_id %>% str_split(":") %>% map_chr(2)
+    ,pathway_name = "adhesion"
+  )
+```
+
+Building the base ID lookup table:
+```{r results="asis", echo=FALSE}
+## link_entrez_string
+link_entrez_string <- read_tsv(
+  "download/human.entrez_2_string.2018.tsv.gz",
+  skip = 1,
+  col_names = c("entrez_id", "string_id"),
+  col_types = cols_only("-", "c", "c")
+)
+## entrez_names
+entrez_names <- read_tsv(
+  "download/Homo_sapiens.gene_info.gz",
+  skip = 1,
+  col_names = c("entrez_id", "entrez_name"),
+  col_types = cols_only("-", "c", "c")
+)
+```
+```{r}
+# Joining all data
+adhesion_genes %<>% left_join(link_entrez_string) %>% left_join(entrez_names)
+```
+
+Some proteins were not available in STRING:
+```{r eval=FALSE}
+adhesion_genes[!complete.cases(adhesion_genes),]
+```
+```{r results="asis", echo=FALSE}
+adhesion_genes[!complete.cases(adhesion_genes),] %>%
+  knitr::kable(booktabs = T) %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+```
+
+```{r results="hide"}
+# Removing unfound proteins
+adhesion_genes %<>% na.omit
+
+# Removing taxid prefix from STRING IDs
+adhesion_genes[["string_id"]] %<>% str_split("\\.") %>% map_chr(2)
+
+# Exporting for package use
+usethis::use_data(adhesion_genes, overwrite = TRUE)
+```
+

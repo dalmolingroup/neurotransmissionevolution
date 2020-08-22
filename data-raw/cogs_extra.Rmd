@@ -1,0 +1,61 @@
+---
+title: "COGs"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  ,cache       = 1
+  ,autodep     = T
+) 
+library(tidyverse)
+library(magrittr)
+library(data.table)
+library(stringi)
+library(neurotransmissionevolution)
+
+load("../data/adhesion_genes.rda")
+load("../data/string_eukaryotes.rda")
+```
+
+```{r include=FALSE}
+download_if_missing("https://stringdb-static.org/download/COG.mappings.v11.0.txt.gz")
+
+cogs <- fread(
+  "download/COG.mappings.v11.0.txt.gz",
+  header           = F,
+  stringsAsFactors = F,
+  skip             = 1,
+  sep              = "\t",
+  col.names        = c("taxid.string_id","cog_id"),
+  select           = c(1,4),
+  quote            = ""
+)
+```
+
+```{r results="hide"}
+# Spliting first column into taxid and string_id
+separated_ids <- cogs %$% stri_split_fixed(taxid.string_id, pattern = ".", n = 2, simplify = T)
+
+cogs[["taxid"]]     <- separated_ids[, 1]
+cogs[["string_id"]] <- separated_ids[, 2]
+
+# Freeing up some memory
+rm(separated_ids)
+gc()
+
+# keeping only eukaryotes
+cogs %<>% select(-taxid.string_id) %>% filter(taxid %in% string_eukaryotes[["taxid"]])
+gc()
+
+# Subsetting cogs of interest
+gene_cogs_extra <- cogs %>%
+    filter(string_id %in% adhesion_genes[["string_id"]]) %>%
+    select(-taxid)
+```
+
+```{r results="hide"}
+# Exporting for package use
+usethis::use_data(gene_cogs_extra, overwrite = TRUE)
+```
