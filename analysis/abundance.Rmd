@@ -47,12 +47,11 @@ gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
 
 We start by setting up reusable data frames with useful metrics.
 ```{r}
-# If a gene has more than 1 COG, select the oldest one.
-# This is unusual, but can happen in cases of gene fusion, for instance.
+# If a gene has more than 1 COG, select the most recent one.
 gene_cogs %<>%
   inner_join(cog_roots) %>%
   group_by(string_id) %>%
-  filter(root == max(root))
+  filter(root == min(root))
 
 # The function of a COG is the function of its proteins
 cog_annotation <- gene_ids %>%
@@ -98,8 +97,59 @@ avg_abundance_by_function <- cog_abundance_by_taxid %>%
   # Adding species and clade info
   left_join(ordered_species)
 ```
+
+```{r include=FALSE}
+theme_main <- theme(
+     panel.spacing      = unit(2.5, "pt")
+    ,strip.background   = element_blank()
+    ,panel.grid.major.x = element_blank()
+    ,panel.grid.major.y = element_line(size = 0.25, linetype = "dotted", color = "#E0E0E0")
+    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5, color = "#757575")
+    ,strip.text.y       = element_text(size = 8, angle = 0, hjust = 0, vjust = 0.5, color = "#757575")
+    ,axis.title         = element_text(size = 15, color = "#424242")
+    ,axis.ticks.x       = element_blank()
+    ,axis.text.x        = element_blank()
+    ,axis.text.y        = element_text(size = 5.5)
+    ,legend.position    = "none"
+  )
+
+theme_supplementary <- theme(
+     panel.grid.major.x = element_line(color = "#E0E0E0", size = 0.25, linetype = "dotted")
+    ,panel.grid.major.y = element_blank()
+    ,strip.text.y       = element_text(size = 7, angle = 0, hjust = 0, vjust = 0.5, color = "#757575")
+    ,strip.text.x       = element_text(size = 7, angle = 90, hjust = 0, vjust = 0.5, color = "#757575")
+    ,axis.title         = element_text(size = 12, color = "#424242")
+    ,axis.ticks         = element_line(colour = "grey20")
+    ,axis.text.y        = element_text(size = 6, angle = 0, hjust = 1, vjust = 0.5, color = "#757575")
+    ,axis.text.x        = element_text(size = 6)
+  )
+
+theme_average <- theme(
+     panel.spacing      = unit(1, "pt")
+    ,axis.title         = element_text(color = "#424242")
+    ,axis.text          = element_text(color = "#757575")
+    ,axis.text.x        = element_text(size = 7, angle = -45, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 5)
+    ,strip.background   = element_blank()
+    ,strip.text         = element_text(color = "#757575")
+    ,strip.text.y       = element_text(angle = 0, hjust = 0, vjust = 0.5)
+  )
+
+theme_big <- theme(
+     panel.spacing      = unit(0.5, "pt")
+    ,panel.grid.major.x = element_line(size = 0.1, linetype = "dashed")
+    ,panel.grid.major.y = element_blank()
+    ,strip.background   = element_blank()
+    ,strip.text.x       = element_text(size = 8, angle = 90, hjust = 0.5, vjust = 0)
+    ,strip.text.y       = element_text(size = 8, angle = 0, hjust = 0, vjust = 0.5)
+    ,axis.text.x        = element_text(size = 6, angle = 90, vjust = 0, hjust = 0)
+    ,axis.text.y        = element_text(size = 4.5)
+    ,axis.ticks         = element_line(size = 0.1)
+  )
+```
+
 Plotting:
-```{r  uncapped_abundances, fig.show="hide", fig.height=31.5, fig.width=7, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure 1."}
+```{r  uncapped_abundances, fig.show="hide", fig.height=35, fig.width=7, fig.cap="Abundance values by species. Species are ordered like in Supplementary Figure 1."}
 # This vertical line indicates the first metazoan (Mnemiopsis leidyi / Ctenophora)
 metazoa_line <- geom_vline(
    xintercept = "Mnemiopsis leidyi"
@@ -158,19 +208,7 @@ abundance_plot <- ggplot(capped_abundance_by_function) +
     ,labeller = labeller(annotation = annotation_labels)
   ) +
   theme_classic() + 
-  theme(
-     panel.spacing      = unit(2.5, "pt")
-    ,strip.background   = element_blank()
-    ,panel.grid.major.x = element_blank()
-    ,panel.grid.major.y = element_line(size = 0.25, linetype = "dotted", color = "#E0E0E0")
-    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0, vjust = 0.5, color = "#757575")
-    ,strip.text.y       = element_text(size = 8, angle = 0, hjust = 0, vjust = 0.5, color = "#757575")
-    ,axis.title         = element_text(size = 15, color = "#424242")
-    ,axis.ticks.x       = element_blank()
-    ,axis.text.x        = element_blank()
-    ,axis.text.y        = element_text(size = 5.5)
-    ,legend.position    = "none"
-  )
+  theme_main
 ggsave("plots/fig5_raw.pdf", abundance_plot, width = 18, height = 6)
 
 # Uncapped abundances for supplementary text
@@ -182,28 +220,19 @@ abundance_plot %+% avg_abundance_by_function +
     ,labeller = labeller(annotation = annotation_labels)
   ) +
   coord_flip() + 
-  theme(
-     panel.grid.major.x = element_line(color = "#E0E0E0", size = 0.25, linetype = "dotted")
-    ,panel.grid.major.y = element_blank()
-    ,strip.text.y       = element_text(size = 7, angle = 0, hjust = 0, vjust = 0.5, color = "#757575")
-    ,strip.text.x       = element_text(size = 7, angle = 90, hjust = 0, vjust = 0.5, color = "#757575")
-    ,axis.title         = element_text(size = 12, color = "#424242")
-    ,axis.ticks         = element_line(colour = "grey20")
-    ,axis.text.y        = element_text(size = 6, angle = 0, hjust = 1, vjust = 0.5, color = "#757575")
-    ,axis.text.x        = element_text(size = 6)
-  )
+  theme_supplementary
 ```
 \clearpage
 
 \thispagestyle{empty}
 
-\pdfpageheight=33in
+\pdfpageheight=36.6in
 
 \begin{figure}[p]
 
-\caption{Abundance values by species. Species are ordered like in Supplementary Figure 1..}\label{fig:uncapped_abundances}
+\caption{Average protein abundances in orthologous groups by species. Orthologous groups are faceted according to their functions.}\label{fig:uncapped_abundances}
 
-{\centering \includegraphics[height=31.5in, width=7in]{figs/analysis.abundance.uncapped_abundances-1} }
+{\centering \includegraphics[height=35in, width=7in]{figs/analysis.abundance.uncapped_abundances-1} }
 
 \end{figure}
 
@@ -212,7 +241,7 @@ abundance_plot %+% avg_abundance_by_function +
 \pdfpageheight=11in
 
 Species-specific average abundances, now averaged by clades:
-```{r fig.align="center", fig.height=4, fig.width=8, fig.cap="Species-specific average abundances, now averaged by clades."}
+```{r clade_average, fig.align="center", fig.height=4, fig.width=8, fig.cap="Species-specific average abundances, now averaged by clades."}
 ggplot(avg_abundance_by_function) +
   geom_bar(
     aes(x = clade_name, y = avg_abundance, fill = annotation, color = after_scale(darken(fill, 0.1)))
@@ -230,20 +259,11 @@ ggplot(avg_abundance_by_function) +
   xlab("Clades") +
   ylab("Average abundance averaged by clade") +
   theme_classic() + 
-  theme(
-     panel.spacing      = unit(1, "pt")
-    ,axis.title         = element_text(color = "#424242")
-    ,axis.text          = element_text(color = "#757575")
-    ,axis.text.x        = element_text(size = 7, angle = -45, vjust = 0, hjust = 0)
-    ,axis.text.y        = element_text(size = 5)
-    ,strip.background   = element_blank()
-    ,strip.text         = element_text(color = "#757575")
-    ,strip.text.y       = element_text(angle = 0, hjust = 0, vjust = 0.5)
-  )
+  theme_average
 ```
 
 Plain protein abundance in single orthogroups:
-```{r all_abundances, fig.show="hide", fig.height=35, fig.width=15, fig.cap="Number of proteins in each neurotransmission COGs, for every species."}
+```{r all_abundances, fig.show="hide", fig.height=35, fig.width=20, fig.cap="Number of proteins in each neurotransmission COGs, for every species. COGs associated with multiple neurotransmission functions are colored grey. COG0733 is associated with depletion/vesicle. KOG2301 is associated with signaling/excitability. COG0814 is associated with vesicle/synthesis."}
 # Collapsing COGs with multiple functions
 cog_abundance_collapsed <- cog_abundance_by_taxid %>%
   group_by(taxid, cog_id) %>%
@@ -272,31 +292,21 @@ ggplot(cog_abundance_collapsed) +
   xlab("Species") +
   ylab("Protein abundance in orthologous groups") +
   coord_flip() +
-  theme(
-     panel.spacing      = unit(0.5, "pt")
-    ,panel.grid.major.x = element_line(size = 0.1, linetype = "dashed")
-    ,panel.grid.major.y = element_blank()
-    ,strip.background   = element_blank()
-    ,strip.text.x       = element_text(size = 6, angle = 90, hjust = 0.5, vjust = 0)
-    ,strip.text.y       = element_text(size = 6, angle = 0, hjust = 0, vjust = 0.5)
-    ,axis.text.x        = element_text(size = 4.5, angle = 90, vjust = 0, hjust = 0)
-    ,axis.text.y        = element_text(size = 4.5)
-    ,axis.ticks         = element_line(size = 0.1)
-  )
+  theme_big
 ```
 \clearpage
 
 \thispagestyle{empty}
 
-\newgeometry{left=0.4in, right=0.4in}
+\newgeometry{top=0.4in, right=0.4in, bottom=0.4in, left=0.4in}
 
-\pdfpagewidth=15.8in \pdfpageheight=37in
+\pdfpagewidth=20.8in \pdfpageheight=36.8in
 
 \begin{figure}[p]
 
-\caption{Number of proteins in each neurotransmission COGs, for every species.}\label{fig:all_abundances}
+\caption{Number of proteins in each neurotransmission COGs, for every species. COGs associated with multiple neurotransmission functions are colored grey. COG0733 is associated with depletion/vesicle. KOG2301 is associated with signaling/excitability. COG0814 is associated with vesicle/synthesis.}\label{fig:all_abundances}
 
-{\centering  \includegraphics[height=35in, width=15in]{figs/analysis.abundance.all_abundances-1} }
+{\centering  \includegraphics[height=35in, width=20in]{figs/analysis.abundance.all_abundances-1} }
 
 \end{figure}
 

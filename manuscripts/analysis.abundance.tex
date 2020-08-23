@@ -38,12 +38,11 @@ We start by setting up reusable data frames with useful metrics.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# If a gene has more than 1 COG, select the oldest one.}
-\CommentTok{# This is unusual, but can happen in cases of gene fusion, for instance.}
+\CommentTok{# If a gene has more than 1 COG, select the most recent one.}
 \NormalTok{gene_cogs }\OperatorTok{%<>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_roots) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{max}\NormalTok{(root))}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{min}\NormalTok{(root))}
 
 \CommentTok{# The function of a COG is the function of its proteins}
 \NormalTok{cog_annotation <-}\StringTok{ }\NormalTok{gene_ids }\OperatorTok{%>%}
@@ -157,19 +156,7 @@ Plotting:
 \NormalTok{    ,}\DataTypeTok{labeller =} \KeywordTok{labeller}\NormalTok{(}\DataTypeTok{annotation =}\NormalTok{ annotation_labels)}
 \NormalTok{  ) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}\StringTok{ }
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{2.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dotted"}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{15}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.ticks.x       =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{5.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.position    =} \StringTok{"none"}
-\NormalTok{  )}
+\StringTok{  }\NormalTok{theme_main}
 \KeywordTok{ggsave}\NormalTok{(}\StringTok{"plots/fig5_raw.pdf"}\NormalTok{, abundance_plot, }\DataTypeTok{width =} \DecValTok{18}\NormalTok{, }\DataTypeTok{height =} \DecValTok{6}\NormalTok{)}
 
 \CommentTok{# Uncapped abundances for supplementary text}
@@ -181,16 +168,7 @@ Plotting:
 \NormalTok{    ,}\DataTypeTok{labeller =} \KeywordTok{labeller}\NormalTok{(}\DataTypeTok{annotation =}\NormalTok{ annotation_labels)}
 \NormalTok{  ) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{coord_flip}\NormalTok{() }\OperatorTok{+}\StringTok{ }
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{panel.grid.major.x =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.25}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dotted"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{12}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{colour =} \StringTok{"grey20"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{1}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{)}
-\NormalTok{  )}
+\StringTok{  }\NormalTok{theme_supplementary}
 \end{Highlighting}
 \end{Shaded}
 
@@ -198,13 +176,13 @@ Plotting:
 
 \thispagestyle{empty}
 
-\pdfpageheight=33in
+\pdfpageheight=36.6in
 
 \begin{figure}[p]
 
-\caption{Abundance values by species. Species are ordered like in Supplementary Figure 1..}\label{fig:uncapped_abundances}
+\caption{Average protein abundances in orthologous groups by species. Orthologous groups are faceted according to their functions.}\label{fig:uncapped_abundances}
 
-{\centering \includegraphics[height=31.5in, width=7in]{figs/analysis.abundance.uncapped_abundances-1} }
+{\centering \includegraphics[height=35in, width=7in]{figs/analysis.abundance.uncapped_abundances-1} }
 
 \end{figure}
 
@@ -233,26 +211,17 @@ Species-specific average abundances, now averaged by clades:
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Clades"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Average abundance averaged by clade"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme_classic}\NormalTok{() }\OperatorTok{+}\StringTok{ }
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\DecValTok{1}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#424242"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text          =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{7}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{strip.text         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#757575"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
-\NormalTok{  )}
+\StringTok{  }\NormalTok{theme_average}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{figure}
 
-{\centering \includegraphics{figs/analysis.abundance.unnamed-chunk-5-1} 
+{\centering \includegraphics{figs/analysis.abundance.clade_average-1} 
 
 }
 
-\caption{Species-specific average abundances, now averaged by clades.}\label{fig:unnamed-chunk-5}
+\caption{Species-specific average abundances, now averaged by clades.}\label{fig:clade_average}
 \end{figure}
 
 Plain protein abundance in single orthogroups:
@@ -287,17 +256,7 @@ Plain protein abundance in single orthogroups:
 \StringTok{  }\KeywordTok{xlab}\NormalTok{(}\StringTok{"Species"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{ylab}\NormalTok{(}\StringTok{"Protein abundance in orthologous groups"}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{coord_flip}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{panel.spacing      =} \KeywordTok{unit}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\StringTok{"pt"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.x =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"dashed"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.grid.major.y =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{strip.background   =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{strip.text.x       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{hjust =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.text.y       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{vjust =} \FloatTok{0.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.x        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{4.5}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{90}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.text.y        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \FloatTok{4.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{axis.ticks         =} \KeywordTok{element_line}\NormalTok{(}\DataTypeTok{size =} \FloatTok{0.1}\NormalTok{)}
-\NormalTok{  )}
+\StringTok{  }\NormalTok{theme_big}
 \end{Highlighting}
 \end{Shaded}
 
@@ -305,15 +264,15 @@ Plain protein abundance in single orthogroups:
 
 \thispagestyle{empty}
 
-\newgeometry{left=0.4in, right=0.4in}
+\newgeometry{top=0.4in, right=0.4in, bottom=0.4in, left=0.4in}
 
-\pdfpagewidth=15.8in \pdfpageheight=37in
+\pdfpagewidth=20.8in \pdfpageheight=36.8in
 
 \begin{figure}[p]
 
-\caption{Number of proteins in each neurotransmission COGs, for every species.}\label{fig:all_abundances}
+\caption{Number of proteins in each neurotransmission COGs, for every species. COGs associated with multiple neurotransmission functions are colored grey. COG0733 is associated with depletion/vesicle. KOG2301 is associated with signaling/excitability. COG0814 is associated with vesicle/synthesis.}\label{fig:all_abundances}
 
-{\centering  \includegraphics[height=35in, width=15in]{figs/analysis.abundance.all_abundances-1} }
+{\centering  \includegraphics[height=35in, width=20in]{figs/analysis.abundance.all_abundances-1} }
 
 \end{figure}
 
