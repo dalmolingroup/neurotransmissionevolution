@@ -34,7 +34,7 @@ phyloTree <- read.tree("../data/hybrid_tree_modified.nwk") %>% rotatePhyloTree("
 We perform some minor data formatting before feeding it to geneplast
 ```{r}
 # Formating cogdata column names for geneplast
-cogs %<>% rename(protein_id = string_id, ssp_id = taxid) %>% select(protein_id, ssp_id, cog_id)
+cogs %<>% select(protein_id = string_id, ssp_id = taxid, cog_id)
 
 # Adding species names to taxid tree
 phyloTree %<>% list_modify(
@@ -129,9 +129,9 @@ Some automatically named clades are resolved by hand. The following table shows 
 lca_names <- read_tsv("geneplast_clade_names.tsv")
 
 root_names %>%
-  rename("automatic_name" = clade_name) %>%
+  rename("Automatic name" = clade_name) %>%
   inner_join(lca_names) %>%
-  rename("corrected_name" = clade_name) %>%
+  rename("Corrected name" = clade_name, "Root" = root) %>%
   knitr::kable(caption = "Clade names before and after manual checking.", booktabs = TRUE, linesep = "") %>%
   kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
 ```
@@ -197,8 +197,6 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 
 \thispagestyle{empty}
 
-<!-- \newgeometry{margin=0.4in} -->
-
 \pdfpageheight=33in
 
 \begin{figure}[p]
@@ -211,13 +209,11 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 
 \clearpage
 
-<!-- \restoregeometry -->
-
 \pdfpageheight=11in
 
 ### Adhesion genes
 Aditionally...
-```{r}
+```{r results="hide"}
 data(
   adhesion_genes,
   gene_cogs_extra,

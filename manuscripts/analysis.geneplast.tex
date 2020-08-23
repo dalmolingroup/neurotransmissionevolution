@@ -26,7 +26,7 @@ We perform some minor data formatting before feeding it to geneplast
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# Formating cogdata column names for geneplast}
-\NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{protein_id =}\NormalTok{ string_id, }\DataTypeTok{ssp_id =}\NormalTok{ taxid) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{select}\NormalTok{(protein_id, ssp_id, cog_id)}
+\NormalTok{cogs }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\DataTypeTok{protein_id =}\NormalTok{ string_id, }\DataTypeTok{ssp_id =}\NormalTok{ taxid, cog_id)}
 
 \CommentTok{# Adding species names to taxid tree}
 \NormalTok{phyloTree }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{list_modify}\NormalTok{(}
@@ -152,9 +152,9 @@ table shows clade names before and after manual checking:
 \NormalTok{lca_names <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{)}
 
 \NormalTok{root_names }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"automatic_name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"Automatic name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(lca_names) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"corrected_name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"Corrected name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name, }\StringTok{"Root"}\NormalTok{ =}\StringTok{ }\NormalTok{root) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Clade names before and after manual checking."}\NormalTok{, }\DataTypeTok{booktabs =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{linesep =} \StringTok{""}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{position =} \StringTok{"left"}\NormalTok{, }\DataTypeTok{latex_options =} \KeywordTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"HOLD_position"}\NormalTok{))}
 \end{Highlighting}
@@ -165,7 +165,7 @@ table shows clade names before and after manual checking:
 \caption{\label{tab:unnamed-chunk-6}Clade names before and after manual checking.}
 \begin{tabular}[t]{rll}
 \toprule
-root & automatic\_name & corrected\_name\\
+Root & Automatic name & Corrected name\\
 \midrule
 \rowcolor{gray!6}  1 & Homo & Homo\\
 2 & Pan & Pan\\
@@ -311,16 +311,7 @@ Aditionally\ldots{}
   \DataTypeTok{spid      =} \StringTok{"9606"}\NormalTok{,}
   \DataTypeTok{cogids    =}\NormalTok{ cogs_of_interest_extra}
 \NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
-\begin{verbatim}
-## -Preprocessing for input data...
-##   |                                                                              |                                                                      |   0%  |                                                                              |====                                                                  |   5%  |                                                                              |=======                                                               |  11%  |                                                                              |===========                                                           |  16%  |                                                                              |===============                                                       |  21%  |                                                                              |==================                                                    |  26%  |                                                                              |======================                                                |  32%  |                                                                              |==========================                                            |  37%  |                                                                              |=============================                                         |  42%  |                                                                              |=================================                                     |  47%  |                                                                              |=====================================                                 |  53%  |                                                                              |=========================================                             |  58%  |                                                                              |============================================                          |  63%  |                                                                              |================================================                      |  68%  |                                                                              |====================================================                  |  74%  |                                                                              |=======================================================               |  79%  |                                                                              |===========================================================           |  84%  |                                                                              |===============================================================       |  89%  |                                                                              |==================================================================    |  95%  |                                                                              |======================================================================| 100%
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \NormalTok{roots_extra <-}\StringTok{ }\KeywordTok{groot}\NormalTok{(ogr_extra, }\DataTypeTok{nPermutations =} \DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{groot.get}\NormalTok{(}\StringTok{"results"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{rownames_to_column}\NormalTok{(}\StringTok{"cog_id"}\NormalTok{) }\OperatorTok{%>%}
@@ -329,12 +320,6 @@ Aditionally\ldots{}
 \StringTok{  }\KeywordTok{left_join}\NormalTok{(lca_names, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"Root"}\NormalTok{ =}\StringTok{ "lca"}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{verbatim}
-## -Performing rooting analysis...
-## --For 19 orthologous groups...
-##   |                                                                              |                                                                      |   0%  |                                                                              |======================================================================| 100%
-\end{verbatim}
 
 \begin{table}[H]
 
@@ -383,9 +368,8 @@ ENSP00000351591 & COG2272 & NLGN3 & Human-SAR LCA (\#36)\\
 ENSP00000249363 & COG4886 & LRRC4 & Human-Metamonada LCA (\#37)\\
 \rowcolor{gray!6}  ENSP00000471502 & COG4886 & LRRC4B & Human-Metamonada LCA (\#37)\\
 ENSP00000278198 & COG4886 & LRRC4C & Human-Metamonada LCA (\#37)\\
-\rowcolor{gray!6}  ENSP00000359085 & KOG1836 & NTNG1 & Human-Metamonada LCA (\#37)\\
-ENSP00000353030 & COG5599 & PTPRF & Human-Metamonada LCA (\#37)\\
-\rowcolor{gray!6}  ENSP00000463325 & COG5599 & PTPRM & Human-Metamonada LCA (\#37)\\
+\rowcolor{gray!6}  ENSP00000353030 & COG5599 & PTPRF & Human-Metamonada LCA (\#37)\\
+ENSP00000463325 & COG5599 & PTPRM & Human-Metamonada LCA (\#37)\\
 \bottomrule
 \end{tabular}
 \end{table}
