@@ -1,0 +1,263 @@
+Loading resources:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(tidyverse)}
+\KeywordTok{library}\NormalTok{(magrittr)}
+\KeywordTok{library}\NormalTok{(readxl)}
+\KeywordTok{library}\NormalTok{(RCurl)}
+\KeywordTok{library}\NormalTok{(neurotransmissionevolution)}
+
+\CommentTok{# Packaged data}
+\KeywordTok{data}\NormalTok{(}
+\NormalTok{   cogs}
+\NormalTok{  ,gene_ids}
+\NormalTok{  ,gene_cogs}
+\NormalTok{  ,gene_pathways}
+\NormalTok{  ,string_eukaryotes}
+\NormalTok{  ,}\DataTypeTok{package =} \StringTok{"neurotransmissionevolution"}
+\NormalTok{)}
+
+\CommentTok{# Collapsing similar functions}
+\NormalTok{gene_annotation <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"../data/gene_annotation.tsv"}\NormalTok{, }\DataTypeTok{col_types =} \StringTok{"cc"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{annotation =} \KeywordTok{case_when}\NormalTok{(}
+     \KeywordTok{grepl}\NormalTok{(}\StringTok{"clearance"}\NormalTok{,   annotation) }\OperatorTok{~}\StringTok{ "depletion"}
+\NormalTok{    ,}\KeywordTok{grepl}\NormalTok{(}\StringTok{"degradation"}\NormalTok{, annotation) }\OperatorTok{~}\StringTok{ "depletion"}
+\NormalTok{    ,}\KeywordTok{grepl}\NormalTok{(}\StringTok{"transport"}\NormalTok{,   annotation) }\OperatorTok{~}\StringTok{ "synthesis"}
+\NormalTok{    ,}\OtherTok{TRUE} \OperatorTok{~}\StringTok{ }\NormalTok{annotation}
+\NormalTok{  ))}
+\end{Highlighting}
+\end{Shaded}
+
+Loading Supplementary Table S4, which contains genes expressed in
+neurons of the cnidarian \emph{Nematostella vectensis}. The excel
+document contains multiple sheets, each reporting the genes expressed in
+a single cluster of neuronal cells. In this first step, we load all
+sheets into a data.frame.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{xlsx_filename <-}\StringTok{ "nematostella_neuronal_genes.xlsx"}
+
+\KeywordTok{download.file}\NormalTok{(}
+   \DataTypeTok{url      =} \StringTok{"https://ars.els-cdn.com/content/image/1-s2.0-S0092867418305968-mmc4.xlsx"}
+\NormalTok{  ,}\DataTypeTok{destfile =}\NormalTok{ xlsx_filename}
+\NormalTok{  ,}\DataTypeTok{mode     =} \StringTok{"wb"}
+\NormalTok{)}
+
+\CommentTok{# Loading xlsx into data.frame}
+\NormalTok{nematostella_neuronal_genes <-}\StringTok{ }\NormalTok{xlsx_filename }\OperatorTok{%>%}\StringTok{ }\NormalTok{excel_sheets }\OperatorTok{%>%}\StringTok{ }\KeywordTok{map_df}\NormalTok{(}\OperatorTok{~}\StringTok{ }\KeywordTok{read_excel}\NormalTok{(xlsx_filename, .))}
+
+\CommentTok{# We are only interested in gene names and blast best hits}
+\NormalTok{nematostella_neuronal_genes }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{select}\NormalTok{(}\DataTypeTok{string_name =}\NormalTok{ ...}\DecValTok{1}\NormalTok{, }\DataTypeTok{best_hit =}\NormalTok{ Hsap.BBH) }\OperatorTok{%>%}\StringTok{ }\NormalTok{distinct}
+
+\KeywordTok{file.remove}\NormalTok{(xlsx_filename)}
+\end{Highlighting}
+\end{Shaded}
+
+Next, we look for \emph{Nematostella vectensis} genes that are
+associated with ionotropic receptor COGs in STRING. Then, we search for
+these ionotropic receptor orthologs in the supplementary table.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Gathering gene info}
+\NormalTok{gene_info <-}\StringTok{ }\NormalTok{gene_ids }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{na.omit }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(gene_cogs) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(gene_annotation)}
+
+\CommentTok{# Ionotropic receptor cogs}
+\NormalTok{ionotropic_cogs <-}\StringTok{ }\NormalTok{gene_info }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(annotation }\OperatorTok{==}\StringTok{ "ionotropic receptor"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(cog_id) }\OperatorTok{%>%}\StringTok{ }\NormalTok{unique}
+
+\CommentTok{# Nematostella taxid}
+\NormalTok{nematostella_taxid <-}\StringTok{ }\NormalTok{string_eukaryotes }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(string_name }\OperatorTok{==}\StringTok{ "Nematostella vectensis"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(taxid)}
+
+\CommentTok{# Finding Nematostella ionotropic receptor orthologs}
+\NormalTok{nematostella_receptors <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(taxid }\OperatorTok{==}\StringTok{ }\NormalTok{nematostella_taxid }\OperatorTok{&}\StringTok{ }\NormalTok{cog_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{ionotropic_cogs) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid)}
+
+\CommentTok{# Querying STRING for gene names }
+\NormalTok{nematostella_api_ids <-}\StringTok{ }\KeywordTok{postForm}\NormalTok{(}
+   \DataTypeTok{uri         =}\StringTok{"http://string-db.org/api/tsv/get_string_ids"}
+\NormalTok{  ,}\DataTypeTok{identifiers =}\NormalTok{ nematostella_receptors }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(string_id) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{paste0}\NormalTok{(}\DataTypeTok{collapse=}\StringTok{"%0d"}\NormalTok{)}
+\NormalTok{  ,}\DataTypeTok{echo_query  =} \StringTok{"1"}
+\NormalTok{  ,}\DataTypeTok{species     =}\NormalTok{ nematostella_taxid}
+\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{read_tsv }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\DataTypeTok{string_id =}\NormalTok{ queryItem, }\DataTypeTok{string_name =}\NormalTok{ preferredName)}
+
+\NormalTok{expressed_receptors <-}\StringTok{ }\NormalTok{nematostella_api_ids }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(nematostella_neuronal_genes) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{left_join}\NormalTok{(nematostella_receptors) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(cog_id)}
+\end{Highlighting}
+\end{Shaded}
+
+Found receptors:
+
+\begin{longtable}[l]{lll>{\raggedright\arraybackslash}p{30em}}
+\caption{\label{tab:unnamed-chunk-5}Human ionotropic receptor orthologs expressed in Nematostella neurons, according to work done by Sebé-Pedrós et al, 2018.}\\
+\toprule
+COG & String ID & Gene name & Human best hit\\
+\midrule
+\rowcolor{gray!6}  KOG1052 & EDO41291 & v1g50912 & Glutamate receptor 4\\
+KOG1052 & EDO41293 & v1g24412 & "Glutamate receptor, ionotropic, AMPA 1 variant "\\
+\rowcolor{gray!6}  KOG1052 & EDO44842 & v1g31895 & "Glutamate receptor ionotropic, NMDA 3B "\\
+KOG1052 & EDO46596 & v1g200214 & "cDNA FLJ77447, highly similar to Homo sapiens glutamate receptor, ionotropic, kainate 2 (GRIK2), transcript variant 1, mRNA "\\
+\rowcolor{gray!6}  KOG1052 & EDO41290 & v1g104623 & "Glutamate receptor, ionotrophic variant "\\
+KOG3644 & EDO30047 & v1g40863 & Gamma-aminobutyric acid receptor subunit beta-2\\
+\rowcolor{gray!6}  KOG3644 & EDO32203 & v1g134406 & Gamma-aminobutyric acid A receptor beta 1 isoform A\\
+KOG3644 & EDO33939 & v1g127924 & Glycine receptor alpha 3 subunit\\
+\rowcolor{gray!6}  KOG3644 & EDO33940 & v1g127934 & Gamma-aminobutyric acid receptor subunit theta\\
+KOG3644 & EDO36340 & v1g11965 & Gamma-aminobutyric acid receptor subunit beta-2\\
+\rowcolor{gray!6}  KOG3644 & EDO36971 & v1g118173 & Gamma-aminobutyric acid A receptor beta 1 isoform A\\
+KOG3644 & EDO37396 & v1g211643 & Gamma-aminobutyric acid A receptor beta 1 isoform A\\
+\rowcolor{gray!6}  KOG3644 & EDO37555 & v1g230093 & Gamma-aminobutyric acid A receptor beta 3 isoform A\\
+KOG3644 & EDO38214 & v1g114291 & "cDNA FLJ57909, highly similar to Gamma-aminobutyric-acid receptor rho-2 subunit "\\
+\rowcolor{gray!6}  KOG3644 & EDO38248 & v1g114264 & Gamma-aminobutyric acid receptor subunit beta-2\\
+KOG3644 & EDO38572 & v1g113279 & Glycine receptor subunit alpha-3\\
+\rowcolor{gray!6}  KOG3644 & EDO39145 & v1g111552 & "cDNA FLJ52443, highly similar to Glycine receptor alpha-2 chain "\\
+KOG3644 & EDO39173 & v1g21524 & Gamma-aminobutyric acid receptor subunit beta-2\\
+\rowcolor{gray!6}  KOG3644 & EDO39193 & v1g57443 & GLRA1 protein\\
+KOG3644 & EDO40478 & v1g22284 & "cDNA FLJ52443, highly similar to Glycine receptor alpha-2 chain "\\
+\rowcolor{gray!6}  KOG3644 & EDO40599 & v1g207679 & Glycine receptor subunit alpha-3\\
+KOG3644 & EDO40889 & v1g105852 & Glycine receptor subunit alpha-1\\
+\rowcolor{gray!6}  KOG3644 & EDO43090 & v1g204447 & Gamma-aminobutyric acid receptor subunit gamma-3\\
+KOG3644 & EDO43093 & v1g22641 & Glycine receptor subunit beta\\
+\rowcolor{gray!6}  KOG3644 & EDO43147 & v1g98804 & Gamma-aminobutyric acid receptor subunit beta-3\\
+KOG3644 & EDO43149 & v1g98897 & Gamma-aminobutyric acid receptor subunit beta-2\\
+\rowcolor{gray!6}  KOG3644 & EDO43673 & v1g97297 & Glycine receptor subunit alpha-3\\
+KOG3644 & EDO45086 & v1g93322 & Glycine receptor subunit alpha-3\\
+\rowcolor{gray!6}  KOG3644 & EDO45319 & v1g201724 & Gamma-aminobutyric acid receptor subunit alpha-5\\
+KOG3644 & EDO45677 & v1g91440 & Glycine receptor subunit alpha-3\\
+\rowcolor{gray!6}  KOG3644 & EDO47783 & v1g85497 & Gamma-aminobutyric acid A receptor beta 1 isoform A\\
+KOG3644 & EDO48848 & v1g82411 & "cDNA FLJ57719, highly similar to Gamma-aminobutyric-acid receptor beta-1 subunit "\\
+\rowcolor{gray!6}  KOG3644 & EDO49903 & v1g60804 & Gamma-aminobutyric acid A receptor beta 1 isoform A\\
+KOG3645 & EDO29634 & v1g2281 & Neuronal acetylcholine receptor subunit alpha-9\\
+\rowcolor{gray!6}  KOG3645 & EDO34726 & v1g214990 & Neuronal acetylcholine receptor subunit alpha-9\\
+KOG3645 & EDO39536 & v1g57113 & Neuronal acetylcholine receptor subunit alpha-5\\
+\rowcolor{gray!6}  KOG3645 & EDO43642 & v1g97337 & Neuronal acetylcholine receptor subunit alpha-10\\
+KOG3645 & EDO44896 & v1g240779 & Neuronal acetylcholine receptor subunit alpha-3\\
+\rowcolor{gray!6}  KOG3645 & EDO45565 & v1g91941 & Neuronal acetylcholine receptor subunit alpha-3\\
+KOG3645 & EDO45734 & v1g91371 & Neuronal acetylcholine receptor subunit alpha-9\\
+\rowcolor{gray!6}  KOG3645 & EDO47639 & v1g198927 & Neuronal acetylcholine receptor subunit beta-3\\
+KOG3646 & EDO42054 & v1g205808 & Neuronal acetylcholine receptor subunit alpha-7\\
+\rowcolor{gray!6}  KOG3646 & EDO37424 & v1g22673 & Neuronal acetylcholine receptor subunit alpha-10\\
+KOG3646 & EDO47631 & v1g85724 & Neuronal acetylcholine receptor subunit alpha-7\\
+\rowcolor{gray!6}  KOG3646 & EDO49735 & v1g79911 & Nicotinic acetylcholine alpha-7 subunit\\
+KOG3646 & EDO45735 & v1g91696 & Neuronal acetylcholine receptor subunit alpha-7\\
+\rowcolor{gray!6}  KOG4440 & EDO35545 & v1g171792 & "Glutamate receptor ionotropic, NMDA 1 "\\
+KOG4440 & EDO48986 & v1g61547 & "Glutamate receptor, ionotropic, N-methyl D-aspartate 1"\\
+\bottomrule
+\end{longtable}
+
+Unfound receptors:
+
+\begin{longtable}[l]{lll}
+\caption{\label{tab:unnamed-chunk-6}Human ionotropic receptor orthologs not found to be expressed in Nematostella neurons, according to work done by Sebé-Pedrós et al, 2018.}\\
+\toprule
+COG & String ID & Gene name\\
+\midrule
+\rowcolor{gray!6}  KOG1052 & EDO27092 & v1g224408\\
+KOG1052 & EDO29110 & v1g4936\\
+\rowcolor{gray!6}  KOG1052 & EDO41292 & v1g104636\\
+KOG1052 & EDO45521 & v1g36018\\
+\rowcolor{gray!6}  KOG1052 & EDO46633 & v1g239847\\
+KOG1052 & EDO29473 & v1g221819\\
+\rowcolor{gray!6}  KOG1052 & EDO29987 & v1g221182\\
+KOG1052 & EDO30203 & v1g141731\\
+\rowcolor{gray!6}  KOG1052 & EDO32621 & v1g132356\\
+KOG1052 & EDO32623 & v1g13877\\
+\rowcolor{gray!6}  KOG1052 & EDO32625 & v1g217727\\
+KOG1052 & EDO39630 & v1g110192\\
+\rowcolor{gray!6}  KOG3644 & EDO25317 & v1g9657\\
+KOG3644 & EDO25880 & v1g9118\\
+\rowcolor{gray!6}  KOG3644 & EDO25881 & v1g156191\\
+KOG3644 & EDO26859 & v1g224654\\
+\rowcolor{gray!6}  KOG3644 & EDO27274 & v1g151552\\
+KOG3644 & EDO27722 & EDO27722\\
+\rowcolor{gray!6}  KOG3644 & EDO28541 & v1g6520\\
+KOG3644 & EDO28562 & v1g147460\\
+\rowcolor{gray!6}  KOG3644 & EDO29065 & v1g145792\\
+KOG3644 & EDO29195 & v1g145423\\
+\rowcolor{gray!6}  KOG3644 & EDO29555 & v1g221743\\
+KOG3644 & EDO32201 & v1g134376\\
+\rowcolor{gray!6}  KOG3644 & EDO34654 & v1g215047\\
+KOG3644 & EDO34692 & v1g125023\\
+\rowcolor{gray!6}  KOG3644 & EDO35410 & v1g122822\\
+KOG3644 & EDO38215 & v1g52007\\
+\rowcolor{gray!6}  KOG3644 & EDO38571 & v1g113370\\
+KOG3644 & EDO38597 & v1g113361\\
+\rowcolor{gray!6}  KOG3644 & EDO40009 & v1g108780\\
+KOG3644 & EDO40010 & v1g12563\\
+\rowcolor{gray!6}  KOG3644 & EDO40746 & v1g51848\\
+KOG3644 & EDO41538 & v1g103931\\
+\rowcolor{gray!6}  KOG3644 & EDO42101 & v1g101859\\
+KOG3644 & EDO43148 & v1g99026\\
+\rowcolor{gray!6}  KOG3644 & EDO43674 & v1g45071\\
+KOG3644 & EDO45257 & v1g92943\\
+\rowcolor{gray!6}  KOG3644 & EDO45258 & v1g92751\\
+KOG3644 & EDO48299 & v1g198106\\
+\rowcolor{gray!6}  KOG3645 & EDO27073 & v1g152171\\
+KOG3645 & EDO27901 & v1g149547\\
+\rowcolor{gray!6}  KOG3645 & EDO30331 & v1g12119\\
+KOG3645 & EDO32790 & v1g247410\\
+\rowcolor{gray!6}  KOG3645 & EDO33746 & v1g11255\\
+KOG3645 & EDO34725 & v1g124946\\
+\rowcolor{gray!6}  KOG3645 & EDO34889 & v1g124362\\
+KOG3645 & EDO36173 & v1g120507\\
+\rowcolor{gray!6}  KOG3645 & EDO37425 & v1g116716\\
+KOG3645 & EDO39535 & v1g51194\\
+\rowcolor{gray!6}  KOG3645 & EDO39537 & v1g110265\\
+KOG3645 & EDO45107 & v1g202108\\
+\rowcolor{gray!6}  KOG3645 & EDO45564 & v1g32916\\
+KOG3645 & EDO46124 & v1g200917\\
+\rowcolor{gray!6}  KOG3645 & EDO46927 & v1g199721\\
+KOG3645 & EDO47122 & v1g87545\\
+\rowcolor{gray!6}  KOG3645 & EDO49734 & v1g80076\\
+KOG3646 & EDO46884 & v1g87907\\
+\rowcolor{gray!6}  KOG3646 & EDO47629 & v1g66300\\
+KOG3646 & EDO42072 & v1g60450\\
+\rowcolor{gray!6}  KOG3646 & EDO26971 & EDO26971\\
+KOG3646 & EDO29632 & v1g46108\\
+\rowcolor{gray!6}  KOG3646 & EDO30566 & v1g140328\\
+KOG3646 & EDO32052 & v1g40806\\
+\rowcolor{gray!6}  KOG3646 & EDO32053 & v1g40919\\
+KOG3646 & EDO33745 & v1g128668\\
+\rowcolor{gray!6}  KOG3646 & EDO36667 & v1g212582\\
+KOG3646 & EDO38722 & v1g112842\\
+\rowcolor{gray!6}  KOG3646 & EDO38752 & v1g52909\\
+KOG3646 & EDO38974 & v1g50745\\
+\rowcolor{gray!6}  KOG3646 & EDO39863 & v1g109100\\
+KOG3646 & EDO39913 & v1g109075\\
+\rowcolor{gray!6}  KOG3646 & EDO40862 & v1g51086\\
+KOG3646 & EDO41763 & v1g103153\\
+\rowcolor{gray!6}  KOG3646 & EDO42038 & v1g59845\\
+KOG3646 & EDO42039 & v1g205856\\
+\rowcolor{gray!6}  KOG3646 & EDO47630 & v1g31824\\
+KOG3646 & EDO47969 & v1g85091\\
+\rowcolor{gray!6}  KOG3646 & EDO48132 & v1g84427\\
+KOG3646 & EDO48133 & v1g198343\\
+\rowcolor{gray!6}  KOG3646 & EDO49045 & v1g82287\\
+KOG3646 & EDO49732 & v1g79680\\
+\rowcolor{gray!6}  KOG3646 & EDO42102 & v1g205764\\
+KOG4440 & EDO25336 & v1g226085\\
+\rowcolor{gray!6}  KOG4440 & EDO27308 & EDO27308\\
+KOG4440 & EDO28724 & EDO28724\\
+\rowcolor{gray!6}  KOG4440 & EDO30961 & v1g16419\\
+KOG4440 & EDO31426 & v1g219279\\
+\rowcolor{gray!6}  KOG4440 & EDO32622 & v1g174495\\
+KOG4440 & EDO34363 & v1g11315\\
+\rowcolor{gray!6}  KOG4440 & EDO35281 & v1g46041\\
+KOG4440 & EDO35544 & v1g15144\\
+\rowcolor{gray!6}  KOG4440 & EDO37062 & v1g27000\\
+KOG4440 & EDO37076 & v1g212089\\
+\rowcolor{gray!6}  KOG4440 & EDO37276 & v1g117160\\
+KOG4440 & EDO37551 & v1g211456\\
+\rowcolor{gray!6}  KOG4440 & EDO47825 & v1g198759\\
+KOG4440 & EDO48352 & v1g83990\\
+\rowcolor{gray!6}  KOG4440 & EDO48353 & v1g37310\\
+\bottomrule
+\end{longtable}

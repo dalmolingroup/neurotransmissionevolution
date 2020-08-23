@@ -1,0 +1,124 @@
+---
+title: "Cnidarian ionotropic receptors expression"
+knit: neurotransmissionevolution::custom_knit
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+   warning     = FALSE
+  ,message     = FALSE
+  # ,cache       = 1
+  # ,autodep     = T
+)
+```
+
+Loading resources:
+```{r}
+library(tidyverse)
+library(magrittr)
+library(readxl)
+library(RCurl)
+library(neurotransmissionevolution)
+
+# Packaged data
+data(
+   cogs
+  ,gene_ids
+  ,gene_cogs
+  ,gene_pathways
+  ,string_eukaryotes
+  ,package = "neurotransmissionevolution"
+)
+
+# Collapsing similar functions
+gene_annotation <- read_tsv("../data/gene_annotation.tsv", col_types = "cc") %>%
+  mutate(annotation = case_when(
+     grepl("clearance",   annotation) ~ "depletion"
+    ,grepl("degradation", annotation) ~ "depletion"
+    ,grepl("transport",   annotation) ~ "synthesis"
+    ,TRUE ~ annotation
+  ))
+```
+
+Loading Supplementary Table S4, which contains genes expressed in neurons of the cnidarian *Nematostella vectensis*. The excel document contains multiple sheets, each reporting the genes expressed in a single cluster of neuronal cells. In this first step, we load all sheets into a data.frame.
+```{r results="hide", message=FALSE, warning=FALSE}
+xlsx_filename <- "nematostella_neuronal_genes.xlsx"
+
+download.file(
+   url      = "https://ars.els-cdn.com/content/image/1-s2.0-S0092867418305968-mmc4.xlsx"
+  ,destfile = xlsx_filename
+  ,mode     = "wb"
+)
+
+# Loading xlsx into data.frame
+nematostella_neuronal_genes <- xlsx_filename %>% excel_sheets %>% map_df(~ read_excel(xlsx_filename, .))
+
+# We are only interested in gene names and blast best hits
+nematostella_neuronal_genes %<>% select(string_name = ...1, best_hit = Hsap.BBH) %>% distinct
+
+file.remove(xlsx_filename)
+```
+
+Next, we look for *Nematostella vectensis* genes that are associated with ionotropic receptor COGs in STRING. Then, we search for these ionotropic receptor orthologs in the supplementary table.
+```{r}
+# Gathering gene info
+gene_info <- gene_ids %>%
+  na.omit %>%
+  left_join(gene_cogs) %>%
+  left_join(gene_annotation)
+
+# Ionotropic receptor cogs
+ionotropic_cogs <- gene_info %>% filter(annotation == "ionotropic receptor") %>% pull(cog_id) %>% unique
+
+# Nematostella taxid
+nematostella_taxid <- string_eukaryotes %>% filter(string_name == "Nematostella vectensis") %>% pull(taxid)
+
+# Finding Nematostella ionotropic receptor orthologs
+nematostella_receptors <- cogs %>%
+  filter(taxid == nematostella_taxid & cog_id %in% ionotropic_cogs) %>%
+  select(-taxid)
+
+# Querying STRING for gene names 
+nematostella_api_ids <- postForm(
+   uri         ="http://string-db.org/api/tsv/get_string_ids"
+  ,identifiers = nematostella_receptors %>% pull(string_id) %>% paste0(collapse="%0d")
+  ,echo_query  = "1"
+  ,species     = nematostella_taxid
+) %>%
+  read_tsv %>%
+  select(string_id = queryItem, string_name = preferredName)
+
+expressed_receptors <- nematostella_api_ids %>%
+  left_join(nematostella_neuronal_genes) %>%
+  left_join(nematostella_receptors) %>%
+  arrange(cog_id)
+```
+
+Found receptors:
+```{r echo=FALSE}
+expressed_receptors %>%
+  filter(!is.na(best_hit)) %>%
+  select("COG" = cog_id, "String ID" = string_id, "Gene name" = string_name, "Human best hit" = best_hit) %>%
+  knitr::kable(
+     caption = "Human ionotropic receptor orthologs expressed in Nematostella neurons, according to work done by Sebé-Pedrós et al, 2018."
+    ,booktabs = TRUE
+    ,longtable = T
+    ,linesep = ""
+  ) %>%
+  kableExtra::column_spec(4, width = "30em") %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+```
+
+Unfound receptors:
+```{r echo=FALSE}
+expressed_receptors %>%
+  filter(is.na(best_hit)) %>%
+  select("COG" = cog_id, "String ID" = string_id, "Gene name" = string_name) %>%
+  knitr::kable(
+     caption = "Human ionotropic receptor orthologs not found to be expressed in Nematostella neurons, according to work done by Sebé-Pedrós et al, 2018."
+    ,booktabs = TRUE
+    ,longtable = T
+    ,linesep = ""
+  ) %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped"))
+```
+

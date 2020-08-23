@@ -1,15 +1,11 @@
 ---
 title: "Supplementary Information"
 subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
-# author: 
-#   - Lucas H. Viscardi
-#   - Danilo O. Imparato
-#   - Maria Cátira Bortolini
-#   - Rodrigo J. S. Dalmolin
-  
-keywords:
-  - Evolution
-  - Nervous system
+author:
+  - Lucas H. Viscardi
+  - Danilo O. Imparato
+  - Maria Cátira Bortolini
+  - Rodrigo J. S. Dalmolin
    
 header-includes:
   # kableExtra
@@ -56,6 +52,9 @@ header-includes:
   - \definecolor{chaos-bg}{HTML}{161616}
   - \newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
   - \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
+  # Last chunk hack
+  - \definecolor{hack-bg}{HTML}{ffffff}
+  - \newtcolorbox{whitebox}{colback=hack-bg}
   # emoji
   - \newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
   - \DeclareTextFontCommand{\e}{\emojifont}
@@ -198,7 +197,15 @@ Abundance
 Abundance is the number of proteins of a single species in a single orthologous group. Abundances are aggregated and averaged according to the function of their corresponding orthogroups. The function of an orthogroup is considered to be the function of its human proteins. 
 \input{analysis.abundance.tex}
 
+<!--- Cnidarian ionotropic receptors expression -->
+Cnidarian ionotropic receptors expression
+-----------
+In this section, we look for the expression of ionotropic receptor orthologs in *Nematostella vectensis* neurons, made available as supplementary data in Sebé-Pedrós et al, 2018. 
+\input{analysis.cnidarian_receptors.tex}
 
+<!-- Hiding code box -->
+\tcbset{colframe=white}
+\renewenvironment{Shaded}{\scriptsize\begin{whitebox}}{\end{whitebox}}
 ```{r end}
 #
 ```
