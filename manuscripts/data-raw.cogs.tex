@@ -41,6 +41,13 @@
 \StringTok{    }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid) }\OperatorTok{%>%}
 \StringTok{    }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
 \StringTok{    }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{n =} \KeywordTok{n}\NormalTok{(), }\DataTypeTok{cog_id =} \KeywordTok{paste}\NormalTok{(cog_id, }\DataTypeTok{collapse =} \StringTok{" / "}\NormalTok{))}
+
+\CommentTok{# Subsetting adhesion cogs of interest}
+\NormalTok{gene_cogs_extra <-}\StringTok{ }\NormalTok{cogs }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{filter}\NormalTok{(string_id }\OperatorTok{%in%}\StringTok{ }\NormalTok{adhesion_genes[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{taxid) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
+\StringTok{    }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{n =} \KeywordTok{n}\NormalTok{(), }\DataTypeTok{cog_id =} \KeywordTok{paste}\NormalTok{(cog_id, }\DataTypeTok{collapse =} \StringTok{" / "}\NormalTok{))}
 \end{Highlighting}
 \end{Shaded}
 
@@ -67,7 +74,10 @@ proteins to their most recent OGs.
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tabular}{lrl}
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-6}Proteins assigned to more than one OG.}
+\begin{tabular}[t]{lrl}
 \toprule
 string\_id & n & cog\_id\\
 \midrule
@@ -76,42 +86,77 @@ ENSP00000293441 & 2 & COG0666 / KOG4375\\
 \rowcolor{gray!6}  ENSP00000356436 & 2 & COG5038 / KOG1325\\
 ENSP00000371886 & 3 & COG1226 / KOG1028 / KOG1325\\
 \rowcolor{gray!6}  ENSP00000380442 & 2 & KOG1028 / KOG1325\\
-\addlinespace
 ENSP00000382434 & 2 & KOG1028 / KOG1325\\
 \rowcolor{gray!6}  ENSP00000396045 & 2 & KOG1028 / KOG1325\\
 ENSP00000469689 & 2 & COG0666 / KOG4375\\
 \bottomrule
 \end{tabular}
+\end{table}
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{gene_cogs_extra }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(n }\OperatorTok{>}\StringTok{ }\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{table}[H]
+
+\caption{\label{tab:unnamed-chunk-8}One Adhesion protein has been assigned to more than one OG.}
+\begin{tabular}[t]{lrl}
+\toprule
+string\_id & n & cog\_id\\
+\midrule
+\rowcolor{gray!6}  ENSP00000359085 & 2 & KOG1836 / KOG3512\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Manually resolving them to their most recent OG (which was determined in
+a previous run).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Resolving main proteins}
 \NormalTok{gene_cogs_resolved <-}\StringTok{ }\KeywordTok{tribble}\NormalTok{(}
-\CommentTok{##############################}
-       \OperatorTok{~}\NormalTok{string_id,   }\OperatorTok{~}\NormalTok{cog_id,}\CommentTok{#}
+       \OperatorTok{~}\NormalTok{string_id,   }\OperatorTok{~}\NormalTok{cog_id,}
+\StringTok{"ENSP00000371886"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# JMJD7-PLA2G4B}
 \StringTok{"ENSP00000356436"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# PLA2G4A}
 \StringTok{"ENSP00000396045"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# PLA2G4B}
 \StringTok{"ENSP00000290472"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# PLA2G4D}
 \StringTok{"ENSP00000382434"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# PLA2G4E}
 \StringTok{"ENSP00000380442"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# PLA2G4F}
-\StringTok{"ENSP00000371886"}\NormalTok{, }\StringTok{"KOG1325"}\NormalTok{,}\CommentTok{# JMJD7-PLA2G4B}
 \StringTok{"ENSP00000293441"}\NormalTok{, }\StringTok{"KOG4375"}\NormalTok{,}\CommentTok{# SHANK1}
 \StringTok{"ENSP00000469689"}\NormalTok{, }\StringTok{"KOG4375"}\NormalTok{,}\CommentTok{# SHANK2}
-\NormalTok{)}\CommentTok{#############################}
+\NormalTok{)}
 
+\CommentTok{# Removing unresolved cases and adding manual assignments}
 \NormalTok{gene_cogs }\OperatorTok{%<>%}
-\StringTok{  }\CommentTok{# Removing unresolved cases}
 \StringTok{  }\KeywordTok{filter}\NormalTok{(n }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{n) }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# Adding the manual assignments}
 \StringTok{  }\KeywordTok{bind_rows}\NormalTok{(gene_cogs_resolved)}
+
+\CommentTok{# Resolving extra adhesion proteins}
+\NormalTok{gene_cogs_extra_resolved <-}\StringTok{ }\KeywordTok{tribble}\NormalTok{(}
+       \OperatorTok{~}\NormalTok{string_id,   }\OperatorTok{~}\NormalTok{cog_id,}
+\StringTok{"ENSP00000359085"}\NormalTok{, }\StringTok{"KOG3512"}\NormalTok{,}\CommentTok{# NTNG1}
+\NormalTok{)}
+
+\CommentTok{# Removing unresolved cases and adding manual assignments}
+\NormalTok{gene_cogs_extra }\OperatorTok{%<>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(n }\OperatorTok{==}\StringTok{ }\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{select}\NormalTok{(}\OperatorTok{-}\NormalTok{n) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{bind_rows}\NormalTok{(gene_cogs_extra_resolved)}
 \end{Highlighting}
 \end{Shaded}
+
+Exporting for analysis:
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# Exporting for package use}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{usethis}\OperatorTok{::}\KeywordTok{use_data}\NormalTok{(gene_cogs_extra, }\DataTypeTok{overwrite =} \OtherTok{TRUE}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 

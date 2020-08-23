@@ -16,6 +16,7 @@ library(stringi)
 library(neurotransmissionevolution)
 
 load("../data/gene_ids.rda")
+load("../data/adhesion_genes.rda")
 load("../data/string_eukaryotes.rda")
 ```
 
@@ -71,6 +72,13 @@ gene_cogs <- cogs %>%
     select(-taxid) %>%
     group_by(string_id) %>%
     summarise(n = n(), cog_id = paste(cog_id, collapse = " / "))
+
+# Subsetting adhesion cogs of interest
+gene_cogs_extra <- cogs %>%
+    filter(string_id %in% adhesion_genes[["string_id"]]) %>%
+    select(-taxid) %>%
+    group_by(string_id) %>%
+    summarise(n = n(), cog_id = paste(cog_id, collapse = " / "))
 ```
 
 ### Proteins with multiple COGs  
@@ -80,34 +88,56 @@ gene_cogs %>% filter(n > 1)
 ```
 ```{r results="asis", echo=FALSE}
 gene_cogs %>% filter(n > 1) %>%
-  knitr::kable(booktabs = T) %>%
+  knitr::kable(caption = "Proteins assigned to more than one OG.", booktabs = TRUE, linesep = "") %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+```
+```{r eval=FALSE}
+gene_cogs_extra %>% filter(n > 1)
+```
+```{r results="asis", echo=FALSE}
+gene_cogs_extra %>% filter(n > 1) %>%
+  knitr::kable(caption = "One Adhesion protein has been assigned to more than one OG.", booktabs = TRUE, linesep = "") %>%
   kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
 ```
 
+Manually resolving them to their most recent OG (which was determined in a previous run).
 ```{r}
+# Resolving main proteins
 gene_cogs_resolved <- tribble(
-##############################
-       ~string_id,   ~cog_id,#
+       ~string_id,   ~cog_id,
+"ENSP00000371886", "KOG1325",# JMJD7-PLA2G4B
 "ENSP00000356436", "KOG1325",# PLA2G4A
 "ENSP00000396045", "KOG1325",# PLA2G4B
 "ENSP00000290472", "KOG1325",# PLA2G4D
 "ENSP00000382434", "KOG1325",# PLA2G4E
 "ENSP00000380442", "KOG1325",# PLA2G4F
-"ENSP00000371886", "KOG1325",# JMJD7-PLA2G4B
 "ENSP00000293441", "KOG4375",# SHANK1
 "ENSP00000469689", "KOG4375",# SHANK2
-)#############################
+)
 
+# Removing unresolved cases and adding manual assignments
 gene_cogs %<>%
-  # Removing unresolved cases
   filter(n == 1) %>%
   select(-n) %>%
-  # Adding the manual assignments
   bind_rows(gene_cogs_resolved)
+
+# Resolving extra adhesion proteins
+gene_cogs_extra_resolved <- tribble(
+       ~string_id,   ~cog_id,
+"ENSP00000359085", "KOG3512",# NTNG1
+)
+
+# Removing unresolved cases and adding manual assignments
+gene_cogs_extra %<>%
+  filter(n == 1) %>%
+  select(-n) %>%
+  bind_rows(gene_cogs_extra_resolved)
 ```
 
+Exporting for analysis:
 ```{r results="hide"}
 # Exporting for package use
 usethis::use_data(cogs, overwrite = TRUE)
 usethis::use_data(gene_cogs, overwrite = TRUE)
+usethis::use_data(gene_cogs_extra, overwrite = TRUE)
 ```
