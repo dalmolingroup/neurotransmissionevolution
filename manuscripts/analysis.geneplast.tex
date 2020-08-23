@@ -146,25 +146,58 @@ of our scope.
 Some automatically named clades have to be resolved by hand. The
 following table shows clade names before and after manual checking:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Loading manually resolved names, based on temp/temp_geneplast_clade_names.tsv}
-\NormalTok{lca_names <-}\StringTok{ }\KeywordTok{read_tsv}\NormalTok{(}\StringTok{"geneplast_clade_names.tsv"}\NormalTok{)}
+\begin{table}[H]
 
-\NormalTok{root_names }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"Automatic name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{inner_join}\NormalTok{(lca_names) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{rename}\NormalTok{(}\StringTok{"Corrected name"}\NormalTok{ =}\StringTok{ }\NormalTok{clade_name, }\StringTok{"Root"}\NormalTok{ =}\StringTok{ }\NormalTok{root) }\OperatorTok{%>%}
-\StringTok{  }\NormalTok{knitr}\OperatorTok{::}\KeywordTok{kable}\NormalTok{(}\DataTypeTok{caption =} \StringTok{"Clade names before and after manual checking."}\NormalTok{, }\DataTypeTok{booktabs =} \OtherTok{TRUE}\NormalTok{, }\DataTypeTok{linesep =} \StringTok{""}\NormalTok{) }\OperatorTok{%>%}
-\StringTok{  }\NormalTok{kableExtra}\OperatorTok{::}\KeywordTok{kable_styling}\NormalTok{(}\DataTypeTok{position =} \StringTok{"left"}\NormalTok{, }\DataTypeTok{latex_options =} \KeywordTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{, }\StringTok{"HOLD_position"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
+\caption{\label{tab:unnamed-chunk-6}Clade names before and after manual checking.}
+\begin{tabular}[t]{rll}
+\toprule
+Root & Automatic name & Corrected name\\
+\midrule
+\rowcolor{gray!6}  1 & Homo & Homo\\
+2 & Pan & Pan\\
+\rowcolor{gray!6}  3 & Gorilla & Gorilla\\
+4 & Ponginae & Ponginae\\
+\rowcolor{gray!6}  5 & Hylobatidae & Hylobatidae\\
+6 & Cercopithecoidea & Cercopithecoidea\\
+\rowcolor{gray!6}  7 & Platyrrhini & Platyrrhini\\
+8 & Tarsiiformes & Tarsiiformes\\
+\rowcolor{gray!6}  9 & Strepsirrhini & Strepsirrhini\\
+10 & Dermoptera & Dermoptera\\
+\rowcolor{gray!6}  11 & Scandentia & Scandentia\\
+12 & Glires & Glires\\
+\rowcolor{gray!6}  13 & Laurasiatheria & Laurasiatheria\\
+14 & Afrotheria (6); Xenarthra (1) & Afrotheria\\
+\rowcolor{gray!6}  15 & Metatheria & Metatheria\\
+16 & Prototheria & Prototheria\\
+\rowcolor{gray!6}  17 & Sauropsida & Sauropsida\\
+18 & Amphibia & Amphibia\\
+\rowcolor{gray!6}  19 & Coelacanthimorpha & Coelacanthimorpha\\
+20 & Actinopterygii & Actinopterygii\\
+\rowcolor{gray!6}  21 & Tunicata & Tunicata\\
+22 & Cephalochordata & Cephalochordata\\
+\rowcolor{gray!6}  23 & Echinodermata (1); Hemichordata (1) & Ambulacraria\\
+24 & Ecdysozoa (43); Spiralia (2) & Ecdysozoa\\
+\rowcolor{gray!6}  25 & Spiralia & Spiralia\\
+26 & Cnidaria & Cnidaria\\
+\rowcolor{gray!6}  27 & Placozoa & Placozoa\\
+28 & Porifera & Porifera\\
+\rowcolor{gray!6}  29 & Ctenophora & Ctenophora\\
+30 & Opisthokonta (5); Apusozoa (1); Cryptophyceae (1) & Unicellular holozoans\\
+\rowcolor{gray!6}  31 & Fungi & Fungi\\
+32 & Amoebozoa & Amoebozoa\\
+\rowcolor{gray!6}  33 & Viridiplantae & Viridiplantae\\
+34 & Discoba (6); Metamonada (1); Sar (1) & Discoba\\
+\rowcolor{gray!6}  35 & Rhodophyta & Rhodophyta\\
+36 & Sar (38); Haptista (1) & SAR\\
+\rowcolor{gray!6}  37 & Metamonada & Metamonada\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \hypertarget{phyletic-patterns}{%
 \subsubsection{Phyletic patterns}\label{phyletic-patterns}}
 
-Visualizing the presence/absence matrix according to inferred roots and
-species' clades
+Visualizing the presence/absence of COGs across species.
 
 \begin{Shaded}
 \begin{Highlighting}[]

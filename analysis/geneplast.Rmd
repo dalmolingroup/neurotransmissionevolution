@@ -124,7 +124,7 @@ root_names <- string_eukaryotes %>%
 ```
 
 Some automatically named clades have to be resolved by hand. The following table shows clade names before and after manual checking:
-```{r results="hide"}
+```{r echo=FALSE}
 # Loading manually resolved names, based on temp/temp_geneplast_clade_names.tsv
 lca_names <- read_tsv("geneplast_clade_names.tsv")
 
@@ -137,7 +137,7 @@ root_names %>%
 ```
 
 ### Phyletic patterns
-Visualizing the presence/absence matrix according to inferred roots and species' clades
+Visualizing the presence/absence of COGs across species.
 ```{r phyletic_patterns, fig.show="hide", fig.height=31, fig.width=7}
 lca_names %<>% rename("lca" = root)
 
