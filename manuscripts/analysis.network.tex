@@ -50,12 +50,11 @@ We start by joining all gene data and creating the graph object.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# If a gene has more than 1 COG, select the oldest one.}
-\CommentTok{# This is unusual, but can happen in cases of gene fusion, for instance.}
+\CommentTok{# If a gene has more than 1 COG, select the most recent one.}
 \NormalTok{gene_cogs }\OperatorTok{%<>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(cog_roots) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(string_id) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{max}\NormalTok{(root)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\KeywordTok{min}\NormalTok{(root)) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{inner_join}\NormalTok{(clade_names)}
 
 \CommentTok{# Gathering all gene info available}
@@ -103,25 +102,56 @@ folder.
 
 We use base ggplot2 to draw the network. Edges are represented by a
 common \texttt{geom\_path} layer. The following block retrieves tidy
-edge coordinates for the \texttt{geom\_path} calls.
+edge coordinates for the \texttt{geom\_path} calls. We also perform some
+data wrangling necessary for faceting the network plots according to the
+roots of genes.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# Recreating the vertices data.frame, now with layout coordinates (lazy way)}
-\NormalTok{vertices <-}\StringTok{ }\NormalTok{igraph}\OperatorTok{::}\KeywordTok{as_data_frame}\NormalTok{(g, }\DataTypeTok{what =} \StringTok{"vertices"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{string_id =}\NormalTok{ name)}
+\NormalTok{vertices <-}\StringTok{ }\NormalTok{g }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{igraph}\OperatorTok{::}\KeywordTok{as_data_frame}\NormalTok{(}\DataTypeTok{what =} \StringTok{"vertices"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{rename}\NormalTok{(}\DataTypeTok{string_id =}\NormalTok{ name) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{pie_border =} \OtherTok{NA}\NormalTok{)}
 
-\CommentTok{# The edges and edges_long data.frames will be used to draw lines with geom_path}
-\NormalTok{edges <-}\StringTok{ }\NormalTok{string_edgelist }\OperatorTok{%>%}
-\StringTok{    }\KeywordTok{map}\NormalTok{(match, vertices[[}\StringTok{"string_id"}\NormalTok{]]) }\OperatorTok{%>%}
-\StringTok{    }\KeywordTok{map_dfr}\NormalTok{(}\OperatorTok{~}\StringTok{ }\NormalTok{vertices[.x,]) }\OperatorTok{%>%}
-\StringTok{    }\KeywordTok{select}\NormalTok{(x, y, string_id) }\OperatorTok{%>%}
-\StringTok{    }\KeywordTok{cbind}\NormalTok{(}\DataTypeTok{group =} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(string_edgelist))}
-
-\NormalTok{edges_long <-}\StringTok{ }\NormalTok{string_edgelist }\OperatorTok{%$%}
+\CommentTok{# The edges data.frames will be used to draw lines with geom_path}
+\NormalTok{edges_scaffold <-}\StringTok{ }\NormalTok{string_edgelist }\OperatorTok{%$%}
 \StringTok{  }\KeywordTok{data.frame}\NormalTok{(}
      \DataTypeTok{string_id        =} \KeywordTok{c}\NormalTok{(stringId_A, stringId_B)}
 \NormalTok{    ,}\DataTypeTok{group            =} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(.)}
 \NormalTok{    ,}\DataTypeTok{stringsAsFactors =} \OtherTok{FALSE}
+\NormalTok{  )}
+
+\NormalTok{edges <-}\StringTok{ }\NormalTok{edges_scaffold }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Joining vertices to obtain coordinates}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(vertices, }\DataTypeTok{by =} \StringTok{"string_id"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }
+\StringTok{  }\CommentTok{# Determining from which root onwards an edge can be drawn}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(group) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{edge_root =} \KeywordTok{min}\NormalTok{(root))}
+
+\CommentTok{# Reference data.frame for inequality join}
+\NormalTok{subsequent_duplicator <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{distinct}\NormalTok{(root) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(clade_names) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{transmute}\NormalTok{(}
+     \DataTypeTok{facet_root =}\NormalTok{ root}
+\NormalTok{    ,}\DataTypeTok{root_name  =} \KeywordTok{paste0}\NormalTok{(}\StringTok{"Human-"}\NormalTok{, clade_name, }\StringTok{" LCA (#"}\NormalTok{, root,}\StringTok{")"}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{fct_reorder}\NormalTok{(}\OperatorTok{-}\NormalTok{root)}
+\NormalTok{  )}
+
+\CommentTok{# Simply duplicating emerging edges in subsequent roots}
+\NormalTok{edges_in_roots <-}\StringTok{ }\NormalTok{edges }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{fuzzy_inner_join}\NormalTok{(subsequent_duplicator, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"edge_root"}\NormalTok{ =}\StringTok{ "facet_root"}\NormalTok{), }\DataTypeTok{match_fun =} \KeywordTok{list}\NormalTok{(}\StringTok{`}\DataTypeTok{>=}\StringTok{`}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{past =}\NormalTok{ edge_root }\OperatorTok{!=}\StringTok{ }\NormalTok{facet_root)}
+
+\CommentTok{# Simply duplicating emerging nodes in subsequent roots}
+\NormalTok{nodes_in_roots <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{fuzzy_inner_join}\NormalTok{(subsequent_duplicator, }\DataTypeTok{by =} \KeywordTok{c}\NormalTok{(}\StringTok{"root"}\NormalTok{ =}\StringTok{ "facet_root"}\NormalTok{), }\DataTypeTok{match_fun =} \KeywordTok{list}\NormalTok{(}\StringTok{`}\DataTypeTok{>=}\StringTok{`}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+     \DataTypeTok{past        =}\NormalTok{ root }\OperatorTok{!=}\StringTok{ }\NormalTok{facet_root}
+\NormalTok{    ,}\DataTypeTok{node_fill   =} \KeywordTok{ifelse}\NormalTok{(past, }\StringTok{"past"}\NormalTok{, annotation)}
+\NormalTok{    ,}\DataTypeTok{node_border =} \KeywordTok{ifelse}\NormalTok{(}\OperatorTok{!}\NormalTok{past }\OperatorTok{&}\StringTok{ }\NormalTok{ne, }\StringTok{"ne_border"}\NormalTok{, node_fill)}
+\NormalTok{    ,}\DataTypeTok{pie_border  =} \KeywordTok{ifelse}\NormalTok{(past, }\StringTok{"past"}\NormalTok{, }\KeywordTok{ifelse}\NormalTok{(ne, }\StringTok{"ne_border"}\NormalTok{, }\StringTok{"no_border"}\NormalTok{))}
 \NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
@@ -136,13 +166,6 @@ Setting up reusable aesthetic parameters to avoid code duplication.
 \NormalTok{  ,}\StringTok{"gabaergic"}
 \NormalTok{  ,}\StringTok{"glutamatergic"}
 \NormalTok{  ,}\StringTok{"serotonergic"}
-\NormalTok{)}
-\NormalTok{systems_labeller <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
-   \StringTok{"Cholinergic"}\NormalTok{   =}\StringTok{ "cholinergic"}
-\NormalTok{  ,}\StringTok{"Dopaminergic"}\NormalTok{  =}\StringTok{ "dopaminergic"}
-\NormalTok{  ,}\StringTok{"GABAergic"}\NormalTok{     =}\StringTok{ "gabaergic"}
-\NormalTok{  ,}\StringTok{"Glutamatergic"}\NormalTok{ =}\StringTok{ "glutamatergic"}
-\NormalTok{  ,}\StringTok{"Serotonergic"}\NormalTok{  =}\StringTok{ "serotonergic"}
 \NormalTok{)}
 
 \NormalTok{edge_color <-}\StringTok{ }\KeywordTok{rgb}\NormalTok{(}\FloatTok{0.7}\NormalTok{, }\FloatTok{0.7}\NormalTok{, }\FloatTok{0.7}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.3}\NormalTok{)}
@@ -170,72 +193,30 @@ Setting up reusable aesthetic parameters to avoid code duplication.
   \CommentTok{#-------- network faceting ---------}
 \NormalTok{  ,}\StringTok{"past"}\NormalTok{                  =}\StringTok{ "#FFFFFF"}
 \NormalTok{  ,}\StringTok{"other"}\NormalTok{                 =}\StringTok{ "#A0A0A0"}
-\NormalTok{  ,}\StringTok{"other_edge"}\NormalTok{            =}\StringTok{ }\KeywordTok{rgb}\NormalTok{(}\FloatTok{0.7}\NormalTok{, }\FloatTok{0.7}\NormalTok{, }\FloatTok{0.7}\NormalTok{)}
+\NormalTok{  ,}\StringTok{"other_edge"}\NormalTok{            =}\StringTok{ "#B3B3B3"}
 \NormalTok{  ,}\StringTok{"ne_border"}\NormalTok{             =}\StringTok{ "#000000"}
-\NormalTok{)}
-
-\NormalTok{node_fill_scale  <-}\StringTok{ }\KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ color_mappings)}
-\NormalTok{node_color_scale <-}\StringTok{ }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ color_mappings }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.2}\NormalTok{))}
-
-\CommentTok{# Color and size scales for neurotransmission functions}
-\NormalTok{plot_scales <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}
-\NormalTok{   node_fill_scale}
-\NormalTok{  ,node_color_scale}
-\NormalTok{  ,}\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{1.75}\NormalTok{, }\FloatTok{5.00}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
-\NormalTok{)}
-
-\NormalTok{past_fill  <-}\StringTok{ "#FFFFFF"} \CommentTok{# past nodes' fill color}
-\NormalTok{past_color <-}\StringTok{ "#888888"} \CommentTok{# past nodes' border color}
-
-\CommentTok{# Baking some aesthetic properties into the vertices data.frame}
-\NormalTok{vertices }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{mutate}\NormalTok{(}
-  \DataTypeTok{shape      =} \KeywordTok{ifelse}\NormalTok{(ne, }\StringTok{"square filled"}\NormalTok{, }\StringTok{"circle filled"}\NormalTok{),}
-  \DataTypeTok{color_node =} \KeywordTok{ifelse}\NormalTok{(ne, }\StringTok{"#000000"}\NormalTok{, color_mappings[annotation] }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.2}\NormalTok{)),}
-  \DataTypeTok{color_pie  =} \KeywordTok{ifelse}\NormalTok{(ne, }\StringTok{"#000000"}\NormalTok{, }\OtherTok{NA}\NormalTok{),}
 \NormalTok{)}
 
 \CommentTok{# Some recurrent ggplot aesthetics}
 \NormalTok{edge_aes <-}\StringTok{ }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{group =}\NormalTok{ group)}
-\NormalTok{text_aes <-}\StringTok{ }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{label =}\NormalTok{ string_name)}
-\NormalTok{pie_aes  <-}\StringTok{ }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{group =}\NormalTok{ string_id, }\DataTypeTok{r =}\NormalTok{ size}\OperatorTok{^}\NormalTok{(}\FloatTok{0.94}\NormalTok{) }\OperatorTok{-}\StringTok{ }\FloatTok{1.5}\NormalTok{)}
+\NormalTok{pie_aes  <-}\StringTok{ }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y, }\DataTypeTok{color =}\NormalTok{ pie_border, }\DataTypeTok{group =}\NormalTok{ string_id, }\DataTypeTok{r =}\NormalTok{ size}\OperatorTok{^}\NormalTok{(}\FloatTok{0.94}\NormalTok{) }\OperatorTok{-}\StringTok{ }\FloatTok{1.5}\NormalTok{)}
 
-\CommentTok{# Fixing xy limits across all plots}
-\NormalTok{xy_lim <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}
-  \KeywordTok{scale_x_continuous}\NormalTok{(}\DataTypeTok{limits =} \KeywordTok{range}\NormalTok{(vertices[[}\StringTok{"x"}\NormalTok{]]) }\OperatorTok{+}\StringTok{ }\KeywordTok{c}\NormalTok{(}\OperatorTok{-}\DecValTok{50}\NormalTok{, }\DecValTok{50}\NormalTok{)),}
-  \KeywordTok{scale_y_continuous}\NormalTok{(}\DataTypeTok{limits =} \KeywordTok{range}\NormalTok{(vertices[[}\StringTok{"y"}\NormalTok{]]) }\OperatorTok{+}\StringTok{ }\KeywordTok{c}\NormalTok{(}\OperatorTok{-}\DecValTok{50}\NormalTok{, }\DecValTok{50}\NormalTok{))}
-\NormalTok{)}
-
-\CommentTok{# Emptying theme defaults}
-\NormalTok{plot_theme <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}\KeywordTok{coord_equal}\NormalTok{(), }\KeywordTok{theme_void}\NormalTok{())}
-
-\CommentTok{# Allowing more space for multiple network plots}
-\NormalTok{diff_theme <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}
-  \KeywordTok{coord_equal}\NormalTok{(),}
-  \KeywordTok{theme_void}\NormalTok{(),}
-  \KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{plot.title         =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{, }\DataTypeTok{hjust =} \FloatTok{0.5}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.text        =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{6}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.title       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{8}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.key.size    =} \KeywordTok{unit}\NormalTok{( }\DecValTok{1}\NormalTok{, }\StringTok{"mm"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.box.spacing =} \KeywordTok{unit}\NormalTok{(}\OperatorTok{-}\DecValTok{2}\NormalTok{, }\StringTok{"mm"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{legend.box.margin  =} \KeywordTok{unit}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{2}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), }\StringTok{"mm"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{plot.margin        =} \KeywordTok{unit}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{, }\DecValTok{0}\NormalTok{), }\StringTok{"mm"}\NormalTok{)}
+\NormalTok{theme_facet <-}\StringTok{ }\KeywordTok{list}\NormalTok{(}
+   \CommentTok{# Scales}
+   \KeywordTok{scale_fill_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ color_mappings)}
+\NormalTok{  ,}\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ color_mappings }\OperatorTok{%>%}\StringTok{ }\KeywordTok{darken}\NormalTok{(}\FloatTok{0.25}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"no_border"}\NormalTok{ =}\StringTok{ }\OtherTok{NA}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
+\NormalTok{  ,}\KeywordTok{scale_shape_manual}\NormalTok{(}\DataTypeTok{values =} \KeywordTok{c}\NormalTok{(}\StringTok{"TRUE"}\NormalTok{ =}\StringTok{ "square filled"}\NormalTok{, }\StringTok{"FALSE"}\NormalTok{ =}\StringTok{ "circle filled"}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
+\NormalTok{  ,}\KeywordTok{coord_equal}\NormalTok{()}
+  \CommentTok{# Theme}
+\NormalTok{  ,}\KeywordTok{theme_void}\NormalTok{()}
+\NormalTok{  ,}\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{strip.text       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{margin =} \KeywordTok{margin}\NormalTok{(}\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{10}\NormalTok{))}
+\NormalTok{    ,}\DataTypeTok{strip.text.x     =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#616161"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{10}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.background =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.border     =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{fill =} \OtherTok{NA}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
 \NormalTok{  )}
-\NormalTok{)}
-
-\CommentTok{# Numeric vector named with clade names}
-\NormalTok{roots <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{arrange}\NormalTok{(}\OperatorTok{-}\NormalTok{root) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{distinct}\NormalTok{(root, clade_name) }\OperatorTok{%$%}
-\StringTok{  }\KeywordTok{set_names}\NormalTok{(root, clade_name)}
-
-\NormalTok{upset_texts <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
-   \DecValTok{3}   \CommentTok{#ytitle}
-\NormalTok{  ,}\DecValTok{2}   \CommentTok{#ytick}
-\NormalTok{  ,}\DecValTok{1}   \CommentTok{#setsizetitle}
-\NormalTok{  ,}\FloatTok{1.5} \CommentTok{#setsizetick}
-\NormalTok{  ,}\DecValTok{2}   \CommentTok{#setnames}
-\NormalTok{  ,}\FloatTok{2.5} \CommentTok{#barnums}
+\NormalTok{  ,}\KeywordTok{guides}\NormalTok{(}\DataTypeTok{legend.position=}\StringTok{"none"}\NormalTok{)}
+\NormalTok{  ,}\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{color =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{linetype =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{shape =} \OtherTok{FALSE}\NormalTok{, }\DataTypeTok{size =} \OtherTok{FALSE}\NormalTok{)}
 \NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
@@ -245,9 +226,7 @@ Setting up reusable aesthetic parameters to avoid code duplication.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{####################}
-\CommentTok{## Common elements}
-\CommentTok{####################}
+\CommentTok{# Common elements}
 \NormalTok{plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
    \DataTypeTok{data    =}\NormalTok{ edges}
 \NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
@@ -257,75 +236,64 @@ Setting up reusable aesthetic parameters to avoid code duplication.
 
 \NormalTok{plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
    \DataTypeTok{data    =}\NormalTok{ vertices}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ text_aes}
-\NormalTok{  ,}\DataTypeTok{size    =} \DecValTok{1}
+\NormalTok{  ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{  ,}\DataTypeTok{size    =} \DecValTok{2}
 \NormalTok{  ,}\DataTypeTok{vjust   =} \DecValTok{0}
 \NormalTok{  ,}\DataTypeTok{nudge_y =} \DecValTok{6}
 \NormalTok{  ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
 \NormalTok{)}
 
-\CommentTok{##############}
-\CommentTok{## Figure 1A}
-\CommentTok{##############}
+\CommentTok{# Figure 1A}
 \NormalTok{plot_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}
    \DataTypeTok{data    =}\NormalTok{ vertices}
 \NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
 \NormalTok{  ,}\DataTypeTok{cols    =}\NormalTok{ systems}
-\NormalTok{  ,}\DataTypeTok{color   =} \OtherTok{NA}
 \NormalTok{)}
 
 \NormalTok{fig1a <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_theme }\OperatorTok{+}
 \StringTok{  }\NormalTok{plot_edges }\OperatorTok{+}
 \StringTok{  }\NormalTok{plot_pies }\OperatorTok{+}
-\StringTok{  }\NormalTok{node_fill_scale }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_text}
+\StringTok{  }\NormalTok{theme_facet }\OperatorTok{+}
+\StringTok{  }\NormalTok{plot_text }\OperatorTok{+}
+\StringTok{  }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill=}\StringTok{"legend"}\NormalTok{)}
 
-\CommentTok{##############}
-\CommentTok{## Figure 1B}
-\CommentTok{##############}
+\CommentTok{# Figure 1B}
 \NormalTok{plot_nodes <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
    \DataTypeTok{data    =}\NormalTok{ vertices}
 \NormalTok{  ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{color =}\NormalTok{ annotation, }\DataTypeTok{size =}\NormalTok{ size)}
 \NormalTok{  ,}\DataTypeTok{shape   =} \DecValTok{21}
-\NormalTok{  ,}\DataTypeTok{stroke  =} \FloatTok{0.5}
+\NormalTok{  ,}\DataTypeTok{stroke  =} \DecValTok{1}
 \NormalTok{)}
   
 \NormalTok{fig1b <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_theme }\OperatorTok{+}
 \StringTok{  }\NormalTok{plot_edges }\OperatorTok{+}
 \StringTok{  }\NormalTok{plot_nodes }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_text}
+\StringTok{  }\NormalTok{theme_facet }\OperatorTok{+}
+\StringTok{  }\NormalTok{plot_text }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{12}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill=}\StringTok{"legend"}\NormalTok{)}
 
 \CommentTok{# Plotting and saving}
 \NormalTok{fig1a }\OperatorTok{/}\StringTok{ }\NormalTok{fig1b}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# ggsave("plots/fig1_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)}
-\end{Highlighting}
-\end{Shaded}
-
-\clearpage
-
 \begin{figure}
-\centering
-\includegraphics[width=\textwidth,height=0.9\textheight]{figs/analysis.network.fig1_raw-1}
-\caption{test.}
-\end{figure}
 
-\clearpage
+{\centering \includegraphics{figs/analysis.network.fig1-1} 
+
+}
+
+\caption{Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom).}\label{fig:fig1}
+\end{figure}
 
 \hypertarget{manuscript-figure-2}{%
 \subsubsection{Manuscript figure 2}\label{manuscript-figure-2}}
 
-This figure is produced externally by a program called ViaComplex.
-ViaComplex superimposes a heatmap over the network layout based on a
-node property. We are going to use nodes neuroexclusivity values. The
-following block handles data formatting related to ViaComplex.
+This figure is produced externally by a program called ViaComplex, which
+superimposes a heatmap over the network layout based on a node property.
+In our case, this property is the neuroexclusivity index. The following
+block handles data formatting related to ViaComplex.
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -389,138 +357,63 @@ consists of finding what nodes have numeric roots in a given range. In
 our analysis, the largest root is numbered 37 and represents the oldest
 common ancestor to humans in the cladogram (the Human-Metamonada LCA, as
 seen in previous sections). Root number 1 is represented by \emph{Homo
-sapiens} itself.\\
-The nodes we need to draw are either \texttt{current\_nodes} (roots in a
-specified numeric range), or \texttt{past\_nodes} (roots \textgreater{}
-such specified range). The edges we need to draw are all edges between
-both sets of nodes.\\
-\textbf{Manuscript Figure 3A}
+sapiens} itself.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# Finding which genes should be drawn}
-\NormalTok{current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\DecValTok{37}\NormalTok{)}
+\CommentTok{# Subsetting node data for the two roots}
+\NormalTok{nodes_in_roots_fig3 <-}\StringTok{ }\NormalTok{nodes_in_roots }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{filter}\NormalTok{(facet_root }\OperatorTok{%in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{37}\NormalTok{,}\DecValTok{26}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}
+     \CommentTok{# Correctly color coding every node between these roots}
+     \DataTypeTok{past        =}\NormalTok{ (root }\OperatorTok{==}\StringTok{ }\DecValTok{37}\NormalTok{) }\OperatorTok{&}\StringTok{ }\NormalTok{(root }\OperatorTok{!=}\StringTok{ }\NormalTok{facet_root)}
+\NormalTok{    ,}\DataTypeTok{pie_border  =} \KeywordTok{ifelse}\NormalTok{(past, }\StringTok{"past"}\NormalTok{, }\KeywordTok{ifelse}\NormalTok{(ne, }\StringTok{"ne_border"}\NormalTok{, }\StringTok{"no_border"}\NormalTok{))}
+\NormalTok{  )}
 
-\CommentTok{# Finding which edges should be drawn}
-\NormalTok{partial_ids   <-}\StringTok{ }\NormalTok{current_genes }\OperatorTok{%>%}\StringTok{ }\KeywordTok{pull}\NormalTok{(string_id)}
-\NormalTok{which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
-\NormalTok{partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{2}\NormalTok{),]}
+\CommentTok{# Nodes from root 37 should be white in root 26}
+\NormalTok{nodes_in_roots_fig3[nodes_in_roots_fig3[[}\StringTok{"past"}\NormalTok{]], systems] <-}\StringTok{ }\DecValTok{0}
 
-\NormalTok{plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ partial_edges}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
-\NormalTok{  ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
-\NormalTok{  ,}\DataTypeTok{size    =} \FloatTok{0.1}
-\NormalTok{)}
-
-\NormalTok{plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ text_aes}
-\NormalTok{  ,}\DataTypeTok{size    =} \DecValTok{1}
-\NormalTok{  ,}\DataTypeTok{vjust   =} \DecValTok{0}
-\NormalTok{  ,}\DataTypeTok{nudge_y =} \FloatTok{1.75}
-\NormalTok{  ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
-\NormalTok{)}
-
-\NormalTok{plot_current_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
-\NormalTok{  ,}\DataTypeTok{cols    =}\NormalTok{ systems}
-\NormalTok{  ,}\DataTypeTok{color   =} \OtherTok{NA}
-\NormalTok{)}
-
-\CommentTok{# Assembling}
-\NormalTok{fig3a <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_edges }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{  }\NormalTok{xy_lim }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_current_pies }\OperatorTok{+}
-\StringTok{  }\NormalTok{node_fill_scale }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_theme}
+\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Edges}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ edges_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(facet_root }\OperatorTok{%in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\DecValTok{37}\NormalTok{,}\DecValTok{26}\NormalTok{))}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
+\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
+\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Non-neuroexclusive nodes}
+\StringTok{  }\KeywordTok{geom_scatterpie}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ nodes_in_roots_fig3 }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ne }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
+\NormalTok{    ,}\DataTypeTok{cols    =}\NormalTok{ systems }\OperatorTok{%>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"past"}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Neuroexclusive nodes}
+\StringTok{  }\KeywordTok{geom_scatterpie}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ nodes_in_roots_fig3 }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ne }\OperatorTok{==}\StringTok{ }\OtherTok{TRUE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
+\NormalTok{    ,}\DataTypeTok{cols    =}\NormalTok{ systems }\OperatorTok{%>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"past"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{n       =} \DecValTok{5} \CommentTok{# Square nodes}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ nodes_in_roots_fig3 }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{16}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{    ,}\DataTypeTok{size    =} \DecValTok{2}
+\NormalTok{    ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{5}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_wrap}\NormalTok{(. }\OperatorTok{~}\StringTok{ }\NormalTok{root_name, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\NormalTok{theme_facet}
 \end{Highlighting}
 \end{Shaded}
-
-\textbf{Manuscript Figure 3B}\\
-For Figure 3B, we want to see what nodes have numeric roots \textless{}
-37 (Human-Metamonada LCA) and \textgreater= 26 (Human-Cnidaria LCA).
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Finding which genes should be drawn}
-\NormalTok{current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{<}\StringTok{ }\DecValTok{37} \OperatorTok{&}\StringTok{ }\NormalTok{root }\OperatorTok{>=}\StringTok{ }\DecValTok{26}\NormalTok{)}
-\NormalTok{past_genes    <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\DecValTok{37}\NormalTok{)}
-
-\CommentTok{# Finding which edges should be drawn}
-\NormalTok{partial_ids   <-}\StringTok{ }\KeywordTok{c}\NormalTok{(current_genes[[}\StringTok{"string_id"}\NormalTok{]], past_genes[[}\StringTok{"string_id"}\NormalTok{]])}
-\NormalTok{which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
-\NormalTok{partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{2}\NormalTok{),]}
-
-\NormalTok{plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ partial_edges}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
-\NormalTok{  ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
-\NormalTok{  ,}\DataTypeTok{size    =} \FloatTok{0.1}
-\NormalTok{)}
-
-\NormalTok{plot_past <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ past_genes}
-\NormalTok{  ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{  ,}\DataTypeTok{fill    =}\NormalTok{ past_fill}
-\NormalTok{  ,}\DataTypeTok{color   =}\NormalTok{ past_color}
-\NormalTok{  ,}\DataTypeTok{shape   =}\NormalTok{ past_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{  ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{)}
-
-\NormalTok{plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ text_aes}
-\NormalTok{  ,}\DataTypeTok{size    =} \DecValTok{1}
-\NormalTok{  ,}\DataTypeTok{vjust   =} \DecValTok{0}
-\NormalTok{  ,}\DataTypeTok{nudge_y =} \FloatTok{1.75}
-\NormalTok{  ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
-\NormalTok{)}
-
-\NormalTok{plot_current_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}
-   \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{  ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
-\NormalTok{  ,}\DataTypeTok{cols    =}\NormalTok{ systems}
-\NormalTok{  ,}\DataTypeTok{color   =} \OtherTok{NA}
-\NormalTok{)}
-
-\CommentTok{# Assembling}
-\NormalTok{fig3b <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_edges }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_past }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{  }\NormalTok{xy_lim }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_current_pies }\OperatorTok{+}
-\StringTok{  }\NormalTok{node_fill_scale }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{  }\NormalTok{plot_theme}
-
-\CommentTok{# Plotting and saving}
-\KeywordTok{pdf.options}\NormalTok{(}\DataTypeTok{useDingbats =} \OtherTok{FALSE}\NormalTok{)}
-\NormalTok{fig3a }\OperatorTok{/}\StringTok{ }\NormalTok{fig3b}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{pdf.options}\NormalTok{(}\DataTypeTok{useDingbats =} \OtherTok{TRUE}\NormalTok{)}
-\CommentTok{# ggsave("plots/fig3_raw.pdf", width = 14, height = 7, onefile = F, useDingbats = F)}
-\end{Highlighting}
-\end{Shaded}
-
-\clearpage
 
 \begin{figure}
-\centering
-\includegraphics[width=\textwidth,height=0.9\textheight]{figs/analysis.network.fig3_raw-1}
-\caption{test.}
-\end{figure}
 
-\clearpage
+{\centering \includegraphics{figs/analysis.network.fig3-1} 
+
+}
+
+\caption{Unedited manuscript figure 3. It represents the human neurotransmission network with nodes colored by neurotransmitter systems. At the top, we have the human network composed only of nodes rooted at the origin of Eukaryota. At the bottom, we have the human network composed of nodes rooted since the origin of Eukaryota until the Human-Cnidaria LCA.}\label{fig:fig3}
+\end{figure}
 
 Additionally, we cumulatively count nodes by their categories (function
 and neuroexclusivity) and inferred root:
@@ -531,13 +424,15 @@ and neuroexclusivity) and inferred root:
 \StringTok{  }\KeywordTok{select}\NormalTok{(root, annotation, }\DataTypeTok{is_neuroexclusive =}\NormalTok{ ne) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Adding clade info}
 \StringTok{  }\KeywordTok{right_join}\NormalTok{(clade_names) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Converting logical to character}
+\StringTok{  }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{is_neuroexclusive =} \KeywordTok{as.character}\NormalTok{(is_neuroexclusive)) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Pivoting from wide to long}
 \StringTok{  }\KeywordTok{pivot_longer}\NormalTok{(annotation}\OperatorTok{:}\NormalTok{is_neuroexclusive, }\DataTypeTok{values_ptypes =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{value =} \StringTok{"character"}\NormalTok{)) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Counting nodes by category (name) for each root}
 \StringTok{  }\KeywordTok{count}\NormalTok{(root, clade_name, name, value) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Making absent counts explicit}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(name) }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{complete}\NormalTok{(}\KeywordTok{nesting}\NormalTok{(root, clade_name), name, value, }\DataTypeTok{fill =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{n =} \DecValTok{0}\NormalTok{)) }\OperatorTok{%>%}
+\StringTok{  }\NormalTok{tidyr}\OperatorTok{::}\KeywordTok{complete}\NormalTok{(}\KeywordTok{nesting}\NormalTok{(root, clade_name), name, value, }\DataTypeTok{fill =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{n =} \DecValTok{0}\NormalTok{)) }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# No reason to include NA observations in cumulative sum}
 \StringTok{  }\NormalTok{na.omit }\OperatorTok{%>%}
 \StringTok{  }\CommentTok{# Cumulative sum node count at each root}
@@ -550,43 +445,43 @@ Plotting such cumulative counts:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# Creating ordered factors for plotting}
 \NormalTok{cumulative_emergence }\OperatorTok{%<>%}\StringTok{ }\NormalTok{ungroup }\OperatorTok{%>%}
-\StringTok{  }\CommentTok{# Creating ordered factors for plotting}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
      \DataTypeTok{clade_name =} \KeywordTok{fct_reorder}\NormalTok{(clade_name, }\OperatorTok{-}\NormalTok{root)}
 \NormalTok{    ,}\DataTypeTok{value      =} \KeywordTok{fct_reorder}\NormalTok{(value, name)}
 \NormalTok{  )}
 
 \KeywordTok{ggplot}\NormalTok{(cumulative_emergence) }\OperatorTok{+}
-\StringTok{  }\CommentTok{#----- Barplot ------}
+\StringTok{  }\CommentTok{# Barplot}
 \StringTok{  }\KeywordTok{geom_bar}\NormalTok{(}
      \DataTypeTok{mapping     =} \KeywordTok{aes}\NormalTok{(clade_name, cumulative_count, }\DataTypeTok{group =}\NormalTok{ value)}
 \NormalTok{    ,}\DataTypeTok{stat        =} \StringTok{"sum"}
 \NormalTok{    ,}\DataTypeTok{fill        =} \StringTok{"#999999"}
 \NormalTok{    ,}\DataTypeTok{show.legend =}\NormalTok{ F}
 \NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\CommentTok{#----- Lines ------}
+\StringTok{  }\CommentTok{# Lines}
 \StringTok{  }\KeywordTok{geom_line}\NormalTok{(}
      \DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(clade_name, cumulative_count, }\DataTypeTok{group =}\NormalTok{ value, }\DataTypeTok{color =}\NormalTok{ value)}
 \NormalTok{    ,}\DataTypeTok{size    =} \DecValTok{1}
 \NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\CommentTok{#----- Styling ------}
+\StringTok{  }\CommentTok{# Styling}
 \StringTok{  }\KeywordTok{scale_color_manual}\NormalTok{(}\DataTypeTok{values =}\NormalTok{ color_mappings) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{facet_grid}\NormalTok{(name }\OperatorTok{~}\StringTok{ }\NormalTok{.) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{theme}\NormalTok{(}
      \DataTypeTok{axis.title  =} \KeywordTok{element_blank}\NormalTok{()}
-\NormalTok{    ,}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{size =} \DecValTok{12}\NormalTok{, }\DataTypeTok{angle =} \DecValTok{-45}\NormalTok{, }\DataTypeTok{vjust =} \DecValTok{0}\NormalTok{, }\DataTypeTok{hjust =} \DecValTok{0}\NormalTok{)}
 \NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{figure}
 
-{\centering \includegraphics{figs/analysis.network.unnamed-chunk-11-1} 
+{\centering \includegraphics{figs/analysis.network.fig3_barplots-1} 
 
 }
 
-\caption{Cumulative node counts by categories at each root.}\label{fig:unnamed-chunk-11}
+\caption{Cumulative node counts by categories at each root.}\label{fig:fig3_barplots}
 \end{figure}
 
 \hypertarget{manuscript-figure-4}{%
@@ -597,171 +492,87 @@ Visualizing nodes with roots \textless= 30 (Human-Porifera LCA) and
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{plot_size <-}\StringTok{ }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{0.5}\NormalTok{, }\FloatTok{1.5}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{)}
-
-\NormalTok{fig4 <-}\StringTok{ }\NormalTok{roots[roots }\OperatorTok{>=}\StringTok{ }\DecValTok{26} \OperatorTok{&}\StringTok{ }\NormalTok{roots }\OperatorTok{<=}\StringTok{ }\DecValTok{30}\NormalTok{] }\OperatorTok{%>%}
-\StringTok{  }\KeywordTok{imap}\NormalTok{(}\OperatorTok{~}\StringTok{ }\NormalTok{\{}
-  \CommentTok{# Finding which genes should be drawn}
-\NormalTok{  current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\NormalTok{.x)}
-\NormalTok{  past_genes    <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root  }\OperatorTok{>}\StringTok{ }\NormalTok{.x)}
-  
-  \CommentTok{# Finding which edges should be drawn}
-\NormalTok{  partial_ids   <-}\StringTok{ }\KeywordTok{c}\NormalTok{(current_genes[[}\StringTok{"string_id"}\NormalTok{]], past_genes[[}\StringTok{"string_id"}\NormalTok{]])}
-\NormalTok{  which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
-\NormalTok{  partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{2}\NormalTok{),]}
-  
-\NormalTok{  plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ partial_edges}
+\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Edges}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ edges_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(facet_root }\OperatorTok{>=}\StringTok{ }\DecValTok{26} \OperatorTok{&}\StringTok{ }\NormalTok{facet_root }\OperatorTok{<=}\StringTok{ }\DecValTok{30}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
 \NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
 \NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
-\NormalTok{  )}
-  
-\NormalTok{  plot_past <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ past_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{fill    =}\NormalTok{ past_fill}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ past_color}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ past_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ text_aes}
-\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.8}
-\NormalTok{    ,}\DataTypeTok{vjust   =} \FloatTok{-0.5}
-\NormalTok{    ,}\DataTypeTok{nudge_y =} \DecValTok{1}
-\NormalTok{    ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
-\NormalTok{  )}
-  
-\NormalTok{  plot_current_nodes <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{color_node}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  remove_legend <-}\StringTok{ }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \StringTok{"none"}\NormalTok{, }\DataTypeTok{colour =} \StringTok{"none"}\NormalTok{)}
-  
-  \CommentTok{# Assembling}
-  \KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\KeywordTok{paste}\NormalTok{(.y, }\StringTok{"LCA"}\NormalTok{)) }\OperatorTok{+}
-\StringTok{    }\NormalTok{diff_theme }\OperatorTok{+}
-\StringTok{    }\NormalTok{xy_lim }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_edges }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_past }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_current_nodes }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_size }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{    }\NormalTok{remove_legend}
-\NormalTok{\})}
-
-\NormalTok{fig4 <-}\StringTok{ }\KeywordTok{invoke}\NormalTok{(grid.arrange, fig4, }\DataTypeTok{ncol =} \DecValTok{5}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Nodes}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(facet_root }\OperatorTok{>=}\StringTok{ }\DecValTok{26} \OperatorTok{&}\StringTok{ }\NormalTok{facet_root }\OperatorTok{<=}\StringTok{ }\DecValTok{30}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}
+       \DataTypeTok{x     =}\NormalTok{ x}
+\NormalTok{      ,}\DataTypeTok{y     =}\NormalTok{ y}
+\NormalTok{      ,}\DataTypeTok{size  =}\NormalTok{ size}
+\NormalTok{      ,}\DataTypeTok{shape =}\NormalTok{ ne}
+\NormalTok{      ,}\DataTypeTok{fill  =}\NormalTok{ node_fill}
+\NormalTok{      ,}\DataTypeTok{color =}\NormalTok{ node_border}
+\NormalTok{    )}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Labels}
+\StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE} \OperatorTok{&}\StringTok{ }\NormalTok{facet_root }\OperatorTok{>=}\StringTok{ }\DecValTok{26} \OperatorTok{&}\StringTok{ }\NormalTok{facet_root }\OperatorTok{<=}\StringTok{ }\DecValTok{30}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{16}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{    ,}\DataTypeTok{size =} \DecValTok{2}
+\NormalTok{    ,}\DataTypeTok{alpha =} \FloatTok{0.75}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{1.75}\NormalTok{, }\FloatTok{4.5}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_wrap}\NormalTok{(. }\OperatorTok{~}\StringTok{ }\NormalTok{root_name, }\DataTypeTok{ncol =} \DecValTok{5}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\NormalTok{theme_facet}
 \end{Highlighting}
 \end{Shaded}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# ggsave(}
-\CommentTok{#   "plots/fig4_raw.pdf"}
-\CommentTok{#   ,plot        = fig4}
-\CommentTok{#   ,width       = 9*0.9}
-\CommentTok{#   ,height      = 5*0.9}
-\CommentTok{#   ,onefile     = F}
-\CommentTok{#   ,useDingbats = F}
-\CommentTok{# )}
-\end{Highlighting}
-\end{Shaded}
-
-\clearpage
 
 \begin{figure}
-\centering
-\includegraphics[width=1\textwidth,height=\textheight]{figs/analysis.network.fig4_raw-1}
-\caption{test.}
-\end{figure}
 
-\clearpage
+{\centering \includegraphics{figs/analysis.network.fig4-1} 
+
+}
+
+\caption{Unedited manuscript figure 4. The human neurotransmission network composed of nodes rooted between roots 30 (Holozoa LCA) and 26 (Human-Cnidaria LCA).}\label{fig:fig4}
+\end{figure}
 
 \hypertarget{supplementary-network-figures}{%
 \subsubsection{Supplementary network
 figures}\label{supplementary-network-figures}}
 
 The following supplementary figures help us see what nodes have been
-rooted at each LCA. Nodes rooted at previous LCAs are colored white.
+rooted at each LCA. Nodes from previous roots are colored white.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{system_plots   <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
-\NormalTok{function_plots <-}\StringTok{ }\KeywordTok{list}\NormalTok{()}
-
-\KeywordTok{iwalk}\NormalTok{(roots, }\OperatorTok{~}\StringTok{ }\NormalTok{\{}
-  \CommentTok{# Finding which genes should be drawn}
-\NormalTok{  current_genes <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root }\OperatorTok{==}\StringTok{ }\NormalTok{.x)}
-\NormalTok{  past_genes    <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(root  }\OperatorTok{>}\StringTok{ }\NormalTok{.x)}
-  
-  \CommentTok{# Finding which edges should be drawn}
-\NormalTok{  partial_ids   <-}\StringTok{ }\KeywordTok{c}\NormalTok{(current_genes[[}\StringTok{"string_id"}\NormalTok{]], past_genes[[}\StringTok{"string_id"}\NormalTok{]])}
-\NormalTok{  which_edges   <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(string_edgelist, }\DecValTok{1}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(r) }\KeywordTok{all}\NormalTok{(r }\OperatorTok{%in%}\StringTok{ }\NormalTok{partial_ids))}
-\NormalTok{  partial_edges <-}\StringTok{ }\NormalTok{edges[which_edges }\OperatorTok{%>%}\StringTok{ }\KeywordTok{rep}\NormalTok{(}\DecValTok{2}\NormalTok{),]}
-  
-  \CommentTok{# Common elements -----------}
-\NormalTok{  plot_edges <-}\StringTok{ }\KeywordTok{geom_path}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ partial_edges}
+\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Edges}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ edges_in_roots}
 \NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
 \NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
 \NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
-\NormalTok{  )}
-  
-\NormalTok{  plot_past <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ past_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{fill    =}\NormalTok{ past_fill}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ past_color}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ past_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, text_aes, }\DataTypeTok{size =} \FloatTok{0.75}\NormalTok{, }\DataTypeTok{nudge_y =} \DecValTok{4}\NormalTok{, }\DataTypeTok{alpha =} \FloatTok{0.5}\NormalTok{)}
-  
-\NormalTok{  base <-}\StringTok{ }\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
-\StringTok{    }\KeywordTok{ggtitle}\NormalTok{(}\KeywordTok{paste0}\NormalTok{(}\StringTok{"Human-"}\NormalTok{, .y, }\StringTok{" LCA (#"}\NormalTok{, .x, }\StringTok{")"}\NormalTok{)) }\OperatorTok{+}
-\StringTok{    }\NormalTok{diff_theme }\OperatorTok{+}
-\StringTok{    }\NormalTok{xy_lim }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_edges }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_past }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_size}
-  
-  \CommentTok{# Nodes colored by system -----------}
-\NormalTok{  plot_current_pies <-}\StringTok{ }\KeywordTok{geom_scatterpie}\NormalTok{(}\DataTypeTok{data =}\NormalTok{ current_genes, pie_aes, }\DataTypeTok{cols =}\NormalTok{ systems, }\DataTypeTok{color =} \OtherTok{NA}\NormalTok{)}
-  
-\NormalTok{  system_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_current_pies }\OperatorTok{+}
-\StringTok{    }\NormalTok{node_fill_scale }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_text}
-  
-  \CommentTok{# Nodes colored by function --------}
-\NormalTok{  plot_current_nodes <-}\StringTok{ }\KeywordTok{geom_point}\NormalTok{(}
-     \DataTypeTok{data    =}\NormalTok{ current_genes}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{fill =}\NormalTok{ annotation, }\DataTypeTok{size =}\NormalTok{ size)}
-\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{color_node}
-\NormalTok{    ,}\DataTypeTok{shape   =}\NormalTok{ current_genes}\OperatorTok{$}\NormalTok{shape}
-\NormalTok{    ,}\DataTypeTok{stroke  =} \FloatTok{0.25}
-\NormalTok{  )}
-  
-\NormalTok{  function_plots[[}\KeywordTok{as.character}\NormalTok{(.x)]] <<-}\StringTok{ }\NormalTok{base }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_current_nodes }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_scales }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_size }\OperatorTok{+}
-\StringTok{    }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{    }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \KeywordTok{guide_legend}\NormalTok{(}\DataTypeTok{override.aes =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{shape =} \DecValTok{21}\NormalTok{))) }\CommentTok{# legend hack}
-\NormalTok{\})}
-
-\CommentTok{# Printing and saving}
-\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =}\NormalTok{ system_plots, }\DataTypeTok{ncol =} \DecValTok{2}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{grid}\OperatorTok{::}\KeywordTok{grid.draw}\NormalTok{()}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Nodes}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}
+       \DataTypeTok{x     =}\NormalTok{ x}
+\NormalTok{      ,}\DataTypeTok{y     =}\NormalTok{ y}
+\NormalTok{      ,}\DataTypeTok{size  =}\NormalTok{ size}
+\NormalTok{      ,}\DataTypeTok{shape =}\NormalTok{ ne}
+\NormalTok{      ,}\DataTypeTok{fill  =}\NormalTok{ node_fill}
+\NormalTok{      ,}\DataTypeTok{color =}\NormalTok{ node_border}
+\NormalTok{    )}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Labels}
+\StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{15}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{    ,}\DataTypeTok{size =} \FloatTok{1.15}
+\NormalTok{    ,}\DataTypeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{1.5}\NormalTok{, }\FloatTok{3.5}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_wrap}\NormalTok{(. }\OperatorTok{~}\StringTok{ }\NormalTok{root_name, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\NormalTok{theme_facet}
 \end{Highlighting}
 \end{Shaded}
 
@@ -769,31 +580,75 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 
 \thispagestyle{empty}
 
-\pdfpageheight=22in
+\pdfpageheight=102in
 
 \begin{figure}[p]
 
-\caption{caption.}\label{fig:analysis.network.fig_sup_systems-1}
+\caption{The human neurotransmission network with nodes rooted at each human LCA. Nodes are colored according to their function in neurotransmission. Nodes from previous roots are colored white. Nodes with black borders are neuroexclusive.}\label{fig:analysis.network.wrap_functions-1}
 
-{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_systems-1} }
+{\centering \includegraphics[height=100in, width=6.9in]{figs/analysis.network.wrap_functions-1} }
 
 \end{figure}
 
 \clearpage
 
-\thispagestyle{empty}
+\pdfpageheight=11in
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{arrangeGrob}\NormalTok{(}\DataTypeTok{grobs =}\NormalTok{ function_plots, }\DataTypeTok{ncol =} \DecValTok{2}\NormalTok{) }\OperatorTok{%>%}\StringTok{ }\NormalTok{grid}\OperatorTok{::}\KeywordTok{grid.draw}\NormalTok{()}
+\CommentTok{# Past nodes should be white (ie have no systems)}
+\NormalTok{nodes_in_roots[nodes_in_roots[[}\StringTok{"past"}\NormalTok{]], systems] <-}\StringTok{ }\DecValTok{0}
+
+\KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Edges}
+\StringTok{  }\KeywordTok{geom_path}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ edges_in_roots}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
+\NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ edge_color}
+\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Non-neuroexclusive nodes}
+\StringTok{  }\KeywordTok{geom_scatterpie}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ne }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
+\NormalTok{    ,}\DataTypeTok{cols    =}\NormalTok{ systems }\OperatorTok{%>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"past"}\NormalTok{)}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Neuroexclusive nodes}
+\StringTok{  }\KeywordTok{geom_scatterpie}\NormalTok{(}
+     \DataTypeTok{data    =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(ne }\OperatorTok{==}\StringTok{ }\OtherTok{TRUE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ pie_aes}
+\NormalTok{    ,}\DataTypeTok{cols    =}\NormalTok{ systems }\OperatorTok{%>%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"past"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{n       =} \DecValTok{5} \CommentTok{# Square nodes}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Labels}
+\StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{16}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{    ,}\DataTypeTok{size =} \FloatTok{2.25}
+\NormalTok{    ,}\DataTypeTok{alpha =} \FloatTok{0.5}
+\NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_wrap}\NormalTok{(. }\OperatorTok{~}\StringTok{ }\NormalTok{root_name, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\NormalTok{theme_facet }\OperatorTok{+}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}
+     \DataTypeTok{strip.text       =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{margin =} \KeywordTok{margin}\NormalTok{(}\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{, }\DecValTok{20}\NormalTok{))}
+\NormalTok{    ,}\DataTypeTok{strip.text.x     =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#616161"}\NormalTok{, }\DataTypeTok{size =} \DecValTok{20}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{strip.background =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{panel.border     =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#E0E0E0"}\NormalTok{, }\DataTypeTok{fill =} \OtherTok{NA}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
+\NormalTok{  )}
 \end{Highlighting}
 \end{Shaded}
 
+\clearpage
+
+\thispagestyle{empty}
+
+\pdfpageheight=102in
+
 \begin{figure}[p]
 
-\caption{caption.}\label{fig:analysis.network.fig_sup_functions-1}
+\caption{The human neurotransmission network with nodes rooted at each human LCA. Nodes are colored according to their neurotransmitter systems. Nodes from previous roots are colored white. Nodes with black borders are neuroexclusive.}\label{fig:analysis.network.wrap_systems-1}
 
-{\centering \includegraphics[width=7.5in, height=20in]{figs/analysis.network.fig_sup_functions-1} }
+{\centering \includegraphics[height=100in, width=6.9in]{figs/analysis.network.wrap_systems-1} }
 
 \end{figure}
 
@@ -806,7 +661,7 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 \CommentTok{# Pivoting vertices data.frame to enable faceting by systems}
 \NormalTok{vertices_long <-}\StringTok{ }\KeywordTok{pivot_longer}\NormalTok{(}
    \DataTypeTok{data      =}\NormalTok{ vertices}
-\NormalTok{  ,}\DataTypeTok{cols      =}\NormalTok{ systems}
+\NormalTok{  ,}\DataTypeTok{cols      =} \KeywordTok{all_of}\NormalTok{(systems)}
 \NormalTok{  ,}\DataTypeTok{names_to  =} \StringTok{"system"}
 \NormalTok{  ,}\DataTypeTok{values_to =} \StringTok{"is_system"}
 \NormalTok{) }\OperatorTok{%>%}
@@ -815,18 +670,14 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 \NormalTok{    ,}\DataTypeTok{annotation_color =} \KeywordTok{ifelse}\NormalTok{(is_system, annotation, }\StringTok{"other"}\NormalTok{)}
 \NormalTok{  )}
 
-\NormalTok{edges_systems <-}\StringTok{ }\KeywordTok{inner_join}\NormalTok{(edges_long, vertices_long, }\DataTypeTok{by =} \StringTok{"string_id"}\NormalTok{)}
-
-\CommentTok{# Determines from which root onwards and edge can be drawn (as well as its color)}
-\NormalTok{edges_systems }\OperatorTok{%<>%}
+\NormalTok{edges_systems <-}\StringTok{ }\NormalTok{edges_scaffold }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(vertices_long, }\DataTypeTok{by =} \StringTok{"string_id"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\CommentTok{# Determines from which root onwards and edge can be drawn (as well as its color)}
 \StringTok{  }\KeywordTok{group_by}\NormalTok{(group, system) }\OperatorTok{%>%}
 \StringTok{  }\KeywordTok{mutate}\NormalTok{(}
      \DataTypeTok{edge_system =} \KeywordTok{ifelse}\NormalTok{(is_system[}\KeywordTok{which.min}\NormalTok{(root)], system, }\StringTok{"other_edge"}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{edge_root   =} \KeywordTok{min}\NormalTok{(root)}
 \NormalTok{  )}
-
-\CommentTok{# Reference data.frame for inequality join}
-\NormalTok{subsequent_duplicator <-}\StringTok{ }\NormalTok{vertices }\OperatorTok{%>%}\StringTok{ }\KeywordTok{distinct}\NormalTok{(}\DataTypeTok{facet_root =}\NormalTok{ root)}
 
 \CommentTok{# Simply duplicating emerging edges in subsequent roots}
 \NormalTok{edges_in_roots <-}\StringTok{ }\NormalTok{edges_systems }\OperatorTok{%>%}
@@ -847,39 +698,35 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 \NormalTok{  )}
 
 \KeywordTok{ggplot}\NormalTok{() }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Edges}
 \StringTok{  }\KeywordTok{geom_path}\NormalTok{(}
      \DataTypeTok{data    =}\NormalTok{ edges_in_roots}
-\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}
-       \DataTypeTok{x     =}\NormalTok{ x}
-\NormalTok{      ,}\DataTypeTok{y     =}\NormalTok{ y}
-\NormalTok{      ,}\DataTypeTok{group =}\NormalTok{ group}
-\NormalTok{    )}
+\NormalTok{    ,}\DataTypeTok{mapping =}\NormalTok{ edge_aes}
 \NormalTok{    ,}\DataTypeTok{color   =}\NormalTok{ color_mappings[edges_in_roots[[}\StringTok{"edge_color"}\NormalTok{]]] }\OperatorTok{%>%}\StringTok{ }\KeywordTok{alpha}\NormalTok{(}\FloatTok{0.3}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{0.1}
 \NormalTok{  ) }\OperatorTok{+}
+\StringTok{  }\CommentTok{# Nodes}
 \StringTok{  }\KeywordTok{geom_point}\NormalTok{(}
      \DataTypeTok{data =}\NormalTok{ nodes_in_roots }
 \NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}
        \DataTypeTok{x     =}\NormalTok{ x}
 \NormalTok{      ,}\DataTypeTok{y     =}\NormalTok{ y}
 \NormalTok{      ,}\DataTypeTok{size  =}\NormalTok{ size}
-\NormalTok{      ,}\DataTypeTok{shape =}\NormalTok{ shape}
+\NormalTok{      ,}\DataTypeTok{shape =}\NormalTok{ ne}
 \NormalTok{      ,}\DataTypeTok{fill  =}\NormalTok{ system_color}
 \NormalTok{      ,}\DataTypeTok{color =}\NormalTok{ system_border}
 \NormalTok{    )}
 \NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\NormalTok{node_fill_scale }\OperatorTok{+}
-\StringTok{  }\NormalTok{node_color_scale }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_shape_identity}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{)) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(}\OperatorTok{-}\NormalTok{facet_root }\OperatorTok{~}\StringTok{ }\NormalTok{system, }\DataTypeTok{switch =} \StringTok{"y"}\NormalTok{) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme_void}\NormalTok{() }\OperatorTok{+}
-\StringTok{  }\KeywordTok{theme}\NormalTok{(}
-     \DataTypeTok{strip.text.y     =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{90}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{strip.background =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#c0c0c0"}\NormalTok{, }\DataTypeTok{fill =} \StringTok{"#c0c0c0"}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
-\NormalTok{    ,}\DataTypeTok{panel.border     =} \KeywordTok{element_rect}\NormalTok{(}\DataTypeTok{color =} \StringTok{"#c0c0c0"}\NormalTok{, }\DataTypeTok{fill =} \OtherTok{NA}\NormalTok{, }\DataTypeTok{size =} \FloatTok{0.5}\NormalTok{, }\DataTypeTok{linetype =} \StringTok{"solid"}\NormalTok{)}
+\StringTok{  }\CommentTok{# Labels}
+\StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
+     \DataTypeTok{data =}\NormalTok{ nodes_in_roots }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE} \OperatorTok{&}\StringTok{ }\NormalTok{is_system }\OperatorTok{==}\StringTok{ }\OtherTok{TRUE}\NormalTok{)}
+\NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{16}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
+\NormalTok{    ,}\DataTypeTok{size =} \FloatTok{1.5}
+\NormalTok{    ,}\DataTypeTok{alpha =} \FloatTok{0.75}
 \NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill =} \StringTok{"none"}\NormalTok{, }\DataTypeTok{color =} \StringTok{"none"}\NormalTok{, }\DataTypeTok{size =} \StringTok{"none"}\NormalTok{)}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{facet_grid}\NormalTok{(root_name }\OperatorTok{~}\StringTok{ }\NormalTok{system, }\DataTypeTok{switch =} \StringTok{"y"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\NormalTok{theme_facet}
 \end{Highlighting}
 \end{Shaded}
 
@@ -891,7 +738,11 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 
 \begin{figure}[p]
 
-\caption{caption.}\label{fig:analysis.network.faceted_systems-1}
+\newgeometry{textwidth=15in}
+
+\caption{The human neurotransmission network with nodes rooted at each human LCA. Nodes are colored according to their neurotransmitter systems. Nodes from previous roots are colored white. Nodes with black borders are neuroexclusive.}\label{fig:analysis.network.faceted_systems-1}
+
+\restoregeometry
 
 {\centering \includegraphics[height=35in, width=15in]{figs/analysis.network.faceted_systems-1} }
 
@@ -904,11 +755,20 @@ rooted at each LCA. Nodes rooted at previous LCAs are colored white.
 \hypertarget{manuscript-set-diagrams}{%
 \subsubsection{Manuscript set diagrams}\label{manuscript-set-diagrams}}
 
-Given the dificulties of joining ggplot and base plots, the set diagrams
-have to be plotted by themselves:
+The following code block produces all set diagrams from the main
+manuscript.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\NormalTok{upset_texts <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}
+   \DecValTok{2}   \CommentTok{#ytitle}
+\NormalTok{  ,}\DecValTok{2}   \CommentTok{#ytick}
+\NormalTok{  ,}\DecValTok{1}   \CommentTok{#setsizetitle}
+\NormalTok{  ,}\FloatTok{1.5} \CommentTok{#setsizetick}
+\NormalTok{  ,}\DecValTok{2}   \CommentTok{#setnames}
+\NormalTok{  ,}\FloatTok{2.5} \CommentTok{#barnums}
+\NormalTok{)}
+
 \CommentTok{# We have to manually find the correct order of colors}
 \CommentTok{# Because UpSetR does not understand named vectors}
 \NormalTok{get_colors <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(df) \{}
@@ -968,5 +828,5 @@ have to be plotted by themselves:
 \end{Shaded}
 
 \begin{figure}
-\subfloat[Set diagram for Figure 1A\label{fig:unnamed-chunk-121}]{\includegraphics{figs/analysis.network.unnamed-chunk-12-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:unnamed-chunk-122}]{\includegraphics{figs/analysis.network.unnamed-chunk-12-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:unnamed-chunk-123}]{\includegraphics{figs/analysis.network.unnamed-chunk-12-3} }\caption{Set diagrams}\label{fig:unnamed-chunk-12}
+\subfloat[Set diagram for Figure 1A\label{fig:sets-1}]{\includegraphics{figs/analysis.network.sets-1} }\newline\subfloat[Set diagram for Figure 3A\label{fig:sets-2}]{\includegraphics{figs/analysis.network.sets-2} }\newline\subfloat[Set diagram for Figure 3B\label{fig:sets-3}]{\includegraphics{figs/analysis.network.sets-3} }\caption{Set diagrams}\label{fig:sets}
 \end{figure}
