@@ -32,26 +32,23 @@ Building the base ID lookup table:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# Joining all data}
 \NormalTok{adhesion_genes }\OperatorTok{%<>%}\StringTok{ }\KeywordTok{left_join}\NormalTok{(link_entrez_string) }\OperatorTok{%>%}\StringTok{ }\KeywordTok{left_join}\NormalTok{(entrez_names)}
 \end{Highlighting}
 \end{Shaded}
 
-Some proteins were not available in STRING:
+One protein was not found in STRING:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{adhesion_genes[}\OperatorTok{!}\KeywordTok{complete.cases}\NormalTok{(adhesion_genes),]}
+\NormalTok{adhesion_genes[}\OperatorTok{!}\KeywordTok{complete.cases}\NormalTok{(adhesion_genes),}\StringTok{"entrez_name"}\NormalTok{]}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{tabular}{lllll}
-\toprule
-  & entrez\_id & pathway\_name & string\_id & entrez\_name\\
-\midrule
-\rowcolor{gray!6}  15 & 22829 & adhesion & NA & NLGN4Y\\
-\bottomrule
-\end{tabular}
+\begin{verbatim}
+## [1] "NLGN4Y"
+\end{verbatim}
+
+Exporting data for analysis:
 
 \begin{Shaded}
 \begin{Highlighting}[]

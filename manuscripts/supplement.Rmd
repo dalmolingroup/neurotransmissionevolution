@@ -146,6 +146,11 @@ Gene selection and annotation
 The anchoring point of our analysis is gene identifiers. This section describes the process of structuring an identifier dictionary as well as other useful annotation, like KEGG pathways. The goal is to have a table to which all kinds of additional data can be left joined.
 \input{data-raw.kegg.tex}
 
+<!--- Adhesion genes -->
+### Adhesion genes
+Further in this document we perform an additional analysis in which the roots of neural adhesion genes are inferred. The following blocks build a separate identifier dictionary for these genes.
+\input{data-raw.kegg_extra.tex}
+
 <!--- Neuroexclusivity -->
 Neuroexclusivity
 --------------------

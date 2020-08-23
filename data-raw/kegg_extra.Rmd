@@ -1,5 +1,5 @@
 ---
-title: 'Gene identifiers and pathway annotation'
+title: 'Adhesion genes'
 knit: neurotransmissionevolution::custom_knit
 ---
 ```{r include=FALSE}
@@ -59,20 +59,15 @@ entrez_names <- read_tsv(
 )
 ```
 ```{r}
-# Joining all data
 adhesion_genes %<>% left_join(link_entrez_string) %>% left_join(entrez_names)
 ```
 
-Some proteins were not available in STRING:
-```{r eval=FALSE}
-adhesion_genes[!complete.cases(adhesion_genes),]
-```
-```{r results="asis", echo=FALSE}
-adhesion_genes[!complete.cases(adhesion_genes),] %>%
-  knitr::kable(booktabs = T) %>%
-  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+One protein was not found in STRING:
+```{r}
+adhesion_genes[!complete.cases(adhesion_genes),"entrez_name"]
 ```
 
+Exporting data for analysis:
 ```{r results="hide"}
 # Removing unfound proteins
 adhesion_genes %<>% na.omit
