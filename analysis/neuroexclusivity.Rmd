@@ -25,7 +25,7 @@ data(
 ```
 
 ### Expression neuroexclusivity
-We start by averaging all `gene_expression` collected from the Expression Atlas by tissue (`tpm_avg`). The averaged expression is filtered for values greather than 0.5 TPM. This ensures further computations only account for tissues in which genes are actually expressed. Then, we add the manual tissue classification indicating which tissues are nervous or not (described in Preprocessing). The neuroexclusivity index for a gene is the sum of its `tpm_avg` values in nervous tissues divided by the sum its values in all tissues.
+We start by averaging all `gene_expression` collected from the Expression Atlas by tissue (`tpm_avg`). The averaged expression is filtered for values greather than 0.5 TPM. This ensures further computations only account for tissues in which genes are actually expressed. Then, we add the manual tissue classification indicating which tissues are nervous or not (described in Preprocessing). The neuroexclusivity index of a gene is the sum of its `tpm_avg` values in nervous tissues divided by the sum its values in all tissues.
 ```{r}
 tissue_classification <- read_tsv(
   file      = "../data/neuroexclusivity_classification_tissue.tsv"
@@ -47,7 +47,7 @@ expression_neuroexclusivity <- avg_by_tissue %>%
 ```
 
 ### Pathway neuroexclusivity
-To find the pathway neuroexclusivity of a gene, we simply divide the count of nervous pathways by the count of all pathways it participates in.
+To find the pathway neuroexclusivity of a gene, we simply divide the number of nervous pathways by the number of all pathways it participates in.
 ```{r}
 pathway_classification <- read_tsv(
    file      = "../data/neuroexclusivity_classification_pathway.tsv"

@@ -123,8 +123,8 @@ root_names <- string_eukaryotes %>%
   write_tsv("temp/temp_geneplast_clade_names.tsv")
 ```
 
-Some automatically named clades are resolved by hand. The following table shows clade names before and after manual checking:
-```{r}
+Some automatically named clades have to be resolved by hand. The following table shows clade names before and after manual checking:
+```{r results="hide"}
 # Loading manually resolved names, based on temp/temp_geneplast_clade_names.tsv
 lca_names <- read_tsv("geneplast_clade_names.tsv")
 
@@ -212,7 +212,7 @@ ggplot(long_pam, aes(x = cog_id, y = species)) +
 \pdfpageheight=11in
 
 ### Adhesion genes
-Aditionally...
+Aditionally, we also infer the roots of neural adhesion genes.
 ```{r results="hide"}
 data(
   adhesion_genes,
@@ -241,6 +241,11 @@ roots_extra %>%
   arrange(Root, entrez_name) %>%
   mutate(Root = paste0("Human-", clade_name, " LCA (#", Root,")")) %>%
   select("String ID" = string_id, "COG" = cog_id, "Symbol" = entrez_name, Root) %>%
-  knitr::kable(caption = "Adhesion genes in the neural system (KEGG Pathway hsa04514).", booktabs = TRUE, linesep = "") %>%
-  kableExtra::kable_styling(position = "left", latex_options = c("striped", "HOLD_position"))
+  knitr::kable(
+    caption = "Adhesion genes in the neural system (KEGG Pathway hsa04514) and their roots."
+    ,booktabs = TRUE
+    ,longtable = T
+    ,linesep = ""
+  ) %>%
+  kableExtra::kable_styling(position = "left", latex_options = c("striped"))
 ```

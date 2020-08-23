@@ -1,11 +1,11 @@
 ---
 title: "Supplementary Information"
 subtitle: "Ionotropic receptors as the driving force behind human synapse establishment"
-author:
-  - Lucas H. Viscardi
-  - Danilo O. Imparato
-  - Maria Cátira Bortolini
-  - Rodrigo J. S. Dalmolin
+# author:
+#   - Lucas H. Viscardi
+#   - Danilo O. Imparato
+#   - Maria Cátira Bortolini
+#   - Rodrigo J. S. Dalmolin
    
 header-includes:
   # kableExtra
@@ -71,6 +71,7 @@ output:
     toc: yes
     toc_depth: 3
     fig_caption: true
+    number_sections: true
     latex_engine: xelatex
     template: style/default.tex
     pandoc_args: --highlight-style=style/chaos_modified.theme
@@ -122,21 +123,21 @@ To explore and tweak this project, users can download the repository's latest re
 <!-- Preprocessing -->
 Preprocessing
 =================
-This section mainly refers to data preprocessing steps done before the actual analysis with the intent of making it either simpler or faster.
+This section mainly refers to data preprocessing steps done before the actual analysis with the intent of making it either simpler or faster.  
 
 <!--- Eukaryota species tree -->
 Eukaryota species tree
 --------------------------
-We opted to use the TimeTree database to obtain an standardized Eukaryota species tree, although some target species were absent from it. Absent species were filled in based on NCBI Taxonomy data.
+We opted to use the TimeTree database to obtain an standardized Eukaryota species tree. Absent species were filled in based on NCBI Taxonomy data.  
 
 <!-- NCBI Taxonomy tree -->
-### NCBI Taxonomy tree
-The following topics describe how we retrieved a target species tree from NCBI Taxonomy data.
+### NCBI Taxonomy tree  
+The following topics describe how we retrieved a target species tree from NCBI Taxonomy data.  
 \input{data-raw.tree_ncbi.tex}
 
 <!-- Hybrid tree -->
 ### Hybrid tree
-Once we have both the NCBI Eukaryota tree and the list of duplicated genera, we can start assembling the complete hybrid tree.
+Once we have both the NCBI Eukaryota tree and the list of duplicated genera, we can start assembling the complete hybrid tree.  
 \input{data-raw.tree_hybrid.tex}
 
 <!--- Kegg annotation -->
@@ -168,6 +169,7 @@ Network
 We use our gene dictionary to retrieve the corresponding human protein-protein interaction network. This is done through the STRING API. In the end, we recompute combined interaction scores.
 \input{data-raw.string_edgelist.tex}
 
+\clearpage
 
 <!-- Analysis -->
 Analysis
@@ -200,7 +202,7 @@ Abundance is the number of proteins of a single species in a single orthologous 
 <!--- Cnidarian ionotropic receptors expression -->
 Cnidarian ionotropic receptors expression
 -----------
-In this section, we look for the expression of ionotropic receptor orthologs in *Nematostella vectensis* neurons, made available as supplementary data in Sebé-Pedrós et al, 2018. 
+In this section, we look for the expression of ionotropic receptor orthologs in *Nematostella vectensis* neurons, made available as supplementary data in [Sebé-Pedrós et al, 2018.](https://doi.org/10.1016/j.cell.2018.05.019)
 \input{analysis.cnidarian_receptors.tex}
 
 <!-- Hiding code box -->

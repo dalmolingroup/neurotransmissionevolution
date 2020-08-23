@@ -29,7 +29,7 @@ untar("download/taxdump.tar.gz", exdir = "download/taxdump")
 ```
 
   
-**Resources**  
+**Resources**
 ```{r results='asis', echo=FALSE, cache=FALSE}
 ###################
 ## string_species

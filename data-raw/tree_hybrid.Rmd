@@ -162,7 +162,7 @@ tree_genus %<>% list_modify(
 ```
 
 **Species of unfound genera**  
-In this part, we try to fill in the remaining missing species (those which genera were not found in TimeTree) by searching for their closest relatives (according to NCBI Taxonomy) that are present in the current tree. Once we find its two closest relatives, we can add the missing species as a branch from their LCA. This is a conservative approach.
+In this part, we try to fill in the remaining missing species (those which genera were not found in TimeTree) by searching for their closest relatives (according to NCBI Taxonomy) that are present in the current tree. Once we find its two closest relatives, we can add the missing species as a branch to their LCA. This is a conservative approach.
 ```{r}
 # converting ncbi phylo to igraph
 graph_ncbi <- read.tree("tree_ncbi.nwk") %>% as.igraph.phylo(directed = TRUE)
