@@ -237,7 +237,7 @@ Setting up reusable aesthetic parameters to avoid code duplication.
 \NormalTok{plot_text <-}\StringTok{ }\KeywordTok{geom_text}\NormalTok{(}
    \DataTypeTok{data    =}\NormalTok{ vertices}
 \NormalTok{  ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(x, y, }\DataTypeTok{label =}\NormalTok{ string_name)}
-\NormalTok{  ,}\DataTypeTok{size    =} \DecValTok{2}
+\NormalTok{  ,}\DataTypeTok{size    =} \FloatTok{1.5}
 \NormalTok{  ,}\DataTypeTok{vjust   =} \DecValTok{0}
 \NormalTok{  ,}\DataTypeTok{nudge_y =} \DecValTok{6}
 \NormalTok{  ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
@@ -270,7 +270,7 @@ Setting up reusable aesthetic parameters to avoid code duplication.
 \StringTok{  }\NormalTok{plot_nodes }\OperatorTok{+}
 \StringTok{  }\NormalTok{theme_facet }\OperatorTok{+}
 \StringTok{  }\NormalTok{plot_text }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{4}\NormalTok{, }\DecValTok{12}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\FloatTok{1.5}\NormalTok{, }\FloatTok{4.5}\NormalTok{), }\DataTypeTok{guide =} \OtherTok{FALSE}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{guides}\NormalTok{(}\DataTypeTok{fill=}\StringTok{"legend"}\NormalTok{)}
 
 \CommentTok{# Plotting and saving}
@@ -397,10 +397,9 @@ sapiens} itself.
 \StringTok{  }\KeywordTok{geom_text}\NormalTok{(}
      \DataTypeTok{data    =}\NormalTok{ nodes_in_roots_fig3 }\OperatorTok{%>%}\StringTok{ }\KeywordTok{filter}\NormalTok{(past }\OperatorTok{==}\StringTok{ }\OtherTok{FALSE}\NormalTok{)}
 \NormalTok{    ,}\DataTypeTok{mapping =} \KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ x, }\DataTypeTok{y =}\NormalTok{ y }\OperatorTok{+}\StringTok{ }\KeywordTok{linMap}\NormalTok{(system_count, }\DecValTok{10}\NormalTok{, }\DecValTok{16}\NormalTok{), }\DataTypeTok{label =}\NormalTok{ string_name)}
-\NormalTok{    ,}\DataTypeTok{size    =} \DecValTok{2}
+\NormalTok{    ,}\DataTypeTok{size    =} \FloatTok{1.5}
 \NormalTok{    ,}\DataTypeTok{alpha   =} \FloatTok{0.5}
 \NormalTok{  ) }\OperatorTok{+}
-\StringTok{  }\KeywordTok{scale_radius}\NormalTok{(}\DataTypeTok{range =} \KeywordTok{c}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{5}\NormalTok{)) }\OperatorTok{+}
 \StringTok{  }\KeywordTok{facet_wrap}\NormalTok{(. }\OperatorTok{~}\StringTok{ }\NormalTok{root_name, }\DataTypeTok{ncol =} \DecValTok{1}\NormalTok{) }\OperatorTok{+}
 \StringTok{  }\NormalTok{theme_facet}
 \end{Highlighting}

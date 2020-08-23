@@ -219,7 +219,7 @@ theme_facet <- list(
 ```
 
 ### Manuscript figure 1
-```{r fig1, fig.align="center", fig.height=17, fig.width=12, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom)."}
+```{r fig1, fig.align="center", fig.height=9, fig.width=6.2, fig.cap="Unedited manuscript figure 1. The human neurotransmission network with nodes colored by neurotransmitter systems (top) and neurotransmission functions (bottom)."}
 # Common elements
 plot_edges <- geom_path(
    data    = edges
@@ -231,7 +231,7 @@ plot_edges <- geom_path(
 plot_text <- geom_text(
    data    = vertices
   ,mapping = aes(x, y, label = string_name)
-  ,size    = 2
+  ,size    = 1.5
   ,vjust   = 0
   ,nudge_y = 6
   ,alpha   = 0.5
@@ -264,14 +264,14 @@ fig1b <- ggplot() +
   plot_nodes +
   theme_facet +
   plot_text +
-  scale_radius(range = c(4, 12), guide = FALSE) +
+  scale_radius(range = c(1.5, 4.5), guide = FALSE) +
   guides(fill="legend")
 
 # Plotting and saving
 fig1a / fig1b
 ```
 ```{r include=FALSE}
-ggsave("plots/fig1_raw.pdf", width = 12, height = 17, useDingbats = F)
+ggsave("plots/fig1_raw.pdf", width = 6.2, height = 9, useDingbats = F)
 ```
 
 ### Manuscript figure 2
@@ -330,7 +330,7 @@ write_tsv(
 
 ### Manuscript figure 3  
 The process for generating Figures 3 and 4 is roughly the same. It consists of finding what nodes have numeric roots in a given range. In our analysis, the largest root is numbered 37 and represents the oldest common ancestor to humans in the cladogram (the Human-Metamonada LCA, as seen in previous sections). Root number 1 is represented by _Homo sapiens_ itself.  
-```{r fig3, fig.align="center", fig.height=17, fig.width=12, fig.cap="Unedited manuscript figure 3. It represents the human neurotransmission network with nodes colored by neurotransmitter systems. At the top, we have the human network composed only of nodes rooted at the origin of Eukaryota. At the bottom, we have the human network composed of nodes rooted since the origin of Eukaryota until the Human-Cnidaria LCA."}
+```{r fig3, fig.align="center", fig.height=9, fig.width=6.2, fig.cap="Unedited manuscript figure 3. It represents the human neurotransmission network with nodes colored by neurotransmitter systems. At the top, we have the human network composed only of nodes rooted at the origin of Eukaryota. At the bottom, we have the human network composed of nodes rooted since the origin of Eukaryota until the Human-Cnidaria LCA."}
 # Subsetting node data for the two roots
 nodes_in_roots_fig3 <- nodes_in_roots %>%
   filter(facet_root %in% c(37,26)) %>%
@@ -367,15 +367,14 @@ ggplot() +
   geom_text(
      data    = nodes_in_roots_fig3 %>% filter(past == FALSE)
     ,mapping = aes(x = x, y = y + linMap(system_count, 10, 16), label = string_name)
-    ,size    = 2
+    ,size    = 1.5
     ,alpha   = 0.5
   ) +
-  scale_radius(range = c(2, 5)) +
   facet_wrap(. ~ root_name, ncol = 1) +
   theme_facet
 ```
 ```{r include=FALSE}
-ggsave("plots/fig3_raw.pdf", width = 12, height = 17, useDingbats = F)
+ggsave("plots/fig3_raw.pdf", width = 6.2, height = 9, useDingbats = F)
 ```
 
 Additionally, we cumulatively count nodes by their categories (function and neuroexclusivity) and inferred root:

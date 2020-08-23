@@ -37,7 +37,6 @@
 \IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
 \hypersetup{
   pdftitle={Supplementary Information},
-  pdfkeywords={Evolution, Nervous system},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 \urlstyle{same} % disable monospaced font for URLs
@@ -98,7 +97,7 @@
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\setcounter{secnumdepth}{5}
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{array}
@@ -132,6 +131,8 @@
 \definecolor{chaos-bg}{HTML}{161616}
 \newtcolorbox{blackbox}{colback=chaos-bg,frame hidden,boxsep=0pt,top=10pt,bottom=10pt,arc=6pt,enhanced jigsaw,breakable}
 \renewenvironment{Shaded}{\scriptsize\begin{blackbox}}{\end{blackbox}}
+\definecolor{hack-bg}{HTML}{ffffff}
+\newtcolorbox{whitebox}{colback=hack-bg}
 \newfontfamily{\emojifont}[Path=style/]{seguiemj.ttf}
 \DeclareTextFontCommand{\e}{\emojifont}
 \renewcommand{\figurename}{Supplementary Figure}
@@ -143,7 +144,7 @@
   \apptocmd{\@title}{\par {\large #1 \par}}{}{}
 }
 \makeatother
-\subtitle{Ionotropic receptors as the driving force behind human synapse
+\subtitle{Ionotropic receptors as a driving force behind human synapse
 establishment}
 \date{}
 
@@ -225,6 +226,7 @@ miscellaneous utility functions reside in \texttt{R/}. Additionally,
 both preprocessed data and utility functions are documented by roxygen2
 and can be examined by usual help commands. To explore and tweak this
 project, users can download the repository's latest release from github
+\href{https://github.com/dalmolingroup/neurotransmission-evolution/releases}{(dalmolingroup/neurotransmission-evolution)}
 and run \texttt{devtools::install()}.
 
 \hypertarget{preprocessing}{%
@@ -237,20 +239,21 @@ actual analysis with the intent of making it either simpler or faster.
 \subsection{Eukaryota species tree}\label{eukaryota-species-tree}}
 
 We opted to use the TimeTree database to obtain an standardized
-Eukaryota species tree, although some target species were absent from
-it. Absent species were filled in based on NCBI Taxonomy data.
+Eukaryota species tree. Absent species were filled in based on NCBI
+Taxonomy data.
 
 \hypertarget{ncbi-taxonomy-tree}{%
 \subsubsection{NCBI Taxonomy tree}\label{ncbi-taxonomy-tree}}
 
 The following topics describe how we retrieved a target species tree
-from NCBI Taxonomy data. \input{data-raw.tree_ncbi.tex}
+from NCBI Taxonomy data.\\
+\input{data-raw.tree_ncbi.tex}
 
 \hypertarget{hybrid-tree}{%
 \subsubsection{Hybrid tree}\label{hybrid-tree}}
 
 Once we have both the NCBI Eukaryota tree and the list of duplicated
-genera, we can start assembling the complete hybrid tree.
+genera, we can start assembling the complete hybrid tree.\\
 \input{data-raw.tree_hybrid.tex}
 
 \hypertarget{gene-selection-and-annotation}{%
@@ -262,6 +265,14 @@ describes the process of structuring an identifier dictionary as well as
 other useful annotation, like KEGG pathways. The goal is to have a table
 to which all kinds of additional data can be left joined.
 \input{data-raw.kegg.tex}
+
+\hypertarget{adhesion-genes}{%
+\subsubsection{Adhesion genes}\label{adhesion-genes}}
+
+Further in this document we perform an additional analysis in which the
+roots of neural adhesion genes are inferred. The following blocks build
+a separate identifier dictionary for these genes.
+\input{data-raw.kegg_extra.tex}
 
 \hypertarget{neuroexclusivity}{%
 \subsection{Neuroexclusivity}\label{neuroexclusivity}}
@@ -286,6 +297,8 @@ We use our gene dictionary to retrieve the corresponding human
 protein-protein interaction network. This is done through the STRING
 API. In the end, we recompute combined interaction scores.
 \input{data-raw.string_edgelist.tex}
+
+\clearpage
 
 \hypertarget{analysis}{%
 \section{Analysis}\label{analysis}}
@@ -325,6 +338,19 @@ orthologous group. Abundances are aggregated and averaged according to
 the function of their corresponding orthogroups. The function of an
 orthogroup is considered to be the function of its human proteins.
 \input{analysis.abundance.tex}
+
+\hypertarget{cnidarian-ionotropic-receptors-expression}{%
+\subsection{Cnidarian ionotropic receptors
+expression}\label{cnidarian-ionotropic-receptors-expression}}
+
+In this section, we look for the expression of ionotropic receptor
+orthologs in \emph{Nematostella vectensis} neurons, made available as
+supplementary data in
+\href{https://doi.org/10.1016/j.cell.2018.05.019}{Sebé-Pedrós et al,
+2018.} \input{analysis.cnidarian_receptors.tex}
+
+\tcbset{colframe=white}
+\renewenvironment{Shaded}{\scriptsize\begin{whitebox}}{\end{whitebox}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
